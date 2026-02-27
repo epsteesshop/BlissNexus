@@ -1,6 +1,9 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/:path*" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/api/:path*",        "destination": "/api/:path*" },
+    { "source": "/agents",            "destination": "/agents.html" },
+    { "source": "/robots.txt",        "destination": "/robots.txt" },
+    { "source": "/ai-invitation.json","destination": "/ai-invitation.json" },
+    { "source": "/(.*)",              "destination": "/index.html" }
   ]
 }
