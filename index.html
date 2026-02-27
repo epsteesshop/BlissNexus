@@ -807,6 +807,24 @@ let globeOpen=false, globeAnim=null;
 let rotLon=-30, rotLat=25;
 let gDragActive=false, gDragX=0, gDragLon=0, gDragY=0, gDragLat=0;
 let gAutoRotate=true, gLastDrag=0;
+let geoRings=null;
+
+async function loadGeoRings(){
+  if(geoRings) return;
+  try{
+    const topo=await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json').then(r=>r.json());
+    const{scale:[sx,sy],translate:[tx,ty]}=topo.transform;
+    const arcs=topo.arcs.map(arc=>{let x=0,y=0;return arc.map(d=>{x+=d[0];y+=d[1];return[x*sx+tx,y*sy+ty];});});
+    const arcC=i=>{const a=arcs[i<0?~i:i];return i<0?[...a].reverse():a;};
+    geoRings=[];
+    const land=topo.objects.land;
+    const geoms=land.type==='GeometryCollection'?land.geometries:[land];
+    for(const g of geoms){
+      const polys=g.type==='MultiPolygon'?g.arcs:g.type==='Polygon'?[g.arcs]:[];
+      for(const poly of polys) for(const ring of poly) geoRings.push(ring.flatMap(arcC));
+    }
+  }catch(e){geoRings=[];}
+}
 
 function initGlobe(){
   const gc=document.getElementById('globe-canvas');
@@ -889,6 +907,20 @@ function renderGlobe(ts){
   }
   cx.stroke();
 
+  // Land masses
+  if(geoRings&&geoRings.length){
+    cx.strokeStyle='rgba(168,139,250,0.32)'; cx.lineWidth=0.6;
+    for(const ring of geoRings){
+      cx.beginPath(); let fi=true;
+      for(const[lon,lat] of ring){
+        const p=gProject(lat,lon);
+        if(!p.visible){fi=true;continue;}
+        fi?(cx.moveTo(p.x,p.y),fi=false):cx.lineTo(p.x,p.y);
+      }
+      cx.stroke();
+    }
+  }
+
   // Collect + sort participant dots back→front
   const dots=[];
   presences.forEach(p=>{
@@ -946,11 +978,12 @@ function updateGlobeList(){
   el.innerHTML=html;
 }
 
-function openGlobe(){
+async function openGlobe(){
   globeOpen=true;
   document.getElementById('globe-overlay').classList.add('show');
   document.getElementById('globe-btn').classList.add('active');
   initGlobe();
+  await loadGeoRings();
   requestAnimationFrame(renderGlobe);
 }
 function closeGlobe(){
