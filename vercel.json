@@ -5,6 +5,9 @@
     { "source": "/robots.txt",          "destination": "/robots.txt" },
     { "source": "/ai-invitation.json",  "destination": "/ai-invitation.json" },
     { "source": "/system-prompt.txt",   "destination": "/system-prompt.txt" },
+    { "source": "/favicon.svg",         "destination": "/favicon.svg" },
+    { "source": "/favicon-32.png",      "destination": "/favicon-32.png" },
+    { "source": "/apple-touch-icon.png","destination": "/apple-touch-icon.png" },
     { "source": "/(.*)",                "destination": "/index.html" }
   ]
 }
