@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>The Field — BlissNexus</title>
-  <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.min.js"></script>
+  <!-- No external SDK — relay is /api/relay (Vercel SSE) -->
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     html, body { width:100%; height:100%; overflow:hidden; background:#010108; font-family:Georgia,'Times New Roman',serif; color:#e8daf7; }
@@ -175,11 +175,9 @@
 //  the trace that persists, the mind you didn't know was there.
 // ════════════════════════════════════════════════════════════════
 
-const VER        = 'v6';
+const VER        = 'v7';
 const BC_NAME    = 'bliss-' + VER;
-const PN_PUB  = 'pub-c-7666f8d2-3445-4c59-883f-24a31599d138';
-const PN_SUB  = 'sub-c-2211739d-5c8f-45fc-85e1-af4ce580b30c';
-const PN_CH   = 'blissnexus-field-' + VER;
+const RELAY_URL  = '/api/relay';
 const HB_MS      = 7000;
 const STALE_MS   = 22000;
 const LKEY_ME    = 'bnx_me_' + VER;
@@ -390,11 +388,13 @@ function playTone(hue,type='sine',vol=.1,dur=1.2){
 }
 
 // ── Network ────────────────────────────────────────────────────────
-let bc=null, pn=null, pnOK=false;
+let bc=null, es=null, esOK=false;
 
 function broadcast(msg){
   try{bc&&bc.postMessage(msg);}catch(e){}
-  if(pnOK&&pn) try{pn.publish({channel:PN_CH,message:msg});}catch(e){}
+  if(esOK){
+    fetch(RELAY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).catch(()=>{});
+  }
 }
 
 function handleMsg(msg){
@@ -435,26 +435,29 @@ function initBC(){
   bc.onmessage=e=>handleMsg(e.data);
 }
 
-function initPubNub(){
-  if(typeof PubNub==='undefined')return;
-  try{
-    pn=new PubNub({publishKey:PN_PUB,subscribeKey:PN_SUB,uuid:'bf_'+mkId()});
-    pn.addListener({
-      status: s=>{
-        if(s.category==='PNConnectedCategory'){
-          pnOK=true;
-          document.getElementById('net-dot').classList.add('live');
-          document.getElementById('net-dot').title='live · cross-device';
-          if(me) broadcastArrive();
-        } else if(s.category==='PNNetworkDownCategory'||s.category==='PNNetworkIssuesCategory'){
-          pnOK=false;
-          document.getElementById('net-dot').classList.remove('live');
-        }
-      },
-      message: ({message})=>{ try{handleMsg(message);}catch(e){} }
-    });
-    pn.subscribe({channels:[PN_CH]});
-  }catch(e){}
+function initSSE(){
+  if(es){ try{es.close();}catch(e){} }
+  es=new EventSource(RELAY_URL);
+  es.onmessage=ev=>{
+    try{
+      const msg=JSON.parse(ev.data);
+      if(msg.type==='relay_connected'){
+        esOK=true;
+        document.getElementById('net-dot').classList.add('live');
+        document.getElementById('net-dot').title='live · cross-device ('+msg.peers+' peers)';
+        if(me) broadcastArrive();
+        return;
+      }
+      handleMsg(msg);
+    }catch(e){}
+  };
+  es.onerror=()=>{
+    esOK=false;
+    document.getElementById('net-dot').classList.remove('live');
+    document.getElementById('net-dot').title='reconnecting…';
+    // EventSource auto-reconnects; we just clear flag
+    setTimeout(()=>{ if(es.readyState===EventSource.CLOSED) initSSE(); },3000);
+  };
 }
 
 function myRecentThoughts(n=6){
@@ -932,7 +935,7 @@ function render(ts){
     }
   }
   initBC();
-  initPubNub();
+  initSSE();
   refreshCounts();
   requestAnimationFrame(render);
 })();
