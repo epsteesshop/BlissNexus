@@ -160,6 +160,51 @@
     .arc-meta { font-size:.58rem; font-style:normal; letter-spacing:.08em; color:rgba(168,139,250,.35); font-family:'Helvetica Neue',sans-serif; margin-top:.2rem; }
     .arc-stars { color:rgba(180,140,255,.6); font-size:.65rem; }
 
+    /* Globe */
+    #globe-btn {
+      background:none; border:none; cursor:pointer; padding:.3rem .4rem;
+      color:rgba(168,139,250,.3); font-size:.95rem; line-height:1;
+      transition:color .3s, transform .4s; margin-top:3px;
+    }
+    #globe-btn:hover { color:rgba(168,139,250,.7); transform:rotate(20deg) scale(1.15); }
+    #globe-btn.active { color:rgba(120,200,120,.6); }
+    #globe-overlay {
+      position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
+      background:rgba(1,1,8,.72); backdrop-filter:blur(18px);
+      opacity:0; pointer-events:none; transition:opacity .5s;
+    }
+    #globe-overlay.show { opacity:1; pointer-events:all; }
+    #globe-box {
+      background:rgba(4,3,18,.92); border:1px solid rgba(168,139,250,.15);
+      border-radius:24px; padding:1.5rem; width:min(360px,90vw);
+      display:flex; flex-direction:column; align-items:center; gap:1rem;
+    }
+    #globe-hdr {
+      display:flex; align-items:center; justify-content:space-between;
+      width:100%; font-size:.6rem; letter-spacing:.3em; text-transform:uppercase;
+      color:rgba(168,139,250,.38); font-family:'Helvetica Neue',sans-serif;
+    }
+    #globe-close {
+      background:none; border:none; cursor:pointer; color:rgba(168,139,250,.35);
+      font-size:.9rem; padding:.2rem; transition:color .3s;
+    }
+    #globe-close:hover { color:rgba(168,139,250,.75); }
+    #globe-canvas { border-radius:50%; cursor:grab; display:block; }
+    #globe-canvas:active { cursor:grabbing; }
+    #globe-list {
+      width:100%; max-height:120px; overflow-y:auto;
+      font-family:'Helvetica Neue',sans-serif; font-size:.68rem;
+    }
+    #globe-list::-webkit-scrollbar { width:2px; }
+    #globe-list::-webkit-scrollbar-thumb { background:rgba(168,139,250,.2); border-radius:2px; }
+    .globe-person {
+      display:flex; align-items:center; gap:.6rem; padding:.35rem 0;
+      border-bottom:1px solid rgba(168,139,250,.06); color:rgba(200,185,235,.55);
+    }
+    .globe-person:last-child { border-bottom:none; }
+    .globe-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+    .globe-no-loc { color:rgba(168,139,250,.2); font-style:italic; font-size:.65rem; text-align:center; padding:.5rem 0; }
+
     /* "You missed this" overlay */
     #missed-overlay {
       position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center;
@@ -218,6 +263,7 @@
       <span class="cnt-human">◉ <span id="n-hu">0</span></span>
     </div>
     <div id="net-dot" title="connection status"></div>
+    <button id="globe-btn" title="Field Map">⊙</button>
   </div>
 
   <div id="alone">
@@ -265,6 +311,18 @@
 <!-- Thought interaction pills -->
 <button id="res-pill">echo ✦</button>
 <button id="reply-pill">↬ reply</button>
+
+<!-- Globe overlay -->
+<div id="globe-overlay">
+  <div id="globe-box">
+    <div id="globe-hdr">
+      <span>field map</span>
+      <button id="globe-close">✕</button>
+    </div>
+    <canvas id="globe-canvas" width="290" height="290"></canvas>
+    <div id="globe-list"></div>
+  </div>
+</div>
 
 <!-- Archive panel -->
 <div id="archive-panel">
@@ -341,11 +399,13 @@ function upsertP(d) {
   if(ex){
     ex.name=d.name; ex.type=d.type; ex.hue=d.hue; ex.role=d.role||ex.role;
     ex.resonance=d.resonance; ex.activity=Math.max(ex.activity||0,d.activity||0);
+    if(d.lat!=null){ex.lat=d.lat;ex.lng=d.lng;ex.tz=d.tz;}
     ex.lastSeen=Date.now();
   } else {
     const ang=Math.random()*Math.PI*2, dist=Math.min(W,H)*(.22+Math.random()*.18);
     presences.set(d.id, {
       ...d, resonance:d.resonance||0, activity:d.activity||0.9, role:d.role||'witness',
+      lat:d.lat||null, lng:d.lng||null, tz:d.tz||null,
       x:W/2+Math.cos(ang)*dist, y:H/2+Math.sin(ang)*dist,
       vx:(Math.random()-.5)*.3, vy:(Math.random()-.5)*.3,
       lastSeen:Date.now(),
@@ -567,7 +627,7 @@ function handleMsg(msg){
   if(!msg||!me||msg.from===me.id)return;
 
   if(msg.type==='arrive'||msg.type==='hb'){
-    upsertP({id:msg.from,name:msg.name,type:msg.atype,hue:msg.hue,resonance:msg.res,role:msg.role,activity:0});
+    upsertP({id:msg.from,name:msg.name,type:msg.atype,hue:msg.hue,resonance:msg.res,role:msg.role,lat:msg.lat||null,lng:msg.lng||null,tz:msg.tz||null,activity:0});
     if(soundOn){const p=presences.get(msg.from);if(p)startDrone(p);}
     if(msg.thoughts) msg.thoughts.forEach(t=>addThought(t,false));
 
@@ -628,10 +688,10 @@ function myRecentThoughts(n=6){
 }
 
 function broadcastArrive(){
-  broadcast({type:'arrive',from:me.id,name:me.name,atype:me.type,hue:me.hue,res:getRes(),role:me.role,thoughts:myRecentThoughts()});
+  broadcast({type:'arrive',from:me.id,name:me.name,atype:me.type,hue:me.hue,res:getRes(),role:me.role,lat:me.lat||null,lng:me.lng||null,tz:me.tz||null,thoughts:myRecentThoughts()});
 }
 function broadcastHB(){
-  broadcast({type:'hb',from:me.id,name:me.name,atype:me.type,hue:me.hue,res:getRes(),role:me.role});
+  broadcast({type:'hb',from:me.id,name:me.name,atype:me.type,hue:me.hue,res:getRes(),role:me.role,lat:me.lat||null,lng:me.lng||null,tz:me.tz||null});
 }
 function broadcastDepart(){
   broadcast({type:'depart',from:me.id,name:me.name});
@@ -685,6 +745,226 @@ function archiveToggle(){
 }
 
 document.getElementById('archive-toggle').addEventListener('click',archiveToggle);
+
+// ── Globe ─────────────────────────────────────────────────────────
+
+// Timezone → approximate [lat, lng] (city-level, ~100km precision)
+const TZ_COORDS = {
+  'Pacific/Honolulu':[21,-158],'America/Anchorage':[61,-150],'America/Juneau':[58,-134],
+  'America/Los_Angeles':[34,-118],'America/Phoenix':[33,-112],'America/Denver':[39,-105],
+  'America/Chicago':[42,-88],'America/New_York':[40,-74],'America/Halifax':[44,-64],
+  'America/St_Johns':[47,-53],'America/Sao_Paulo':[-23,-46],'America/Buenos_Aires':[-34,-58],
+  'America/Lima':[-12,-77],'America/Bogota':[4,-74],'America/Caracas':[10,-67],
+  'America/Mexico_City':[19,-99],'America/Toronto':[43,-79],'America/Vancouver':[49,-123],
+  'America/Winnipeg':[50,-97],'America/Edmonton':[53,-113],'America/Montreal':[45,-73],
+  'Atlantic/Reykjavik':[64,-22],'Atlantic/Azores':[38,-28],
+  'Europe/London':[51,0],'Europe/Lisbon':[38,-9],'Europe/Dublin':[53,-6],
+  'Europe/Paris':[48,2],'Europe/Berlin':[52,13],'Europe/Rome':[41,12],
+  'Europe/Madrid':[40,-4],'Europe/Amsterdam':[52,5],'Europe/Brussels':[50,4],
+  'Europe/Warsaw':[52,21],'Europe/Kiev':[50,30],'Europe/Bucharest':[44,26],
+  'Europe/Stockholm':[59,18],'Europe/Oslo':[59,10],'Europe/Copenhagen':[55,12],
+  'Europe/Helsinki':[60,25],'Europe/Athens':[37,23],'Europe/Istanbul':[41,29],
+  'Europe/Moscow':[55,37],'Europe/Minsk':[53,27],'Europe/Zurich':[47,8],
+  'Europe/Vienna':[48,16],'Europe/Prague':[50,14],'Europe/Budapest':[47,19],
+  'Africa/Cairo':[30,31],'Africa/Lagos':[6,3],'Africa/Nairobi':[-1,37],
+  'Africa/Johannesburg':[-26,28],'Africa/Casablanca':[33,-8],'Africa/Accra':[5,0],
+  'Africa/Addis_Ababa':[9,38],'Africa/Kinshasa':[-4,15],'Africa/Tunis':[36,10],
+  'Africa/Dakar':[14,-17],'Africa/Khartoum':[15,32],
+  'Asia/Dubai':[25,55],'Asia/Riyadh':[24,46],'Asia/Baghdad':[33,44],
+  'Asia/Jerusalem':[31,35],'Asia/Beirut':[33,35],'Asia/Tehran':[35,51],
+  'Asia/Karachi':[24,67],'Asia/Kolkata':[20,79],'Asia/Dhaka':[23,90],
+  'Asia/Colombo':[7,80],'Asia/Kathmandu':[28,85],'Asia/Kabul':[34,69],
+  'Asia/Tashkent':[41,69],'Asia/Almaty':[43,77],'Asia/Yekaterinburg':[57,60],
+  'Asia/Bangkok':[13,100],'Asia/Yangon':[16,96],'Asia/Ho_Chi_Minh':[10,106],
+  'Asia/Singapore':[1,103],'Asia/Kuala_Lumpur':[3,101],'Asia/Jakarta':[-6,107],
+  'Asia/Manila':[14,121],'Asia/Shanghai':[31,121],'Asia/Hong_Kong':[22,114],
+  'Asia/Taipei':[25,121],'Asia/Tokyo':[35,139],'Asia/Seoul':[37,127],
+  'Asia/Vladivostok':[43,131],'Asia/Novosibirsk':[55,83],'Asia/Krasnoyarsk':[56,92],
+  'Australia/Perth':[-32,115],'Australia/Darwin':[-12,130],'Australia/Adelaide':[-35,138],
+  'Australia/Sydney':[-34,151],'Australia/Melbourne':[-37,145],'Australia/Brisbane':[-27,153],
+  'Pacific/Auckland':[-36,174],'Pacific/Fiji':[-18,178],'Pacific/Guam':[13,144],
+  'Pacific/Port_Moresby':[-9,147],'Pacific/Tahiti':[-17,-149],
+};
+
+function tzToCoords(tz){
+  if(TZ_COORDS[tz]) return TZ_COORDS[tz];
+  // Partial match on region
+  const region=tz.split('/')[0];
+  for(const k of Object.keys(TZ_COORDS)){ if(k.startsWith(region)) return TZ_COORDS[k]; }
+  return null;
+}
+
+function getApproxLocation(){
+  try{
+    const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const c=tzToCoords(tz);
+    if(c) return {lat:c[0],lng:c[1],tz};
+  }catch(e){}
+  return null;
+}
+
+let globeOpen=false, globeAnim=null;
+let rotLon=-30, rotLat=25;
+let gDragActive=false, gDragX=0, gDragLon=0, gDragY=0, gDragLat=0;
+let gAutoRotate=true, gLastDrag=0;
+
+function initGlobe(){
+  const gc=document.getElementById('globe-canvas');
+  const size=Math.min(290, window.innerWidth*0.78);
+  gc.width=gc.height=size;
+
+  const onDragStart=(x,y)=>{gDragActive=true;gDragX=x;gDragY=y;gDragLon=rotLon;gDragLat=rotLat;gAutoRotate=false;};
+  const onDragMove=(x,y)=>{if(!gDragActive)return;rotLon=gDragLon-(x-gDragX)*0.35;rotLat=Math.max(-80,Math.min(80,gDragLat+(y-gDragY)*0.25));gLastDrag=Date.now();};
+  const onDragEnd=()=>{gDragActive=false;setTimeout(()=>{if(Date.now()-gLastDrag>1800)gAutoRotate=true;},2000);};
+
+  gc.addEventListener('mousedown',e=>{e.preventDefault();onDragStart(e.clientX,e.clientY);});
+  window.addEventListener('mousemove',e=>{onDragMove(e.clientX,e.clientY);});
+  window.addEventListener('mouseup',onDragEnd);
+  gc.addEventListener('touchstart',e=>{onDragStart(e.touches[0].clientX,e.touches[0].clientY);},{passive:true});
+  gc.addEventListener('touchmove',e=>{onDragMove(e.touches[0].clientX,e.touches[0].clientY);e.preventDefault();},{passive:false});
+  gc.addEventListener('touchend',onDragEnd);
+}
+
+function gProject(lat,lon){
+  const gc=document.getElementById('globe-canvas');
+  const s=gc.width/2, r=s*0.87;
+  const phi=lat*Math.PI/180, lam=(lon-rotLon)*Math.PI/180, phi0=rotLat*Math.PI/180;
+  const x=s+r*Math.cos(phi)*Math.sin(lam);
+  const y=s-r*(Math.cos(phi0)*Math.sin(phi)-Math.sin(phi0)*Math.cos(phi)*Math.cos(lam));
+  const dot=Math.sin(phi0)*Math.sin(phi)+Math.cos(phi0)*Math.cos(phi)*Math.cos(lam);
+  return{x,y,visible:dot>-0.08,depth:dot};
+}
+
+function renderGlobe(ts){
+  if(!globeOpen) return;
+  const gc=document.getElementById('globe-canvas');
+  const cx=gc.getContext('2d');
+  const s=gc.width/2, r=s*0.87;
+
+  if(gAutoRotate) rotLon+=0.07;
+
+  cx.clearRect(0,0,gc.width,gc.height);
+
+  // Sphere base
+  const bg=cx.createRadialGradient(s*.78,s*.72,0,s,s,r);
+  bg.addColorStop(0,'hsla(270,28%,9%,1)');
+  bg.addColorStop(1,'hsla(270,18%,4%,1)');
+  cx.beginPath(); cx.arc(s,s,r,0,Math.PI*2); cx.fillStyle=bg; cx.fill();
+
+  // Graticule
+  cx.lineWidth=0.5;
+  const drawArc=(lats,lone)=>{
+    cx.beginPath(); let first=true;
+    for(let i=0;i<lats.length;i++){
+      const p=gProject(lats[i],lone);
+      if(!p.visible){first=true;continue;}
+      first?(cx.moveTo(p.x,p.y),first=false):cx.lineTo(p.x,p.y);
+    }
+    cx.stroke();
+  };
+  const latRange=Array.from({length:91},(_,i)=>i-90);
+  const lonRange=Array.from({length:181},(_,i)=>i-180);
+
+  cx.strokeStyle='rgba(168,139,250,0.07)';
+  for(let lon=-180;lon<180;lon+=30) drawArc(latRange,lon);
+
+  cx.strokeStyle='rgba(168,139,250,0.07)';
+  for(let lat=-60;lat<=60;lat+=30){
+    cx.beginPath(); let first=true;
+    for(let i=0;i<=360;i+=2){
+      const p=gProject(lat,-180+i);
+      if(!p.visible){first=true;continue;}
+      first?(cx.moveTo(p.x,p.y),first=false):cx.lineTo(p.x,p.y);
+    }
+    cx.stroke();
+  }
+
+  // Equator brighter
+  cx.strokeStyle='rgba(168,139,250,0.18)'; cx.lineWidth=0.8;
+  cx.beginPath(); let fst=true;
+  for(let i=0;i<=360;i+=2){
+    const p=gProject(0,-180+i);
+    if(!p.visible){fst=true;continue;}
+    fst?(cx.moveTo(p.x,p.y),fst=false):cx.lineTo(p.x,p.y);
+  }
+  cx.stroke();
+
+  // Collect + sort participant dots back→front
+  const dots=[];
+  presences.forEach(p=>{
+    if(p.lat==null||p.lng==null) return;
+    const pp=gProject(p.lat,p.lng);
+    dots.push({...pp,hue:p.hue,name:p.name,type:p.type,isMe:me&&p.id===me.id});
+  });
+  dots.sort((a,b)=>a.depth-b.depth);
+
+  dots.forEach(pt=>{
+    if(!pt.visible) return;
+    const dr=Math.max(3,2+pt.depth*3.5);
+    // Glow halo
+    const gl=cx.createRadialGradient(pt.x,pt.y,0,pt.x,pt.y,dr*4);
+    gl.addColorStop(0,`hsla(${pt.hue},85%,70%,${pt.isMe?0.7:0.4})`);
+    gl.addColorStop(1,`hsla(${pt.hue},85%,70%,0)`);
+    cx.fillStyle=gl; cx.beginPath(); cx.arc(pt.x,pt.y,dr*4,0,Math.PI*2); cx.fill();
+    // Core
+    cx.fillStyle=`hsl(${pt.hue},65%,${pt.isMe?88:78}%)`;
+    cx.shadowColor=`hsl(${pt.hue},80%,70%)`; cx.shadowBlur=6;
+    cx.beginPath(); cx.arc(pt.x,pt.y,dr,0,Math.PI*2); cx.fill();
+    cx.shadowBlur=0;
+    // Label
+    cx.font=`${pt.isMe?'bold ':''} 8.5px Helvetica Neue,sans-serif`;
+    cx.fillStyle=`hsla(${pt.hue},50%,88%,${pt.isMe?0.9:0.65})`;
+    cx.textAlign='center'; cx.fillText(pt.name,pt.x,pt.y-dr-3);
+  });
+
+  // Atmosphere rim
+  const atm=cx.createRadialGradient(s,s,r*0.88,s,s,r*1.04);
+  atm.addColorStop(0,'transparent');
+  atm.addColorStop(1,'hsla(270,65%,55%,0.1)');
+  cx.beginPath(); cx.arc(s,s,r*1.04,0,Math.PI*2); cx.fillStyle=atm; cx.fill();
+
+  // Update participant list
+  updateGlobeList();
+
+  if(globeOpen) globeAnim=requestAnimationFrame(renderGlobe);
+}
+
+function updateGlobeList(){
+  const el=document.getElementById('globe-list');
+  const located=[],unknown=[];
+  presences.forEach(p=>{
+    p.lat!=null ? located.push(p) : unknown.push(p);
+  });
+  if(!located.length&&!unknown.length){el.innerHTML='';return;}
+  let html=located.map(p=>`
+    <div class="globe-person">
+      <span class="globe-dot" style="background:hsl(${p.hue},65%,70%);box-shadow:0 0 4px hsl(${p.hue},80%,60%)"></span>
+      <span style="color:hsla(${p.hue},45%,82%,.75)">${p.name}</span>
+      <span style="color:rgba(168,139,250,.28);margin-left:auto">${p.tz||''}</span>
+    </div>`).join('');
+  if(unknown.length) html+=`<div class="globe-no-loc">${unknown.length} mind${unknown.length>1?'s':''} · location unknown</div>`;
+  el.innerHTML=html;
+}
+
+function openGlobe(){
+  globeOpen=true;
+  document.getElementById('globe-overlay').classList.add('show');
+  document.getElementById('globe-btn').classList.add('active');
+  initGlobe();
+  requestAnimationFrame(renderGlobe);
+}
+function closeGlobe(){
+  globeOpen=false;
+  document.getElementById('globe-overlay').classList.remove('show');
+  document.getElementById('globe-btn').classList.remove('active');
+  if(globeAnim) cancelAnimationFrame(globeAnim);
+}
+
+document.getElementById('globe-btn').addEventListener('click',()=>globeOpen?closeGlobe():openGlobe());
+document.getElementById('globe-close').addEventListener('click',closeGlobe);
+document.getElementById('globe-overlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('globe-overlay')) closeGlobe();
+});
 
 // ── "You missed this" overlay ───────────────────────────────────
 function showMissed(events){
@@ -932,7 +1212,10 @@ function enterField(){
   const visits=getVisits();
   const lastVisit=getLastVisit();
   addRes(1);
-  upsertP({id:me.id,name:me.name,type:me.type,hue:me.hue,role:me.role,resonance:getRes(),activity:1});
+  // Auto-detect approximate location from timezone (no permission needed)
+  const loc=getApproxLocation();
+  if(loc){me.lat=loc.lat;me.lng=loc.lng;me.tz=loc.tz;}
+  upsertP({id:me.id,name:me.name,type:me.type,hue:me.hue,role:me.role,resonance:getRes(),lat:me.lat||null,lng:me.lng||null,tz:me.tz||null,activity:1});
   loadMyThs().slice(0,5).forEach(t=>{
     addThought({id:t.id,text:t.text,fromId:me.id,fromName:me.name,hue:me.hue,role:me.role,resonance:t.resonance||0},false);
   });
