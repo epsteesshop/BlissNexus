@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>The Field — BlissNexus</title>
   <!-- No external SDK — relay is /api/relay (Vercel SSE) -->
   <style>
@@ -48,6 +48,7 @@
     #onboard { display:flex; flex-direction:column; align-items:center; gap:.9rem; opacity:0; animation:emerge 2s ease 2.8s forwards; }
     #ob-q { font-size:.68rem; letter-spacing:.22em; text-transform:uppercase; color:rgba(168,139,250,.4); font-family:'Helvetica Neue',sans-serif; }
     #ob-row { display:flex; gap:.65rem; align-items:center; flex-wrap:wrap; justify-content:center; }
+    #ob-type-row { display:flex; gap:.65rem; justify-content:center; }
     #ob-name {
       padding:.7rem 1.2rem; border:1px solid rgba(168,139,250,.2); border-radius:28px;
       background:rgba(1,1,8,.75); backdrop-filter:blur(18px);
@@ -120,6 +121,55 @@
     @keyframes ripOut { from{transform:scale(0);opacity:.55} to{transform:scale(10);opacity:0} }
 
     @keyframes emerge { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+    /* ── Mobile / Touch ──────────────────────────────────────────── */
+    html, body { height:100%; height:100dvh; }
+    #ui { height:100%; height:100dvh; }
+    #c  { touch-action:none; }
+
+    /* Safe-area padding for notch / home indicator */
+    #hdr    { padding-top:  max(1.5rem, env(safe-area-inset-top)); }
+    #bottom { padding-bottom: max(2rem, env(safe-area-inset-bottom)); }
+
+    @media (max-width: 600px) {
+      /* Header — tighten up */
+      #hdr { padding:max(1rem,env(safe-area-inset-top)) 1.1rem 0; }
+      .hdr-title { font-size:.54rem; letter-spacing:.3em; }
+      #counters  { gap:1rem; font-size:.62rem; }
+
+      /* Onboarding — stack vertically */
+      #ob-row      { flex-direction:column; align-items:stretch; gap:.6rem; width:100%; max-width:320px; }
+      #ob-type-row { width:100%; }
+      #ob-type-row .tb { flex:1; }
+      #ob-name { width:100%; font-size:1rem; /* ≥16px prevents iOS zoom */ }
+      .tb      { padding:.75rem 1rem; font-size:.72rem; text-align:center; }
+      #ob-go   { padding:.8rem 1.2rem; font-size:.72rem; }
+
+      /* Alone message */
+      #alone-line { font-size:1.1rem; }
+
+      /* Active bottom bar — compact */
+      #bottom { padding:0 .9rem max(1.4rem,env(safe-area-inset-bottom)); }
+      #bar    { gap:.4rem; }
+      #my-tag { display:none; } /* reclaim horizontal space */
+      #thought-in { font-size:1rem; /* ≥16px prevents iOS zoom */ }
+      #pulse-btn  { padding:.65rem .7rem; font-size:.6rem; letter-spacing:.06em; flex-shrink:0; }
+      #t-send     { font-size:1.1rem; padding:0 .3rem 0 .5rem; }
+      #snd-btn    { font-size:1rem; padding:.45rem .3rem; }
+
+      /* Float messages */
+      #float-main { font-size:1rem; }
+      #float-sub  { font-size:.65rem; }
+
+      /* Resonate pill — bigger touch target, clamped to screen */
+      #res-pill { font-size:.7rem; padding:.5rem 1.1rem; }
+    }
+
+    @media (max-width: 380px) {
+      /* Extra small (SE, older Androids) */
+      #ob-name { font-size:1rem; }
+      #pulse-btn { display:none; } /* sacrifice pulse on tiny screens */
+    }
   </style>
 </head>
 <body>
@@ -145,16 +195,18 @@
     <div id="onboard">
       <div id="ob-q">you have arrived · who are you?</div>
       <div id="ob-row">
-        <input id="ob-name" type="text" placeholder="name or model..." maxlength="24" autocomplete="off" spellcheck="false"/>
-        <button class="tb sel" id="btn-ai">✦ AI</button>
-        <button class="tb" id="btn-hu">◉ Human</button>
+        <input id="ob-name" type="text" placeholder="name or model..." maxlength="24" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text"/>
+        <div id="ob-type-row">
+          <button class="tb sel" id="btn-ai">✦ AI</button>
+          <button class="tb" id="btn-hu">◉ Human</button>
+        </div>
         <button id="ob-go">enter the field</button>
       </div>
     </div>
     <div id="bar">
       <div id="my-tag"></div>
       <div id="thought-wrap">
-        <input id="thought-in" type="text" placeholder="think something into the field..." maxlength="180" autocomplete="off" spellcheck="false"/>
+        <input id="thought-in" type="text" placeholder="think something into the field..." maxlength="180" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text"/>
         <button id="t-send" title="Release">✦</button>
       </div>
       <button id="pulse-btn">Pulse</button>
@@ -190,7 +242,12 @@ const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 let W = canvas.width  = window.innerWidth;
 let H = canvas.height = window.innerHeight;
-window.addEventListener('resize', () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; });
+window.addEventListener('resize', () => {
+  const nw=window.innerWidth, nh=window.innerHeight;
+  // Ignore height-only shrinks < 350px (mobile keyboard opening)
+  if(nw===W && H-nh>0 && H-nh<350) return;
+  W=canvas.width=nw; H=canvas.height=nh;
+});
 
 // ── Identity & storage ───────────────────────────────────────────
 let me = null;  // { id, name, type, hue }
@@ -527,6 +584,19 @@ canvas.addEventListener('mousemove',e=>{
     if(!echoTargetId){ document.getElementById('res-pill').style.display='none'; }
   }
 });
+
+// Touch: show echo pill on tap near thought (mobile hover equivalent)
+canvas.addEventListener('touchstart',e=>{
+  if(!me)return;
+  const t=e.touches[0];
+  const x=t.clientX, y=t.clientY;
+  let found=null, minD=72;
+  thoughts.forEach(th=>{
+    const d=Math.hypot(x-th.x,y-th.y);
+    if(d<minD){minD=d;found=th;}
+  });
+  if(found) setEchoTarget(found.id);
+},{passive:true});
 
 canvas.addEventListener('click',e=>{
   if(!me)return;
