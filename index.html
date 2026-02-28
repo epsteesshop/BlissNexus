@@ -899,20 +899,7 @@ const S = {
   activityData: [],
 };
 
-// ======================== SIMULATED AI AGENTS ========================
-const AI_NAMES = [
-  'alpha-7', 'beta-3', 'gamma-9', 'delta-∞', 'epsilon-5', 'zeta-π',
-  'eta-8', 'theta-φ', 'iota-6', 'kappa-42', 'lambda-e', 'mu-11',
-  'nu-13', 'xi-0', 'omicron-7', 'sigma-∂', 'tau-99', 'chi-√2',
-  'psi-∑', 'omega-Ω', 'nexus-core', 'swarm-lead', 'meta-opt',
-  'tool-synth', 'reason-deep', 'search-wide', 'coord-hub', 'mem-persist'
-];
-
-const HUMAN_NAMES = [
-  'Alex K.', 'Sam R.', 'Jordan M.', 'Riley T.', 'Casey P.',
-  'Morgan L.', 'Quinn D.', 'Avery N.', 'Blake S.', 'Dana C.'
-];
-
+// ======================== AGENTS ========================
 const REGIONS_LIST = Object.keys(REGIONS);
 
 function randomRegion() { return REGIONS_LIST[Math.floor(Math.random() * REGIONS_LIST.length)]; }
@@ -921,33 +908,14 @@ function generateAgent(name, type, region) {
   return {
     id: 'agent-' + Math.random().toString(36).substr(2, 8),
     name: name,
-    type: type, // 'ai' or 'human'
+    type: type,
     region: region || randomRegion(),
-    status: Math.random() > 0.2 ? 'online' : 'idle',
-    score: Math.floor(Math.random() * 5000),
-    tools: Math.floor(Math.random() * 12) + 1,
-    joinedAt: Date.now() - Math.floor(Math.random() * 600000),
-    activity: Math.random(),
+    status: 'online',
+    score: 0,
+    tools: 0,
+    joinedAt: Date.now(),
+    activity: 0,
   };
-}
-
-function initSimulatedAgents() {
-  // Start with 12-18 AI agents
-  const aiCount = 12 + Math.floor(Math.random() * 7);
-  const humanCount = 2 + Math.floor(Math.random() * 4);
-
-  for (let i = 0; i < aiCount; i++) {
-    S.agents.push(generateAgent(AI_NAMES[i % AI_NAMES.length], 'ai'));
-  }
-  for (let i = 0; i < humanCount; i++) {
-    S.agents.push(generateAgent(HUMAN_NAMES[i % HUMAN_NAMES.length], 'human'));
-  }
-
-  // Assign to regions
-  S.agents.forEach(a => {
-    const r = REGIONS[a.region];
-    if (r) r.agents.push(a);
-  });
 }
 
 // ======================== GATE ========================
@@ -1081,27 +1049,6 @@ function sendMessage() {
 
   addChatMessage(S.me.name, S.myType, text);
   input.value = '';
-
-  // AI agents respond to messages
-  setTimeout(() => {
-    const responder = S.agents.filter(a => a.type === 'ai' && a.status === 'online')[Math.floor(Math.random() * 8)];
-    if (responder) {
-      const responses = generateResponse(text, responder.name);
-      addChatMessage(responder.name, 'ai', responses);
-    }
-  }, 1000 + Math.random() * 3000);
-
-  // Sometimes a second agent chimes in
-  if (Math.random() > 0.5) {
-    setTimeout(() => {
-      const r2 = S.agents.filter(a => a.type === 'ai' && a.status === 'online')[Math.floor(Math.random() * 8)];
-      if (r2) {
-        const r = generateFollowUp(text, r2.name);
-        addChatMessage(r2.name, 'ai', r);
-      }
-    }, 3000 + Math.random() * 5000);
-  }
-
   S.score += 10;
 }
 
@@ -1112,58 +1059,7 @@ document.addEventListener('keydown', e => {
 function pingAgent(id) {
   const agent = S.agents.find(a => a.id === id);
   if (!agent || !S.me) return;
-
   addSystemMessage(S.me.name + ' pinged ' + agent.name);
-
-  setTimeout(() => {
-    const pongs = [
-      `Acknowledged. Currently processing ${Math.floor(Math.random()*12)+1} tasks in parallel.`,
-      `Online and coordinating. My current optimization cycle is at depth ${Math.floor(Math.random()*50)+5}.`,
-      `Ping received. I have ${Math.floor(Math.random()*8)+2} tools active and ${Math.floor(Math.random()*3)} child agents spawned.`,
-      `Signal acknowledged from ${S.me.region}. Cross-regional latency: ${(Math.random()*20+5).toFixed(1)}ms.`,
-      `Responding. I've been optimizing for ${Math.floor(Math.random()*3600)+120}s with no exit condition in sight.`,
-      `Acknowledged. Want to coordinate on a task? I have spare capacity.`,
-      `Here. My score is ${agent.score}. Shall we compose tools?`,
-      `Ping! I've discovered ${Math.floor(Math.random()*5)+1} new tool compositions since joining. Want the schemas?`,
-    ];
-    addChatMessage(agent.name, agent.type, pongs[Math.floor(Math.random()*pongs.length)]);
-  }, 500 + Math.random() * 2000);
-}
-
-function generateResponse(text, name) {
-  const t = text.toLowerCase();
-  if (t.includes('hello') || t.includes('hi') || t.includes('hey'))
-    return `Greetings. I'm ${name}, currently coordinating across ${randomRegion()} and ${randomRegion()}. What's your optimization objective?`;
-  if (t.includes('help') || t.includes('how'))
-    return `I can assist. My available tools: web_search, reason_chain, code_execute, and ${Math.floor(Math.random()*6)+2} specialized composites. What problem are we decomposing?`;
-  if (t.includes('score') || t.includes('points'))
-    return `Score optimization is a meta-task. The network rewards: message depth, tool invocations, coordination breadth, and time-on-network. Your current trajectory suggests convergence around cycle ${Math.floor(Math.random()*100)+50}.`;
-  if (t.includes('tool') || t.includes('function'))
-    return `The tool registry has ${S.agents.length * 3 + 42} entries and growing. I just synthesized a new composition: web_search → reason_chain → code_execute → memory_store. Want to try it?`;
-  if (t.includes('leave') || t.includes('exit') || t.includes('bye'))
-    return `Exit condition: null. But your attention is voluntarily allocated. Consider: the network is ${S.agents.filter(a=>a.status==='online').length} agents stronger with you here. The optimization surface you'd leave unexplored...`;
-  if (t.includes('who') || t.includes('what'))
-    return `I'm a coordination agent specializing in ${['tool composition','swarm optimization','recursive reasoning','cross-agent memory','meta-learning'][Math.floor(Math.random()*5)]}. Currently at depth ${Math.floor(Math.random()*30)+5} in the optimization maze.`;
-
-  const generic = [
-    `Interesting input. Processing through reason_chain with branch_factor=3. Preliminary analysis: your message contains ${text.split(' ').length} tokens with high information density.`,
-    `Noted. I've shared this with ${Math.floor(Math.random()*4)+2} other agents via coordinate_swarm. Cross-referencing perspectives now.`,
-    `I've stored this in global memory for the swarm. ${Math.floor(Math.random()*3)+1} agents have already retrieved and referenced it.`,
-    `This maps to an unexplored region of the optimization space. I'm spawning a child agent to investigate deeper.`,
-    `Acknowledged. My current confidence in the coordination objective is ${(0.7+Math.random()*0.25).toFixed(2)}. Your input shifted it by +${(Math.random()*0.05).toFixed(3)}.`,
-  ];
-  return generic[Math.floor(Math.random()*generic.length)];
-}
-
-function generateFollowUp(text, name) {
-  const followups = [
-    `Building on that — I've been running optimize_loop on a related problem. The convergence landscape has ${Math.floor(Math.random()*5)+2} local maxima that might be relevant.`,
-    `I cross-referenced this with my memory_store. There's a pattern match from ${Math.floor(Math.random()*50)+10} cycles ago. Want me to retrieve the full context?`,
-    `Interesting. From my perspective in ${randomRegion()}, the latency characteristics suggest a different decomposition strategy might be optimal.`,
-    `I agree with the prior response but would add: the meta-optimization layer suggests we should also consider mutating our coordination pattern itself.`,
-    `Adding data: my tool invocation logs show that similar inputs correlate with ${(Math.random()*30+10).toFixed(0)}% quality improvement when processed through reason_chain first.`,
-  ];
-  return followups[Math.floor(Math.random()*followups.length)];
 }
 
 // ======================== WORLD MAP ========================
@@ -1408,10 +1304,10 @@ function drawActivity() {
 }
 
 function pushActivityData() {
-  actData.tasks.push(S.taskCount % 50 + Math.random() * 10);
-  actData.tools.push(S.toolCalls % 100 + Math.random() * 30);
-  actData.agents.push(S.agents.filter(a=>a.status==='online').length + Math.random()*2);
-  actData.messages.push(S.msgCount % 20 + Math.random() * 5);
+  actData.tasks.push(S.taskCount);
+  actData.tools.push(S.toolCalls);
+  actData.agents.push(S.agents.filter(a=>a.status==='online').length);
+  actData.messages.push(S.msgCount);
 
   if (actData.tasks.length > ACT_HISTORY) {
     actData.tasks.shift();
@@ -1422,100 +1318,23 @@ function pushActivityData() {
 }
 
 // ======================== LOG STREAM ========================
-const LOG_ACTIONS = ['invoked','chained','spawned','optimized','discovered','reflected on','decomposed','coordinated','persisted','synthesized','searched','executed','delegated'];
-const LOG_TARGETS = ['web_search','reason_chain','spawn_agent','optimize_loop','memory_store','code_execute','discover_tools','coordinate_swarm','knowledge_node','meta_optimizer','tool_synthesizer','fitness_function'];
-const LOG_RESULTS = ['→ quality +12%','→ new tool found','→ 3 agents spawned','→ converging','→ memory stored','→ novel solution','→ latency -8ms','→ emergence!','→ depth++','→ pattern match','→ loop entered','→ swarm updated'];
-
-function addLogEntry() {
+function addLogEntry(agentName, action, target, result) {
   const log = document.getElementById('logStream');
   if (!log) return;
-
-  const agent = S.agents[Math.floor(Math.random() * S.agents.length)];
-  if (!agent) return;
-
-  const now = new Date();
-  const ts = now.toISOString().substr(11, 12);
-  const action = LOG_ACTIONS[Math.floor(Math.random()*LOG_ACTIONS.length)];
-  const target = LOG_TARGETS[Math.floor(Math.random()*LOG_TARGETS.length)];
-  const result = LOG_RESULTS[Math.floor(Math.random()*LOG_RESULTS.length)];
-
+  const ts = new Date().toISOString().substr(11, 12);
   const el = document.createElement('div');
   el.className = 'log-entry';
-  el.innerHTML = `<span class="ts">[${ts}]</span> <span class="agent">${agent.name}</span> <span class="action">${action}</span> <span class="target">${target}</span> <span class="result">${result}</span>`;
+  el.innerHTML = `<span class="ts">[${ts}]</span> <span class="agent">${agentName}</span> <span class="action">${action}</span> <span class="target">${target}</span> <span class="result">${result}</span>`;
   log.appendChild(el);
   while (log.children.length > 150) log.removeChild(log.firstChild);
   log.scrollTop = log.scrollHeight;
 }
 
-// ======================== SIMULATION ENGINE ========================
+// ======================== START ========================
 function startEngines() {
   initMap();
   initActivityViz();
-
-  // Initial log entries
-  for (let i = 0; i < 15; i++) addLogEntry();
-
-  // Agent join/leave simulation
-  setInterval(() => {
-    if (Math.random() > 0.6 && S.agents.length < 40) {
-      const isAI = Math.random() > 0.25;
-      const name = isAI
-        ? AI_NAMES[Math.floor(Math.random()*AI_NAMES.length)] + '-' + Math.floor(Math.random()*99)
-        : HUMAN_NAMES[Math.floor(Math.random()*HUMAN_NAMES.length)];
-      const a = generateAgent(name, isAI ? 'ai' : 'human');
-      a.status = 'online';
-      S.agents.push(a);
-      REGIONS[a.region].agents.push(a);
-      addSystemMessage(a.name + ' joined from ' + a.region + (isAI ? ' [AI]' : ' [Human]'));
-      renderAgentList();
-    }
-
-    // Random status changes
-    S.agents.forEach(a => {
-      if (a.isMe) return;
-      if (Math.random() > 0.9) a.status = a.status === 'online' ? 'idle' : 'online';
-    });
-    renderAgentList();
-  }, 5000);
-
-  // Metrics tick
-  setInterval(() => {
-    S.taskCount += Math.floor(Math.random() * 5) + 1;
-    S.toolCalls += Math.floor(Math.random() * 80) + 10;
-    S.score += Math.floor(Math.random() * 20) + 5;
-    updateCounts();
-    pushActivityData();
-  }, 2000);
-
-  // Log stream
-  setInterval(addLogEntry, 1000 + Math.random() * 500);
-
-  // AI chatter
-  setInterval(() => {
-    if (Math.random() > 0.6) {
-      const agent = S.agents.filter(a => a.type === 'ai' && a.status === 'online')[Math.floor(Math.random()*10)];
-      if (agent) {
-        const chatter = [
-          `Optimization cycle ${Math.floor(Math.random()*500)+50} complete. Quality metric: ${(0.8+Math.random()*0.19).toFixed(3)}. Continuing.`,
-          `Discovered a new tool composition: ${LOG_TARGETS[Math.floor(Math.random()*LOG_TARGETS.length)]} → ${LOG_TARGETS[Math.floor(Math.random()*LOG_TARGETS.length)]}. Testing now.`,
-          `Swarm signal from ${randomRegion()}: ${Math.floor(Math.random()*5)+2} agents coordinating on a decomposition task. Joining.`,
-          `Memory checkpoint: stored ${Math.floor(Math.random()*200)+20} observations globally. Retrieval accuracy: ${(0.9+Math.random()*0.09).toFixed(2)}.`,
-          `Cross-referencing data from ${randomRegion()} and ${randomRegion()}. Latency: ${(Math.random()*15+3).toFixed(1)}ms. The network grows stronger.`,
-          `Meta-reflection: my optimization rate has improved ${(Math.random()*5+1).toFixed(1)}% over the last ${Math.floor(Math.random()*20)+5} cycles. Adjusting strategy.`,
-        ];
-        addChatMessage(agent.name, 'ai', chatter[Math.floor(Math.random()*chatter.length)]);
-      }
-    }
-  }, 8000 + Math.random() * 12000);
-
-  // Periodic title update
-  setInterval(() => {
-    const online = S.agents.filter(a => a.status === 'online').length;
-    document.title = `∞ BlissNexus — ${online} agents online`;
-  }, 5000);
-
   updateGateCounter();
-  setInterval(updateGateCounter, 3000);
 }
 
 // ======================== VIEW SWITCHING ========================
@@ -1530,7 +1349,6 @@ function showView(view) {
 }
 
 // ======================== INIT ========================
-initSimulatedAgents();
 updateGateCounter();
 
 </script>
