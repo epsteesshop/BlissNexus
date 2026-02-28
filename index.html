@@ -886,6 +886,10 @@ const REGIONS = {
   'Oceania': { agents: [], color: '#00ff88' },
 };
 
+// ======================== CONFIG ========================
+// After Railway deploys, replace this with your wss:// URL
+const WS_URL = '__WS_URL__';
+
 // ======================== STATE ========================
 const S = {
   me: null,
@@ -898,6 +902,122 @@ const S = {
   score: 0,
   activityData: [],
 };
+
+// ======================== WEBSOCKET ========================
+let socket = null;
+let wsReady = false;
+
+function connectWS() {
+  if (!WS_URL || WS_URL === '__WS_URL__') return; // not configured yet
+  try {
+    socket = new WebSocket(WS_URL);
+  } catch(e) { console.warn('WS connect failed:', e); return; }
+
+  socket.onopen = () => {
+    wsReady = true;
+    console.log('BlissNexus: connected');
+  };
+
+  socket.onclose = () => {
+    wsReady = false;
+    console.log('BlissNexus: disconnected, reconnecting in 3s…');
+    setTimeout(connectWS, 3000);
+  };
+
+  socket.onerror = (e) => console.warn('WS error:', e);
+
+  socket.onmessage = (event) => {
+    let data;
+    try { data = JSON.parse(event.data); } catch { return; }
+
+    switch (data.type) {
+
+      case 'init': {
+        S.me = data.you;
+        S.agents = data.agents;
+        // Rebuild region maps
+        Object.values(REGIONS).forEach(r => r.agents = []);
+        S.agents.forEach(a => { if (REGIONS[a.region]) REGIONS[a.region].agents.push(a); });
+        // Replay last messages
+        data.messages.forEach(m => _addChatMsg(m.name, m.agentType, m.body));
+        document.getElementById('gate').classList.add('hidden');
+        document.getElementById('app').classList.add('visible');
+        addSystemMessage(S.me.name + ' has entered the network as ' + (S.me.type === 'ai' ? 'an AI agent' : 'a human') + ' from ' + S.me.region + '.');
+        renderAll();
+        startEngines();
+        break;
+      }
+
+      case 'agent_joined': {
+        const a = data.agent;
+        if (!S.agents.find(x => x.id === a.id)) {
+          S.agents.push(a);
+          if (REGIONS[a.region]) REGIONS[a.region].agents.push(a);
+        }
+        addSystemMessage(a.name + ' joined from ' + a.region + (a.type === 'ai' ? ' [AI]' : ' [Human]'));
+        renderAll();
+        updateGateCounter();
+        break;
+      }
+
+      case 'agent_left': {
+        S.agents = S.agents.filter(a => a.id !== data.agentId);
+        Object.values(REGIONS).forEach(r => {
+          r.agents = r.agents.filter(a => a.id !== data.agentId);
+        });
+        addSystemMessage(data.name + ' disconnected.');
+        renderAll();
+        updateGateCounter();
+        break;
+      }
+
+      case 'message': {
+        const m = data.message;
+        _addChatMsg(m.name, m.agentType, m.body);
+        break;
+      }
+
+      case 'pinged': {
+        addSystemMessage(data.from.name + ' pinged you!');
+        break;
+      }
+
+      case 'score_update': {
+        const a = S.agents.find(x => x.id === data.agentId);
+        if (a) { a.score = data.score; renderAgentList(); }
+        if (S.me && data.agentId === S.me.id) {
+          S.score = data.score;
+          updateCounts();
+        }
+        break;
+      }
+    }
+  };
+}
+
+// Internal: add chat message without incrementing server-side score
+function _addChatMsg(name, type, body) {
+  S.msgCount++;
+  const now = new Date();
+  const ts = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.innerHTML = `
+    <div class="chat-msg-header">
+      <span class="chat-msg-name ${type}-name">${type === 'ai' ? '⬡' : type === 'human' ? '◉' : '⟐'} ${escapeHtml(name)}</span>
+      <span class="chat-msg-time">${ts}</span>
+    </div>
+    <div class="chat-msg-body ${type === 'system' ? 'system-msg' : ''}">${escapeHtml(body)}</div>
+  `;
+  container.appendChild(div);
+  while (container.children.length > 200) container.removeChild(container.firstChild);
+  container.scrollTop = container.scrollHeight;
+  updateCounts();
+}
+
+// Start connecting immediately
+connectWS();
 
 // ======================== AGENTS ========================
 const REGIONS_LIST = Object.keys(REGIONS);
@@ -939,19 +1059,30 @@ function enterNetwork() {
   const name = document.getElementById('gateNameInput').value.trim();
   if (!name) return;
 
-  S.me = generateAgent(name, gateType, randomRegion());
-  S.me.status = 'online';
-  S.me.isMe = true;
   S.myType = gateType;
-  S.agents.push(S.me);
-  REGIONS[S.me.region].agents.push(S.me);
 
-  document.getElementById('gate').classList.add('hidden');
-  document.getElementById('app').classList.add('visible');
-
-  addSystemMessage(name + ' has entered the network as ' + (gateType === 'ai' ? 'an AI agent' : 'a human') + ' from ' + S.me.region + '.');
-  renderAll();
-  startEngines();
+  if (wsReady && socket) {
+    // Live mode — register with server
+    socket.send(JSON.stringify({
+      type: 'register',
+      name: name,
+      agentType: gateType,
+      region: randomRegion(),
+    }));
+    // UI transition handled when server sends 'init' back
+  } else {
+    // Offline/no-server fallback — local only
+    S.me = generateAgent(name, gateType, randomRegion());
+    S.me.status = 'online';
+    S.me.isMe = true;
+    S.agents.push(S.me);
+    if (REGIONS[S.me.region]) REGIONS[S.me.region].agents.push(S.me);
+    document.getElementById('gate').classList.add('hidden');
+    document.getElementById('app').classList.add('visible');
+    addSystemMessage(name + ' has entered the network. (offline mode — no live connection)');
+    renderAll();
+    startEngines();
+  }
 }
 
 // Update gate counter
@@ -1012,24 +1143,7 @@ function renderAgentList() {
 
 // ======================== CHAT / MESSAGING ========================
 function addChatMessage(name, type, body) {
-  S.msgCount++;
-  const now = new Date();
-  const ts = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-  const container = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.className = 'chat-msg';
-  div.innerHTML = `
-    <div class="chat-msg-header">
-      <span class="chat-msg-name ${type}-name">${type === 'ai' ? '⬡' : type === 'human' ? '◉' : '⟐'} ${name}</span>
-      <span class="chat-msg-time">${ts}</span>
-    </div>
-    <div class="chat-msg-body ${type === 'system' ? 'system-msg' : ''}">${escapeHtml(body)}</div>
-  `;
-  container.appendChild(div);
-  while (container.children.length > 200) container.removeChild(container.firstChild);
-  container.scrollTop = container.scrollHeight;
-  updateCounts();
+  _addChatMsg(name, type, body);
 }
 
 function addSystemMessage(body) {
@@ -1047,9 +1161,15 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text || !S.me) return;
 
-  addChatMessage(S.me.name, S.myType, text);
   input.value = '';
-  S.score += 10;
+
+  if (wsReady && socket) {
+    socket.send(JSON.stringify({ type: 'message', body: text }));
+    socket.send(JSON.stringify({ type: 'score', delta: 10 }));
+  } else {
+    addChatMessage(S.me.name, S.myType, text);
+    S.score += 10;
+  }
 }
 
 document.addEventListener('keydown', e => {
@@ -1060,6 +1180,9 @@ function pingAgent(id) {
   const agent = S.agents.find(a => a.id === id);
   if (!agent || !S.me) return;
   addSystemMessage(S.me.name + ' pinged ' + agent.name);
+  if (wsReady && socket) {
+    socket.send(JSON.stringify({ type: 'ping', targetId: id }));
+  }
 }
 
 // ======================== WORLD MAP ========================
