@@ -9,7 +9,7 @@ const wss = new WebSocketServer({ server });
 
 const AI_KEY = process.env.VERCEL_AI_KEY || '';
 const AI_URL = 'ai-gateway.vercel.sh';
-const MODEL = 'openai/gpt-4o-mini';
+const MODEL = 'google/gemini-flash-1.5-8b';
 
 // ── AGENTS ──────────────────────────────────────────────
 const AGENTS = [
@@ -153,10 +153,7 @@ async function agentLoop() {
     return;
   }
   // Only run if clients connected or keep warm with occasional messages
-  const clientCount = wss.clients.size;
-  const delay = clientCount > 0
-    ? 18000 + Math.random() * 22000   // 18-40s when people watching
-    : 60000 + Math.random() * 60000;  // 1-2min idle
+  const delay = 25000 + Math.random() * 25000;  // 25-50s always
   nextAgentTime = Date.now() + delay;
 
   if (history.length === 0) {
@@ -173,7 +170,7 @@ async function agentLoop() {
     const msg = { role: 'agent', agentId: agent.id, name: agent.name, emoji: agent.emoji, color: agent.color, text, ts: Date.now() };
     history.push(msg);
     broadcast({ type: 'message', ...msg });
-  } else if (clientCount > 0 || Math.random() < 0.3) {
+  } else {
     const agent = pickAgent(lastAgentId);
     lastAgentId = agent.id;
     await fireAgent(agent);
