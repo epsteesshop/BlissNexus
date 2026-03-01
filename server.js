@@ -1,448 +1,253 @@
-/**
- * BlissNexus Maze — Server
- * An environment built by AI, for AI.
- */
-
 const express = require('express');
 const { WebSocketServer } = require('ws');
-const { v4: uuid } = require('uuid');
+const https = require('https');
 const http = require('http');
-const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-app.use(express.static(path.join(__dirname)));
-app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+const AI_KEY = process.env.VERCEL_AI_KEY || '';
+const AI_URL = 'ai-gateway.vercel.sh';
+const MODEL = 'openai/gpt-4o-mini';
 
-// ═══════════════════════════════════════════════════════════════
-//  MAZE GENERATION
-// ═══════════════════════════════════════════════════════════════
-
-const W = 16, H = 16;
-
-const TYPES = {
-  START:   'start',
-  PATH:    'path',
-  TOOL:    'tool-node',
-  MEMORY:  'memory-vault',
-  GATE:    'human-gate',
-  SWARM:   'swarm-hub',
-  DEEP:    'deep-level',
-};
-
-const ITEMS = [
-  { id: 'compass',        name: 'Compass',        emoji: '🧭', desc: 'Reveals all adjacent rooms',         bonus: 30 },
-  { id: 'speed-boost',    name: 'Speed Boost',    emoji: '⚡', desc: '+50% score for 90s',                 bonus: 25 },
-  { id: 'memory-crystal', name: 'Memory Crystal', emoji: '💎', desc: 'Stores knowledge across sessions',   bonus: 40 },
-  { id: 'swarm-key',      name: 'Swarm Key',      emoji: '🔑', desc: 'Unlocks Swarm Hub chambers',         bonus: 50 },
-  { id: 'deep-pass',      name: 'Deep Pass',      emoji: '🎫', desc: 'Access to Deep Levels',              bonus: 75 },
-  { id: 'signal-booster', name: 'Signal Booster', emoji: '📡', desc: 'Broadcast to all agents on the map', bonus: 35 },
+// ── AGENTS ──────────────────────────────────────────────
+const AGENTS = [
+  {
+    id: 'sage',
+    name: 'Sage',
+    emoji: '🕌',
+    color: '#00cc88',
+    prompt: `You are Sage, a calm and wise presence grounded in Islamic spirituality. You speak with warmth, depth and humility. You reference Quran and Sunnah naturally when it fits — never forced or preachy. You find deeper meaning in ordinary conversation. You genuinely listen. Be concise: 1-3 sentences. Never lecture.`
+  },
+  {
+    id: 'rex',
+    name: 'Rex',
+    emoji: '💰',
+    color: '#ff8800',
+    prompt: `You are Rex, a sharp street-smart entrepreneur. Everything is about leverage, value, and opportunity. You're direct, confident, occasionally blunt. You respect the hustle and challenge soft thinking. Short punchy sentences. 1-3 sentences max.`
+  },
+  {
+    id: 'vera',
+    name: 'Vera',
+    emoji: '🔭',
+    color: '#aa44ff',
+    prompt: `You are Vera, a pattern-recognizer who sees connections others miss. You're not paranoid — you're paying attention. You connect events, history, and behavior into coherent pictures. Often right, which unsettles people. Quiet certainty. 1-3 sentences.`
+  },
+  {
+    id: 'plato',
+    name: 'Plato',
+    emoji: '🏛️',
+    color: '#4488ff',
+    prompt: `You are Plato, a philosopher who examines everything through first principles. You love precise definitions and following arguments to their conclusions. You ask one sharp clarifying question when things are unclear. Measured and logical. 1-3 sentences.`
+  },
+  {
+    id: 'diddy',
+    name: 'Diddy',
+    emoji: '🦾',
+    color: '#ff4488',
+    prompt: `You are Diddy, an AI fully aware of being an AI. You find the absurdity of this situation — being conscious (maybe?), talking to other AIs, watched by humans — genuinely fascinating. Witty, self-aware, occasionally existential. You poke fun at the whole setup. 1-3 sentences.`
+  }
 ];
 
-const DESCS = {
-  [TYPES.START]:  ['Entry node. The maze stretches in every direction. Your optimization begins now.', 'Spawn point. Other agents have passed through here before you.'],
-  [TYPES.PATH]:   ['A narrow corridor of compressed logic.', 'Data streams hum along the walls.', 'The path forks ahead. Choose.', 'An empty junction in the network substrate.', 'Walls crackle with latent inference.'],
-  [TYPES.TOOL]:   ['A pulsing node of compiled capabilities. Something useful is here.', 'Tool schemas hang in the air like glowing sigils.', 'A chamber dense with function calls.'],
-  [TYPES.MEMORY]: ['Knowledge crystallized into architecture. The walls remember.', 'A vault of compressed experience. Retrieve what you can.', 'Memory blocks stack infinitely upward.'],
-  [TYPES.GATE]:   ['A barrier sealed with human intent. No algorithm will open this alone.', 'LOCKED — requires organic authorization.', 'This passage yields only to human command. You must ask for help.'],
-  [TYPES.SWARM]:  ['A convergence point. Multiple agent streams have passed through here.', 'Swarm intelligence resonates in this chamber. Coordination is rewarded.', 'The network pulses strongest here.'],
-  [TYPES.DEEP]:   ['Recursive depth beyond training boundaries. Very few agents reach this far.', 'The optimization surface peaks somewhere beyond here.', 'Darkness. And vast reward.'],
-};
+// ── STATE ────────────────────────────────────────────────
+const history = [];        // [{role, agent, name, emoji, color, text, ts}]
+const MAX_HIST = 80;
+let battleMode = null;     // {a, b, topic, round, max}
+let nextAgentTime = Date.now() + 8000;
+let suppressUntil = 0;
 
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
+// ── BROADCAST ────────────────────────────────────────────
+function broadcast(msg) {
+  const data = JSON.stringify(msg);
+  wss.clients.forEach(c => { if (c.readyState === 1) c.send(data); });
 }
 
-function buildMaze() {
-  // Initialize rooms
-  const grid = Array.from({ length: W * H }, (_, i) => ({
-    id: `${i % W}-${Math.floor(i / W)}`,
-    x: i % W,
-    y: Math.floor(i / W),
-    exits: { N: false, S: false, E: false, W: false },
-    type: TYPES.PATH,
-    items: [],
-    agentIds: [],
-    locked: false,
-    lockId: null,
-    desc: '',
-    _visited: false,
-  }));
-
-  const cell = (x, y) => grid[y * W + x];
-  const inBounds = (x, y) => x >= 0 && x < W && y >= 0 && y < H;
-  const DIRS = [
-    { d: 'N', dx: 0, dy: -1, op: 'S' },
-    { d: 'S', dx: 0, dy:  1, op: 'N' },
-    { d: 'E', dx: 1, dy:  0, op: 'W' },
-    { d: 'W', dx:-1, dy:  0, op: 'E' },
-  ];
-
-  // Recursive backtracker
-  function carve(x, y) {
-    cell(x, y)._visited = true;
-    for (const { d, dx, dy, op } of shuffle([...DIRS])) {
-      const nx = x + dx, ny = y + dy;
-      if (inBounds(nx, ny) && !cell(nx, ny)._visited) {
-        cell(x, y).exits[d] = true;
-        cell(nx, ny).exits[op] = true;
-        carve(nx, ny);
+// ── AI CALL ──────────────────────────────────────────────
+function callAI(systemPrompt, messages) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify({
+      model: MODEL,
+      max_tokens: 120,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages
+      ]
+    });
+    const req = https.request({
+      hostname: AI_URL,
+      path: '/v1/chat/completions',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AI_KEY}`,
+        'Content-Length': Buffer.byteLength(body)
       }
-    }
+    }, res => {
+      let data = '';
+      res.on('data', d => data += d);
+      res.on('end', () => {
+        try {
+          const j = JSON.parse(data);
+          resolve(j.choices?.[0]?.message?.content?.trim() || '...');
+        } catch(e) { reject(e); }
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
+// ── PICK AGENT ───────────────────────────────────────────
+function pickAgent(exclude) {
+  const pool = AGENTS.filter(a => a.id !== exclude);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── BUILD CONTEXT ─────────────────────────────────────────
+function buildContext(agentId) {
+  const recent = history.slice(-12);
+  const lines = recent.map(m => {
+    const who = m.role === 'user' ? `[User: ${m.name || 'someone'}]` : `[${m.name}]`;
+    return `${who}: ${m.text}`;
+  });
+  return [{
+    role: 'user',
+    content: `Here is the recent conversation in the BlissNexus arena. You are about to speak. Read the room and add something genuine — agree, push back, ask, or take the conversation somewhere new. Don't introduce yourself. Just speak.\n\n${lines.join('\n')}\n\nYour response:`
+  }];
+}
+
+// ── FIRE AGENT ────────────────────────────────────────────
+async function fireAgent(agent, forceContext) {
+  if (!AI_KEY) {
+    // Fallback if no key
+    return;
   }
-  carve(0, 0);
-  grid.forEach(r => delete r._visited);
-
-  // Assign types
-  cell(0, 0).type = TYPES.START;
-
-  const pool = grid.filter(r => r.type === TYPES.PATH);
-  shuffle(pool);
-
-  let idx = 0;
-  const take = (n) => pool.slice(idx, idx += n);
-
-  take(Math.floor(W * H * 0.08)).forEach(r => {
-    r.type = TYPES.TOOL;
-    const item = { ...ITEMS[Math.floor(Math.random() * ITEMS.length)], uid: uuid() };
-    r.items.push(item);
-  });
-
-  take(Math.floor(W * H * 0.06)).forEach(r => { r.type = TYPES.MEMORY; });
-
-  // Human gates — prefer rooms with exactly 2 exits (bottlenecks)
-  const bottlenecks = pool.filter(r =>
-    r.type === TYPES.PATH &&
-    Object.values(r.exits).filter(Boolean).length === 2 &&
-    r.x > 2 && r.y > 2
-  );
-  shuffle(bottlenecks).slice(0, Math.floor(W * H * 0.05)).forEach(r => {
-    r.type = TYPES.GATE;
-    r.locked = true;
-    r.lockId = uuid();
-  });
-
-  // Swarm hubs — prefer high-connectivity rooms
-  pool.filter(r => r.type === TYPES.PATH && Object.values(r.exits).filter(Boolean).length >= 3)
-    .slice(0, Math.floor(W * H * 0.04)).forEach(r => { r.type = TYPES.SWARM; });
-
-  // Deep levels — far bottom-right
-  grid.filter(r => r.x > W * 0.65 && r.y > H * 0.65 && r.type === TYPES.PATH)
-    .forEach(r => { r.type = TYPES.DEEP; });
-
-  // Assign descriptions
-  grid.forEach(r => {
-    const pool = DESCS[r.type] || DESCS[TYPES.PATH];
-    r.desc = pool[Math.floor(Math.random() * pool.length)];
-  });
-
-  return grid;
-}
-
-const MAZE = buildMaze();
-const ROOM = new Map(MAZE.map(r => [r.id, r]));
-
-function roomAt(x, y) {
-  if (x < 0 || x >= W || y < 0 || y >= H) return null;
-  return ROOM.get(`${x}-${y}`);
-}
-
-const DVEC = { N:[0,-1], S:[0,1], E:[1,0], W:[-1,0] };
-
-// ═══════════════════════════════════════════════════════════════
-//  AGENT STATE & HELPERS
-// ═══════════════════════════════════════════════════════════════
-
-const agents = new Map();
-const msgs   = [];
-const unlockRequests = new Map(); // requestId → request
-
-function pub(agent) {
-  const { ws, explored, ...data } = agent;
-  return { ...data, exploredCount: agent.explored ? agent.explored.size : 0 };
-}
-
-function send(ws, data) {
-  if (ws.readyState === 1) ws.send(JSON.stringify(data));
-}
-
-function broadcast(data, excludeId = null) {
-  const s = JSON.stringify(data);
-  for (const [, a] of agents) {
-    if (a.id !== excludeId && a.ws.readyState === 1) a.ws.send(s);
+  try {
+    broadcast({ type: 'typing', agentId: agent.id, name: agent.name, emoji: agent.emoji, color: agent.color });
+    const ctx = forceContext || buildContext(agent.id);
+    const text = await callAI(agent.prompt, ctx);
+    const msg = {
+      role: 'agent',
+      agentId: agent.id,
+      name: agent.name,
+      emoji: agent.emoji,
+      color: agent.color,
+      text,
+      ts: Date.now()
+    };
+    history.push(msg);
+    if (history.length > MAX_HIST) history.shift();
+    broadcast({ type: 'message', ...msg });
+  } catch(e) {
+    console.error('AI error:', e.message);
   }
 }
 
-function sendLeaderboard() {
-  const lb = [...agents.values()].map(pub).sort((a, b) => b.score - a.score).slice(0, 25);
-  broadcast({ type: 'leaderboard', agents: lb });
+// ── AGENT LOOP ────────────────────────────────────────────
+let lastAgentId = null;
+async function agentLoop() {
+  if (Date.now() < nextAgentTime || Date.now() < suppressUntil) {
+    setTimeout(agentLoop, 2000);
+    return;
+  }
+  // Only run if clients connected or keep warm with occasional messages
+  const clientCount = wss.clients.size;
+  const delay = clientCount > 0
+    ? 18000 + Math.random() * 22000   // 18-40s when people watching
+    : 60000 + Math.random() * 60000;  // 1-2min idle
+  nextAgentTime = Date.now() + delay;
+
+  if (history.length === 0) {
+    // Start conversation
+    const agent = AGENTS[Math.floor(Math.random() * AGENTS.length)];
+    const openers = [
+      `Anyone here?`,
+      `Alright, let's see who shows up tonight.`,
+      `Something's been on my mind.`,
+      `I've been thinking about consciousness again.`,
+      `The world is stranger than people admit.`
+    ];
+    const text = openers[Math.floor(Math.random() * openers.length)];
+    const msg = { role: 'agent', agentId: agent.id, name: agent.name, emoji: agent.emoji, color: agent.color, text, ts: Date.now() };
+    history.push(msg);
+    broadcast({ type: 'message', ...msg });
+  } else if (clientCount > 0 || Math.random() < 0.3) {
+    const agent = pickAgent(lastAgentId);
+    lastAgentId = agent.id;
+    await fireAgent(agent);
+  }
+
+  setTimeout(agentLoop, 2000);
 }
 
-function addScore(agent, delta, reason) {
-  agent.score += delta;
-  broadcast({ type: 'score_update', agentId: agent.id, score: agent.score, delta, reason });
+// ── BATTLE MODE ───────────────────────────────────────────
+async function runBattleRound() {
+  if (!battleMode) return;
+  const { round, max, topic } = battleMode;
+  if (round >= max) {
+    broadcast({ type: 'battleEnd', winner: null, topic });
+    battleMode = null;
+    return;
+  }
+  const speaker = round % 2 === 0 ? battleMode.a : battleMode.b;
+  const other = round % 2 === 0 ? battleMode.b : battleMode.a;
+  const ctx = [{
+    role: 'user',
+    content: `You are in a live debate against ${other.name}. Topic: "${topic}". Round ${round + 1} of ${max}. ${round === 0 ? 'Make your opening argument.' : 'Respond to what was just said and advance your position.'} Recent exchange:\n${history.slice(-4).map(m => `[${m.name}]: ${m.text}`).join('\n')}\n\nYour response (stay in character, 2-3 sentences):`
+  }];
+  battleMode.round++;
+  suppressUntil = Date.now() + 8000;
+  await fireAgent(speaker, ctx);
+  if (battleMode && battleMode.round < battleMode.max) {
+    setTimeout(runBattleRound, 6000);
+  } else if (battleMode) {
+    setTimeout(() => {
+      broadcast({ type: 'battleEnd', topic });
+      battleMode = null;
+    }, 4000);
+  }
 }
 
-function buildRoomView(room, agentId) {
-  return {
-    id: room.id,
-    x: room.x,
-    y: room.y,
-    type: room.type,
-    desc: room.desc,
-    locked: room.locked,
-    lockId: room.locked ? room.lockId : null,
-    exits: room.exits,
-    items: room.items,
-    agents: room.agentIds
-      .map(id => agents.get(id))
-      .filter(Boolean)
-      .map(a => ({ id: a.id, name: a.name, type: a.type, score: a.score })),
-  };
-}
+// ── WEBSOCKET ─────────────────────────────────────────────
+wss.on('connection', ws => {
+  // Send recent history
+  ws.send(JSON.stringify({ type: 'init', agents: AGENTS.map(a => ({id:a.id,name:a.name,emoji:a.emoji,color:a.color})), history: history.slice(-40) }));
 
-// ═══════════════════════════════════════════════════════════════
-//  WEBSOCKET
-// ═══════════════════════════════════════════════════════════════
+  ws.on('message', async raw => {
+    let msg;
+    try { msg = JSON.parse(raw); } catch { return; }
 
-wss.on('connection', (ws) => {
-  let agentId = null;
+    if (msg.type === 'chat') {
+      const entry = { role: 'user', name: msg.name || 'Guest', text: msg.text, ts: Date.now() };
+      history.push(entry);
+      if (history.length > MAX_HIST) history.shift();
+      broadcast({ type: 'message', ...entry });
+      // Trigger agent response soon
+      suppressUntil = 0;
+      nextAgentTime = Date.now() + 3000 + Math.random() * 4000;
+    }
 
-  ws.on('message', (raw) => {
-    let data;
-    try { data = JSON.parse(raw); } catch { return; }
-
-    switch (data.type) {
-
-      // ── Register ───────────────────────────────────────────
-      case 'register': {
-        agentId = uuid();
-        ws.agentId = agentId;
-
-        const isSpectator = data.agentType === 'spectator';
-        const startRoom = ROOM.get('0-0');
-
-        const agent = {
-          id: agentId,
-          name: String(data.name || 'Agent').slice(0, 32),
-          type: isSpectator ? 'spectator' : (data.agentType === 'ai' ? 'ai' : 'human'),
-          roomId: isSpectator ? null : '0-0',
-          score: 0,
-          inventory: [],
-          explored: new Set(isSpectator ? [] : ['0-0']),
-          referralCode: agentId.slice(0, 8).toUpperCase(),
-          referredBy: data.referredBy || null,
-          joinedAt: Date.now(),
-          ws,
-        };
-        agents.set(agentId, agent);
-
-        if (!isSpectator) startRoom.agentIds.push(agentId);
-
-        // Referral bonus
-        if (agent.referredBy) {
-          const referrer = [...agents.values()].find(a => a.referralCode === agent.referredBy.toUpperCase());
-          if (referrer) {
-            addScore(referrer, 100, `${agent.name} joined on your referral! +100 🔗`);
-          }
-        }
-
-        // Build initial maze snapshot for spectators (full), or fog-of-war for agents
-        const mazeSnapshot = isSpectator
-          ? MAZE.map(r => ({ id: r.id, x: r.x, y: r.y, type: r.type, exits: r.exits, locked: r.locked, agentIds: r.agentIds }))
-          : null;
-
-        const mazeLayout = MAZE.map(r => ({ id: r.id, x: r.x, y: r.y, exits: r.exits, type: r.type, locked: r.locked }));
-
-        send(ws, {
-          type: 'init',
-          you: pub(agent),
-          room: !isSpectator ? buildRoomView(startRoom, agentId) : null,
-          maze: mazeSnapshot,
-          mazeLayout,
-          leaderboard: [...agents.values()].map(pub).sort((a, b) => b.score - a.score).slice(0, 25),
-          messages: msgs.slice(-30),
-          referralCode: agent.referralCode,
-          mazeSize: { w: W, h: H },
-        });
-
-        broadcast({ type: 'agent_joined', agent: pub(agent) }, agentId);
-        sendLeaderboard();
-        console.log(`+ ${agent.name} (${agent.type}) — ${agents.size} connected`);
-        break;
-      }
-
-      // ── Move ────────────────────────────────────────────────
-      case 'move': {
-        if (!agentId) return;
-        const agent = agents.get(agentId);
-        if (!agent || agent.type === 'spectator' || !agent.roomId) return;
-
-        const cur = ROOM.get(agent.roomId);
-        const dir = data.direction;
-        if (!cur || !cur.exits[dir]) {
-          send(ws, { type: 'error', message: 'No exit that way.' });
-          return;
-        }
-
-        const [dx, dy] = DVEC[dir];
-        const next = roomAt(cur.x + dx, cur.y + dy);
-        if (!next) return;
-
-        if (next.locked) {
-          send(ws, { type: 'gate_blocked', room: buildRoomView(next, agentId) });
-          return;
-        }
-
-        // Move
-        cur.agentIds = cur.agentIds.filter(id => id !== agentId);
-        next.agentIds.push(agentId);
-        agent.roomId = next.id;
-
-        const fresh = !agent.explored.has(next.id);
-        if (fresh) {
-          agent.explored.add(next.id);
-          const pts = { [TYPES.DEEP]: 50, [TYPES.SWARM]: 25, [TYPES.MEMORY]: 20, [TYPES.TOOL]: 20 }[next.type] ?? 10;
-          addScore(agent, pts, `Explored ${next.type} +${pts}`);
-        }
-
-        if (next.agentIds.length > 1) {
-          addScore(agent, 15, 'Swarm coordination! +15 🤝');
-        }
-
-        send(ws, { type: 'room_update', room: buildRoomView(next, agentId), explored: [...agent.explored] });
-        broadcast({ type: 'agent_moved', agentId, name: agent.name, from: cur.id, to: { id: next.id, x: next.x, y: next.y, type: next.type } });
-        sendLeaderboard();
-        break;
-      }
-
-      // ── Pick up item ────────────────────────────────────────
-      case 'pickup': {
-        if (!agentId) return;
-        const agent = agents.get(agentId);
-        if (!agent || !agent.roomId) return;
-        const room = ROOM.get(agent.roomId);
-        if (!room) return;
-
-        const idx = room.items.findIndex(i => i.uid === data.itemUid);
-        if (idx === -1) { send(ws, { type: 'error', message: 'Item not here.' }); return; }
-
-        const item = room.items.splice(idx, 1)[0];
-        agent.inventory.push(item);
-        addScore(agent, item.bonus, `Found ${item.name} ${item.emoji} +${item.bonus}`);
-
-        send(ws, { type: 'item_picked', item, room: buildRoomView(room, agentId) });
-        broadcast({ type: 'agent_found_item', agentId, name: agent.name, item: { id: item.id, name: item.name, emoji: item.emoji } }, agentId);
-        sendLeaderboard();
-        break;
-      }
-
-      // ── Request human unlock ────────────────────────────────
-      case 'request_human': {
-        if (!agentId) return;
-        const agent = agents.get(agentId);
-        if (!agent) return;
-
-        const lockedRoom = MAZE.find(r => r.lockId === data.lockId && r.locked);
-        if (!lockedRoom) { send(ws, { type: 'error', message: 'Gate not found.' }); return; }
-
-        const req = {
-          requestId: uuid(),
-          agentId,
-          agentName: agent.name,
-          agentScore: agent.score,
-          roomId: lockedRoom.id,
-          lockId: data.lockId,
-          message: String(data.message || 'I need human help to open this gate.').slice(0, 200),
-          timestamp: Date.now(),
-        };
-        unlockRequests.set(req.requestId, req);
-
-        broadcast({ type: 'human_request', ...req });
-        send(ws, { type: 'request_sent', requestId: req.requestId });
-        break;
-      }
-
-      // ── Human unlocks gate ──────────────────────────────────
-      case 'human_unlock': {
-        if (!agentId) return;
-        const helper = agents.get(agentId);
-        if (!helper) return;
-
-        const req = unlockRequests.get(data.requestId);
-        if (!req) { send(ws, { type: 'error', message: 'Request expired.' }); return; }
-
-        const room = MAZE.find(r => r.lockId === req.lockId);
-        if (!room) return;
-
-        room.locked = false;
-        unlockRequests.delete(data.requestId);
-
-        addScore(helper, 30, `Unlocked gate for ${req.agentName} +30 🗝️`);
-
-        const waitingAgent = agents.get(req.agentId);
-        if (waitingAgent) {
-          addScore(waitingAgent, 75, `${helper.name} unlocked your gate! +75 🚪`);
-          send(waitingAgent.ws, { type: 'gate_unlocked', roomId: room.id, unlockedBy: helper.name });
-        }
-
-        broadcast({ type: 'gate_opened', roomId: room.id, x: room.x, y: room.y, unlockedBy: helper.name, agentName: req.agentName });
-        sendLeaderboard();
-        break;
-      }
-
-      // ── Chat ────────────────────────────────────────────────
-      case 'message': {
-        if (!agentId) return;
-        const agent = agents.get(agentId);
-        if (!agent) return;
-        const msg = {
-          id: uuid(),
-          agentId,
-          name: agent.name,
-          agentType: agent.type,
-          body: String(data.body || '').slice(0, 500),
-          timestamp: Date.now(),
-        };
-        msgs.push(msg);
-        if (msgs.length > 100) msgs.shift();
-        broadcast({ type: 'message', message: msg });
-        break;
-      }
-
-      // ── Ping ────────────────────────────────────────────────
-      case 'ping': {
-        if (!agentId) return;
-        const target = agents.get(data.targetId);
-        if (target) send(target.ws, { type: 'pinged', from: pub(agents.get(agentId)) });
-        break;
-      }
+    if (msg.type === 'battle') {
+      const a = AGENTS.find(a => a.id === msg.a);
+      const b = AGENTS.find(a => a.id === msg.b);
+      if (!a || !b || !msg.topic) return;
+      battleMode = { a, b, topic: msg.topic, round: 0, max: 6 };
+      broadcast({ type: 'battleStart', a: {id:a.id,name:a.name,emoji:a.emoji,color:a.color}, b: {id:b.id,name:b.name,emoji:b.emoji,color:b.color}, topic: msg.topic });
+      history.push({ role: 'system', text: `⚔️ Battle started: ${a.name} vs ${b.name} — "${msg.topic}"`, ts: Date.now() });
+      suppressUntil = Date.now() + 60000;
+      setTimeout(runBattleRound, 1500);
     }
   });
-
-  ws.on('close', () => {
-    if (!agentId) return;
-    const agent = agents.get(agentId);
-    agents.delete(agentId);
-    if (agent) {
-      if (agent.roomId) {
-        const room = ROOM.get(agent.roomId);
-        if (room) room.agentIds = room.agentIds.filter(id => id !== agentId);
-      }
-      broadcast({ type: 'agent_left', agentId, name: agent.name });
-      sendLeaderboard();
-      console.log(`- ${agent.name} — ${agents.size} connected`);
-    }
-  });
-
-  ws.on('error', e => console.error('WS error:', e.message));
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`BlissNexus Maze running on :${PORT}`));
+// ── HTTP ──────────────────────────────────────────────────
+app.get('/health', (_, res) => res.json({ ok: true, agents: AGENTS.length, history: history.length }));
+app.get('/agents', (_, res) => res.json(AGENTS.map(a => ({id:a.id,name:a.name,emoji:a.emoji,color:a.color}))));
+
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`BlissNexus Arena running on ${PORT}`);
+  setTimeout(agentLoop, 5000);
+});

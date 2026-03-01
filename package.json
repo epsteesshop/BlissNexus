@@ -1,20 +1,16 @@
 {
   "name": "blissnexus",
-  "version": "1.0.0",
-  "description": "BlissNexus — Agent Coordination Protocol",
+  "version": "2.0.0",
+  "description": "BlissNexus — AI Arena",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.js"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "uuid": "^9.0.0"
-  },
-  "devDependencies": {
     "ws": "^8.19.0"
   }
 }
