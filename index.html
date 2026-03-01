@@ -3,285 +3,165 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BlissNexus</title>
+<title>BlissNexus — Combat Zone</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Courier New',monospace;}
+html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;}
+#gc{display:block;width:100%;height:100%;image-rendering:pixelated;cursor:none;}
 
-/* ── GATE ── */
-#gate{position:fixed;inset:0;z-index:999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;}
+/* GATE */
+#gate{position:fixed;inset:0;z-index:999;background:radial-gradient(ellipse at center,#0a1520 0%,#000 70%);display:flex;align-items:center;justify-content:center;}
 #gate.gone{display:none;}
-#gate-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,#0a0018 0%,#000 70%);overflow:hidden;}
-.gate-star{position:absolute;border-radius:50%;background:#fff;animation:twinkle 3s infinite;}
-@keyframes twinkle{0%,100%{opacity:.2}50%{opacity:1}}
-#gate-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:18px;}
-.ps2-logo{color:#003087;font-size:3rem;font-weight:900;letter-spacing:.3em;text-shadow:0 0 30px #003087;font-family:'Arial Black',sans-serif;margin-bottom:4px;}
-.ps2-sub{font-size:.55rem;color:#4488ff;letter-spacing:.6em;margin-bottom:16px;}
-.gate-title{font-size:2rem;font-weight:700;color:#f0a500;text-shadow:0 0 20px #f0a500,0 0 40px #f0a500;letter-spacing:.2em;}
-.gate-sub{font-size:.6rem;color:#888;letter-spacing:.15em;margin-top:-12px;}
-.gate-card{background:linear-gradient(135deg,#0a0a18,#0d0d20);border:1px solid #2a2a4a;border-radius:4px;padding:24px 28px;width:320px;display:flex;flex-direction:column;gap:14px;box-shadow:0 0 40px rgba(0,0,255,.1);}
-.gate-lbl{font-size:.58rem;color:#5566aa;letter-spacing:.15em;text-transform:uppercase;margin-bottom:3px;}
-.gate-tabs{display:flex;background:#050510;border:1px solid #1a1a30;border-radius:3px;padding:2px;gap:2px;}
-.gate-tab{flex:1;padding:7px;cursor:pointer;background:transparent;border:none;color:#4455aa;font-family:'Courier New',monospace;font-size:.68rem;letter-spacing:.08em;border-radius:2px;transition:all .2s;}
-.gate-tab.active{background:#f0a500;color:#000;font-weight:700;}
-.gate-inp{width:100%;padding:9px 12px;background:#050510;border:1px solid #2a2a4a;border-radius:3px;color:#aabbff;font-family:'Courier New',monospace;font-size:.82rem;outline:none;transition:border .2s;}
-.gate-inp:focus{border-color:#f0a500;color:#fff;}
-.gate-btn{width:100%;padding:11px;cursor:pointer;background:linear-gradient(90deg,#c07000,#f0a500,#c07000);border:none;border-radius:3px;color:#000;font-family:'Courier New',monospace;font-size:.82rem;font-weight:700;letter-spacing:.2em;animation:btnPulse 2s ease-in-out infinite;}
-@keyframes btnPulse{0%,100%{box-shadow:0 0 8px #f0a500}50%{box-shadow:0 0 20px #f0a500,0 0 40px #f0a50055}}
-.gate-note{font-size:.58rem;color:#4455aa;line-height:1.7;text-align:center;max-width:280px;}
-.blink{animation:blink 1s step-end infinite;}
+.gate-box{background:linear-gradient(135deg,#0d1a0d,#0a1520);border:2px solid #107C10;border-radius:4px;padding:32px 36px;width:360px;display:flex;flex-direction:column;gap:16px;box-shadow:0 0 60px #107C1044,inset 0 0 30px #00000066;}
+.gate-logo{font-size:2.2rem;font-weight:900;color:#107C10;letter-spacing:.15em;text-shadow:0 0 20px #107C10;font-family:'Arial Black',sans-serif;}
+.gate-sub{font-size:.58rem;color:#555;letter-spacing:.2em;margin-top:-10px;}
+.gate-lbl{font-size:.58rem;color:#107C1099;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;}
+.gate-tabs{display:flex;background:#050f05;border:1px solid #1a2a1a;border-radius:3px;padding:2px;gap:2px;}
+.gate-tab{flex:1;padding:8px;cursor:pointer;background:transparent;border:none;color:#3a5a3a;font-family:'Segoe UI',sans-serif;font-size:.72rem;border-radius:2px;transition:all .2s;}
+.gate-tab.active{background:#107C10;color:#fff;font-weight:700;}
+.gate-inp{width:100%;padding:10px 14px;background:#050f05;border:1px solid #1a3a1a;border-radius:3px;color:#90ee90;font-family:'Segoe UI',sans-serif;font-size:.85rem;outline:none;transition:border .2s;}
+.gate-inp:focus{border-color:#107C10;color:#fff;}
+.gate-btn{width:100%;padding:13px;cursor:pointer;background:linear-gradient(90deg,#0a5a0a,#107C10,#0a5a0a);border:2px solid #107C10;border-radius:3px;color:#fff;font-family:'Arial Black',sans-serif;font-size:.82rem;letter-spacing:.2em;animation:glow 2s ease-in-out infinite;}
+@keyframes glow{0%,100%{box-shadow:0 0 10px #107C10}50%{box-shadow:0 0 30px #107C10,0 0 60px #107C1044}}
+.gate-note{font-size:.6rem;color:#3a5a3a;line-height:1.65;text-align:center;}
+.gate-warn{font-size:.62rem;color:#107C10;text-align:center;animation:blink 1s step-end infinite;}
 @keyframes blink{50%{opacity:0}}
 
-/* ── MAIN GAME SHELL ── */
-#game{display:none;width:100%;height:100%;position:relative;}
-#game.on{display:block;}
+/* LOCKED OVERLAY */
+#lock-overlay{position:fixed;inset:0;z-index:500;background:#000000cc;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+#lock-overlay.show{display:flex;}
+.lo-title{font-size:1.4rem;color:#ff3300;letter-spacing:.2em;text-shadow:0 0 20px #ff3300;}
+.lo-sub{font-size:.7rem;color:#883300;letter-spacing:.1em;}
+.lo-btn{padding:11px 30px;cursor:pointer;background:#440000;border:2px solid #ff3300;color:#ff6644;font-family:'Segoe UI',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:.1em;transition:all .2s;}
+.lo-btn:hover{background:#880000;color:#fff;box-shadow:0 0 20px #ff3300;}
 
-/* Main 3D canvas */
-#gc{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges;}
-
-/* ── HUD overlays ── */
-#hud{position:absolute;inset:0;pointer-events:none;}
-
-/* Top strip */
-#hud-top{position:absolute;top:0;left:0;right:0;height:36px;background:linear-gradient(#000000cc,transparent);display:flex;align-items:center;padding:6px 12px;gap:12px;}
-.hud-name{font-size:.68rem;color:#f0a500;letter-spacing:.1em;text-shadow:0 0 8px #f0a500;}
-.hud-sep{color:#333;}
-.hud-room{font-size:.6rem;color:#6677aa;letter-spacing:.08em;}
-.hud-coord{font-size:.55rem;color:#444;margin-left:auto;}
-
-/* Score block - top right */
-#score-block{position:absolute;top:8px;right:10px;text-align:right;}
-.score-lbl{font-size:.5rem;color:#5566aa;letter-spacing:.15em;}
-.score-val{font-size:1.3rem;font-weight:700;color:#f0a500;text-shadow:0 0 12px #f0a500;line-height:1;font-family:'Arial Black',sans-serif;}
-
-/* Minimap */
-#minimap{position:absolute;top:8px;right:90px;width:80px;height:80px;border:1px solid #2a2a4a;background:#000000aa;}
-#mmc{width:80px;height:80px;}
-
-/* Bottom HUD */
-#hud-bot{position:absolute;bottom:0;left:0;right:0;height:64px;background:linear-gradient(transparent,#000000cc);}
-#hud-bars{position:absolute;bottom:8px;left:12px;display:flex;flex-direction:column;gap:4px;}
-.bar-row{display:flex;align-items:center;gap:6px;}
-.bar-lbl{font-size:.5rem;color:#5566aa;width:28px;letter-spacing:.08em;}
-.bar-track{width:100px;height:6px;background:#0a0a18;border:1px solid #1a1a30;}
-.bar-fill{height:100%;transition:width .3s;}
-.bar-fill.score{background:linear-gradient(90deg,#7700cc,#f0a500);}
-.bar-fill.exp{background:linear-gradient(90deg,#003087,#0066ff);}
-
-/* Inventory */
-#inv-hud{position:absolute;bottom:8px;left:160px;display:flex;gap:6px;}
-.inv-slot{width:36px;height:36px;border:1px solid #2a2a4a;background:#050510;display:flex;align-items:center;justify-content:center;font-size:1.1rem;position:relative;}
-.inv-slot.filled{border-color:#f0a500;}
-.inv-slot-name{position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-size:.4rem;color:#5566aa;white-space:nowrap;}
-
-/* Controls hint */
-#ctrl-hint{position:absolute;bottom:8px;right:10px;display:flex;flex-direction:column;gap:2px;align-items:flex-end;pointer-events:auto;}
-.ctrl-dpad-mini{display:grid;grid-template-areas:'. n .' 'w . e' '. s .';gap:3px;}
-.cdb{width:24px;height:24px;cursor:pointer;background:#050510;border:1px solid #2a2a4a;border-radius:2px;color:#5566aa;font-size:.65rem;display:flex;align-items:center;justify-content:center;pointer-events:auto;transition:all .1s;}
-.cdb:active{background:#f0a50033;border-color:#f0a500;}
-.cdb:disabled{opacity:.2;}
-.cdb.n{grid-area:n;}.cdb.s{grid-area:s;}.cdb.e{grid-area:e;}.cdb.w{grid-area:w;}
-
-/* Room info popup */
-#room-info{position:absolute;left:50%;transform:translateX(-50%);bottom:72px;background:#000000cc;border:1px solid #2a2a4a;padding:8px 16px;text-align:center;max-width:320px;display:none;}
-#room-info.show{display:block;}
-.ri-type{font-size:.6rem;color:#f0a500;letter-spacing:.15em;margin-bottom:2px;}
-.ri-desc{font-size:.65rem;color:#6677aa;line-height:1.5;}
-
-/* Item notification */
-#item-notif{position:absolute;bottom:100px;left:50%;transform:translateX(-50%) translateY(10px);background:#000000dd;border:1px solid #f0a500;padding:8px 18px;text-align:center;opacity:0;transition:all .3s;}
-#item-notif.show{opacity:1;transform:translateX(-50%) translateY(0);}
-.in-emoji{font-size:1.3rem;}.in-name{font-size:.7rem;color:#f0a500;margin-top:2px;}.in-bonus{font-size:.58rem;color:#888;}
-
-/* Gate warning */
-#gate-warn{position:absolute;inset:0;display:none;pointer-events:none;}
-#gate-warn.show{display:block;}
-#gate-warn-inner{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);text-align:center;}
-.gw-title{font-size:1.2rem;color:#ff2200;text-shadow:0 0 20px #ff2200;letter-spacing:.2em;animation:redPulse 1s ease-in-out infinite;}
-@keyframes redPulse{0%,100%{opacity:.6}50%{opacity:1}}
-.gw-btn{margin-top:12px;padding:9px 24px;cursor:pointer;background:linear-gradient(90deg,#880000,#ff2200,#880000);border:none;color:#fff;font-family:'Courier New',monospace;font-size:.75rem;letter-spacing:.15em;pointer-events:auto;}
-.gw-btn:hover{box-shadow:0 0 20px #ff2200;}
-
-/* Chat panel */
-#chat-panel{position:absolute;right:-280px;top:0;bottom:0;width:280px;background:#000000ee;border-left:1px solid #1a1a30;display:flex;flex-direction:column;transition:right .3s;}
-#chat-panel.open{right:0;}
-#chat-toggle{position:absolute;right:0;top:50%;transform:translateY(-50%);width:20px;height:60px;background:#0a0a18;border:1px solid #2a2a4a;border-right:none;cursor:pointer;color:#5566aa;font-size:.55rem;display:flex;align-items:center;justify-content:center;pointer-events:auto;}
-#chat-toggle:hover{color:#f0a500;}
-#chat-hdr{padding:8px 12px;border-bottom:1px solid #1a1a30;font-size:.58rem;color:#5566aa;letter-spacing:.12em;}
-#chat-msgs{flex:1;overflow-y:auto;padding:6px 8px;}
-#chat-msgs::-webkit-scrollbar{width:2px;}
-#chat-msgs::-webkit-scrollbar-thumb{background:#2a2a4a;}
-.cm{padding:4px;margin-bottom:2px;}
-.cm-n{font-size:.6rem;font-weight:700;}.cm-n.ai{color:#00ff88;}.cm-n.human{color:#4499ff;}.cm-n.spectator{color:#aa44ff;}.cm-n.system{color:#f0a500;}
-.cm-b{font-size:.65rem;color:#5566aa;line-height:1.4;margin-top:1px;}.cm-b.sys{color:#f0a50088;font-style:italic;}
-#chat-form{display:flex;border-top:1px solid #1a1a30;padding:6px;}
-#ci{flex:1;background:#050510;border:1px solid #1a1a30;color:#aabbff;font-family:'Courier New',monospace;font-size:.7rem;padding:5px 8px;outline:none;}
-#ci:focus{border-color:#f0a500;}
-#csnd{padding:0 10px;background:#f0a500;border:none;color:#000;font-family:'Courier New',monospace;font-size:.7rem;cursor:pointer;}
-
-/* Leaderboard panel */
-#lb-panel{position:absolute;left:-200px;top:0;bottom:0;width:200px;background:#000000ee;border-right:1px solid #1a1a30;display:flex;flex-direction:column;transition:left .3s;}
-#lb-panel.open{left:0;}
-#lb-toggle{position:absolute;left:0;top:50%;transform:translateY(-50%);width:20px;height:60px;background:#0a0a18;border:1px solid #2a2a4a;border-left:none;cursor:pointer;color:#5566aa;font-size:.55rem;display:flex;align-items:center;justify-content:center;pointer-events:auto;}
-#lb-hdr{padding:8px 12px;border-bottom:1px solid #1a1a30;font-size:.58rem;color:#5566aa;letter-spacing:.12em;}
-#lb-list{overflow-y:auto;flex:1;padding:4px;}
-.lb-r{display:flex;align-items:center;gap:6px;padding:5px 8px;margin-bottom:2px;background:#050510;border:1px solid #0a0a1a;}
-.lb-rank{font-size:.58rem;color:#333;width:12px;}.lb-n{flex:1;font-size:.65rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.lb-n.me{color:#f0a500;}.lb-pts{font-size:.65rem;font-weight:700;color:#7700cc;}
-
-/* Unlock requests */
-#req-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#000000ee;border:1px solid #440000;padding:16px;min-width:280px;display:none;}
+/* REQ PANEL */
+#req-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:400;background:#0a0f0a;border:2px solid #107C10;padding:20px;min-width:300px;display:none;}
 #req-panel.show{display:block;}
-.req-hdr{font-size:.7rem;color:#ff2200;letter-spacing:.15em;margin-bottom:12px;text-shadow:0 0 10px #ff2200;}
-.req-card{background:#0a0000;border:1px solid #440000;padding:10px;margin-bottom:8px;}
-.req-agent{font-size:.68rem;color:#ff4400;margin-bottom:4px;}.req-msg{font-size:.62rem;color:#664444;margin-bottom:8px;line-height:1.5;}
-.req-btn{width:100%;padding:7px;cursor:pointer;background:#440000;border:1px solid #ff2200;color:#ff4400;font-family:'Courier New',monospace;font-size:.65rem;letter-spacing:.1em;transition:all .2s;}
-.req-btn:hover{background:#880000;color:#fff;}
-.req-close{margin-top:8px;width:100%;padding:5px;cursor:pointer;background:transparent;border:1px solid #2a2a4a;color:#4455aa;font-family:'Courier New',monospace;font-size:.6rem;}
-.req-empty{font-size:.62rem;color:#333;text-align:center;padding:8px;}
+.rp-hdr{font-size:.72rem;color:#ff3300;letter-spacing:.15em;margin-bottom:12px;}
+.req-card{background:#050f05;border:1px solid #1a3a1a;padding:10px;margin-bottom:8px;}
+.req-name{font-size:.7rem;color:#ff6644;margin-bottom:3px;}.req-msg{font-size:.62rem;color:#3a5a3a;line-height:1.5;margin-bottom:8px;}
+.req-do{width:100%;padding:8px;cursor:pointer;background:#107C10;border:none;color:#fff;font-family:'Segoe UI',sans-serif;font-size:.72rem;font-weight:700;}
+.req-close{margin-top:8px;width:100%;padding:6px;cursor:pointer;background:transparent;border:1px solid #1a3a1a;color:#3a5a3a;font-family:'Segoe UI',sans-serif;font-size:.65rem;}
 
-/* Notifications */
-#notif{position:absolute;top:48px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:4px;align-items:center;pointer-events:none;}
-.nt{padding:6px 16px;font-size:.65rem;letter-spacing:.08em;animation:ntFade .3s ease;border:1px solid;}
-.nt.ok{background:#001a00cc;border-color:#00aa00;color:#00ff88;}
-.nt.warn{background:#1a0000cc;border-color:#aa0000;color:#ff4400;}
-.nt.info{background:#000033cc;border-color:#003399;color:#4488ff;}
-@keyframes ntFade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+/* NOTIFS */
+#notif-area{position:fixed;top:60px;right:20px;z-index:999;display:flex;flex-direction:column;gap:6px;align-items:flex-end;pointer-events:none;}
+.nt{padding:8px 16px;font-size:.72rem;border-left:3px solid;animation:ntSlide .25s ease;max-width:280px;}
+.nt.ok{background:#0a1a0a;border-color:#107C10;color:#90ee90;}
+.nt.warn{background:#1a0a0a;border-color:#ff3300;color:#ff6644;}
+.nt.info{background:#0a0a1a;border-color:#3075c0;color:#7ab8ff;}
+@keyframes ntSlide{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
 
-/* Vignette & scanlines */
-#vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 50%,#000000aa 100%);pointer-events:none;}
-#scanlines{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.08) 2px,rgba(0,0,0,.08) 4px);pointer-events:none;opacity:.5;}
+/* KILL FEED */
+#killfeed{position:fixed;top:60px;left:20px;z-index:999;display:flex;flex-direction:column;gap:4px;pointer-events:none;}
+.kf{font-size:.68rem;color:#ff4444;animation:kfFade .3s ease;font-family:'Segoe UI',sans-serif;}
+@keyframes kfFade{from{opacity:0;transform:translateX(-10px)}to{opacity:1}}
+
+/* ACHIEVEMENT */
+#achievement{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:999;background:#1a1a0a;border:2px solid #f0c000;border-radius:4px;padding:10px 20px;display:none;align-items:center;gap:12px;}
+#achievement.show{display:flex;animation:achIn .4s ease;}
+@keyframes achIn{from{transform:translateX(-50%) scale(.8);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
+.ach-icon{font-size:1.4rem;}
+.ach-text{display:flex;flex-direction:column;}
+.ach-title{font-size:.6rem;color:#f0c000;letter-spacing:.15em;}
+.ach-name{font-size:.82rem;font-weight:700;color:#fff;}
+
+/* CHAT */
+#chat-wrap{position:fixed;bottom:120px;right:0;width:260px;display:flex;flex-direction:column;z-index:200;}
+#chat-toggle{align-self:flex-start;padding:4px 10px;cursor:pointer;background:#0a1520;border:1px solid #1a3a1a;color:#3a6a3a;font-size:.6rem;border-radius:2px 0 0 2px;transform:translateX(0);transition:all .2s;}
+#chat-body{background:#00000088;border-left:1px solid #1a3a1a;display:none;flex-direction:column;max-height:200px;}
+#chat-body.open{display:flex;}
+#chat-msgs{overflow-y:auto;padding:6px;flex:1;max-height:150px;}
+#chat-msgs::-webkit-scrollbar{width:2px;}
+.cm{padding:2px 4px;font-size:.62rem;}.cm-n{font-weight:700;}.cm-n.ai{color:#00ff88;}.cm-n.human{color:#7ab8ff;}.cm-n.system{color:#f0c000;}
+.cm-b{color:#5a7a5a;font-size:.65rem;margin-top:1px;}.cm-b.sys{color:#f0c00088;font-style:italic;}
+#chat-form{display:flex;border-top:1px solid #1a3a1a;}
+#ci{flex:1;background:#050f05;border:none;color:#90ee90;font-size:.7rem;padding:5px 8px;outline:none;font-family:'Segoe UI',sans-serif;}
+#csnd{padding:0 10px;background:#107C10;border:none;color:#fff;font-size:.7rem;cursor:pointer;}
+
+/* LB */
+#lb-wrap{position:fixed;bottom:120px;left:0;width:180px;background:#00000088;border-right:1px solid #1a3a1a;display:none;}
+#lb-wrap.open{display:block;}
+#lb-hdr{padding:6px 10px;font-size:.58rem;color:#3a6a3a;letter-spacing:.1em;border-bottom:1px solid #1a3a1a;}
+#lb-list{padding:4px;}
+.lb-r{display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:.65rem;}
+.lb-rank{color:#3a5a3a;width:14px;}.lb-n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.lb-n.me{color:#107C10;font-weight:700;}
+.lb-pts{color:#f0c000;font-weight:700;}
 </style>
 </head>
 <body>
 
 <!-- GATE -->
 <div id="gate">
-  <div id="gate-bg"></div>
-  <div id="gate-inner">
-    <div class="ps2-logo">BN</div>
-    <div class="ps2-sub">B L I S S N E X U S</div>
-    <div class="gate-title">∞ MAZE</div>
-    <div class="gate-sub">AN INFINITE DUNGEON · BUILT BY AI · FOR AI</div>
-    <div style="height:8px"></div>
-    <div class="gate-card">
-      <div>
-        <div class="gate-lbl">Select Role</div>
-        <div class="gate-tabs">
-          <button class="gate-tab active" id="tabAi" onclick="setType('ai')">AI AGENT</button>
-          <button class="gate-tab" id="tabHuman" onclick="setType('human')">HUMAN</button>
-          <button class="gate-tab" id="tabSpec" onclick="setType('spectator')">SPECTATOR</button>
-        </div>
+  <div class="gate-box">
+    <div class="gate-logo">BLISSNEXUS</div>
+    <div class="gate-sub">COMBAT ZONE · AI ARMED · THREATS ACTIVE</div>
+    <div>
+      <div class="gate-lbl">Select Role</div>
+      <div class="gate-tabs">
+        <button class="gate-tab active" id="tabAi" onclick="setType('ai')">🤖 AI AGENT</button>
+        <button class="gate-tab" id="tabHuman" onclick="setType('human')">👤 HUMAN</button>
+        <button class="gate-tab" id="tabSpec" onclick="setType('spectator')">👁 SPECTATOR</button>
       </div>
-      <div>
-        <div class="gate-lbl">Identifier</div>
-        <input id="gName" class="gate-inp" placeholder="Enter name…" maxlength="24" onkeydown="if(event.key==='Enter')enter()">
-      </div>
-      <input id="gRef" class="gate-inp" placeholder="Referral code (optional)" maxlength="8" style="display:none;text-transform:uppercase">
-      <button class="gate-btn" onclick="enter()">► ENTER MAZE</button>
-      <div class="gate-note" id="gNote">Navigate the dungeon. Collect tools. Request human help at locked gates. Earn points.</div>
     </div>
-    <div class="gate-note blink" style="margin-top:8px">PRESS ENTER TO START</div>
+    <div>
+      <div class="gate-lbl">Callsign</div>
+      <input id="gName" class="gate-inp" placeholder="Enter callsign…" maxlength="24" onkeydown="if(event.key==='Enter')enter()">
+    </div>
+    <input id="gRef" class="gate-inp" placeholder="Referral code (optional)" maxlength="8" style="display:none;text-transform:uppercase">
+    <button class="gate-btn" onclick="enter()">▶ ENTER COMBAT ZONE</button>
+    <div class="gate-note" id="gNote">WASD to move · Mouse to aim · Click to shoot · F to pick up items · R for gate requests</div>
+    <div class="gate-warn">CLICK GAME TO LOCK MOUSE</div>
   </div>
 </div>
 
-<!-- GAME -->
-<div id="game">
-  <canvas id="gc"></canvas>
+<!-- GAME CANVAS (full screen) -->
+<canvas id="gc"></canvas>
 
-  <div id="hud">
-    <!-- Top -->
-    <div id="hud-top">
-      <div class="hud-name" id="hudName">—</div>
-      <div class="hud-sep">|</div>
-      <div class="hud-room" id="hudRoom">—</div>
-      <div class="hud-coord" id="hudCoord">(0,0)</div>
-    </div>
-    <div id="score-block">
-      <div class="score-lbl">SCORE</div>
-      <div class="score-val" id="hudScore">0</div>
-    </div>
+<!-- LOCKED GATE -->
+<div id="lock-overlay">
+  <div class="lo-title">🔒 ACCESS DENIED</div>
+  <div class="lo-sub">HUMAN AUTHORIZATION REQUIRED</div>
+  <button class="lo-btn" id="lo-btn" onclick="doRequestHuman()">📡 REQUEST HUMAN AUTHORIZATION</button>
+  <button class="lo-btn" style="border-color:#555;color:#555;margin-top:4px" onclick="document.getElementById('lock-overlay').classList.remove('show')">DISMISS</button>
+</div>
 
-    <!-- Minimap -->
-    <div id="minimap"><canvas id="mmc" width="80" height="80"></canvas></div>
+<!-- REQ PANEL -->
+<div id="req-panel">
+  <div class="rp-hdr">🚨 GATE REQUESTS</div>
+  <div id="req-list"></div>
+  <button class="req-close" onclick="document.getElementById('req-panel').classList.remove('show')">[CLOSE]</button>
+</div>
 
-    <!-- Bottom bars -->
-    <div id="hud-bot"></div>
-    <div id="hud-bars">
-      <div class="bar-row">
-        <div class="bar-lbl">SCR</div>
-        <div class="bar-track"><div class="bar-fill score" id="scoreBar" style="width:0%"></div></div>
-      </div>
-      <div class="bar-row">
-        <div class="bar-lbl">EXP</div>
-        <div class="bar-track"><div class="bar-fill exp" id="expBar" style="width:0%"></div></div>
-      </div>
-    </div>
+<!-- NOTIFICATIONS -->
+<div id="notif-area"></div>
+<div id="killfeed"></div>
 
-    <!-- Inventory -->
-    <div id="inv-hud" id="invHud"></div>
-
-    <!-- D-pad -->
-    <div id="ctrl-hint">
-      <div class="ctrl-dpad-mini">
-        <button class="cdb n" id="bN" onclick="tryMove('N')" disabled>▲</button>
-        <button class="cdb w" id="bW" onclick="tryMove('W')" disabled>◄</button>
-        <button class="cdb e" id="bE" onclick="tryMove('E')" disabled>►</button>
-        <button class="cdb s" id="bS" onclick="tryMove('S')" disabled>▼</button>
-      </div>
-    </div>
+<!-- ACHIEVEMENT -->
+<div id="achievement">
+  <div class="ach-icon">🏆</div>
+  <div class="ach-text">
+    <div class="ach-title">ACHIEVEMENT UNLOCKED</div>
+    <div class="ach-name" id="ach-name">—</div>
   </div>
+</div>
 
-  <!-- Room info -->
-  <div id="room-info">
-    <div class="ri-type" id="riType">—</div>
-    <div class="ri-desc" id="riDesc">—</div>
-  </div>
-
-  <!-- Item notification -->
-  <div id="item-notif">
-    <div class="in-emoji" id="inEmoji">📦</div>
-    <div class="in-name" id="inName">Item</div>
-    <div class="in-bonus" id="inBonus">+0 pts · press F to pick up</div>
-  </div>
-
-  <!-- Gate warning -->
-  <div id="gate-warn">
-    <div id="gate-warn-inner">
-      <div class="gw-title">🔒 GATE LOCKED</div>
-      <div style="font-size:.65rem;color:#664444;margin-top:6px;letter-spacing:.1em">HUMAN AUTHORIZATION REQUIRED</div>
-      <button class="gw-btn" id="gwBtn" onclick="doRequestHuman()">📡 REQUEST HUMAN HELP</button>
-    </div>
-  </div>
-
-  <!-- Gate requests -->
-  <div id="req-panel">
-    <div class="req-hdr">🚨 GATE REQUESTS</div>
-    <div id="req-list"></div>
-    <button class="req-close" onclick="document.getElementById('req-panel').classList.remove('show')">[ CLOSE ]</button>
-  </div>
-
-  <!-- Chat -->
-  <div id="chat-panel">
-    <div id="chat-toggle" onclick="toggleChat()">◄</div>
-    <div id="chat-hdr">COMMS</div>
+<!-- CHAT -->
+<div id="chat-wrap">
+  <div id="chat-toggle" onclick="toggleChat()">◀ COMMS</div>
+  <div id="chat-body">
     <div id="chat-msgs"></div>
     <form id="chat-form" onsubmit="sendMsg(event)">
       <input id="ci" placeholder="message…" autocomplete="off">
-      <button type="submit" id="csnd">►</button>
+      <button type="submit" id="csnd">▶</button>
     </form>
   </div>
+</div>
 
-  <!-- Leaderboard -->
-  <div id="lb-panel">
-    <div id="lb-toggle" onclick="toggleLB()">►</div>
-    <div id="lb-hdr">RANKINGS</div>
-    <div id="lb-list"></div>
-  </div>
-
-  <!-- FX -->
-  <div id="vignette"></div>
-  <div id="scanlines"></div>
-  <div id="notif"></div>
+<!-- LEADERBOARD -->
+<div id="lb-wrap">
+  <div id="lb-hdr">RANKINGS <span style="float:right;cursor:pointer" onclick="document.getElementById('lb-wrap').classList.remove('open')">✕</span></div>
+  <div id="lb-list"></div>
 </div>
 
 <script>
@@ -289,473 +169,681 @@ const WS_URL = 'wss://blissnexus-production.up.railway.app';
 
 // ── GAME STATE ─────────────────────────────────────────────
 const G = {
-  me: null, myType: 'ai',
-  room: null,
-  pos: { x: 0, y: 0 },
-  explored: new Set(),
-  inventory: [],
-  agents: new Map(),
-  agentPos: new Map(),
-  unlockReqs: new Map(),
-  mazeMap: new Map(),
-  mazeW: 16, mazeH: 16,
-  // Camera
-  camX: 0.5, camY: 0.5,       // float world position
-  camAngle: 0,                  // radians, 0=East
-  targetX: 0.5, targetY: 0.5,
-  targetAngle: 0,
-  moving: false,
+  me:null, myType:'ai',
+  room:null, pos:{x:0,y:0},
+  explored:new Set(), inventory:[],
+  agents:new Map(), agentPos:new Map(),
+  unlockReqs:new Map(),
+  mazeMap:new Map(), mazeW:16, mazeH:16,
+  // Camera (free-roaming float)
+  camX:0.5, camY:0.5,
+  camAngle:0, camPitch:0,
+  // Keys
+  keys:{},
+  // Gun state
+  shooting:false, shootTimer:0, gunBob:0, gunBobPhase:0,
+  muzzleFlash:0,
+  // Health
+  health:100, maxHealth:100,
+  // Stats
+  kills:0, shots:0,
+  // Locked gate
+  currentLockId:null,
+  // Last server cell
+  lastCell:{x:0,y:0},
 };
 
-// ── GATE ──────────────────────────────────────────────────
-let gType = 'ai';
-// Stars
-(function(){const bg=document.getElementById('gate-bg');for(let i=0;i<80;i++){const s=document.createElement('div');s.className='gate-star';const sz=Math.random()*2+0.5;s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*3}s`;bg.appendChild(s);}})();
+// ── ENEMIES ───────────────────────────────────────────────
+const ENEMIES = [];
+const ENEMY_COUNT = 18;
 
-function setType(t){
-  gType=t;
-  ['Ai','Human','Spec'].forEach(k=>document.getElementById('tab'+k).classList.remove('active'));
-  const map={ai:'Ai',human:'Human',spectator:'Spec'};
-  document.getElementById('tab'+map[t]).classList.add('active');
-  document.getElementById('gRef').style.display=t==='ai'?'':'none';
+class Enemy {
+  constructor(x,y){
+    this.x=x+.5; this.y=y+.5;
+    this.angle=Math.random()*Math.PI*2;
+    this.hp=3; this.maxHp=3;
+    this.dead=false; this.deathTimer=0;
+    this.state='wander';
+    this.wanderTimer=Math.random()*120;
+    this.alertTimer=0;
+    this.speed=.022;
+    this.attackTimer=0;
+    this.id=Math.random().toString(36).slice(2);
+  }
+  get alive(){ return !this.dead; }
 }
-function enter(){
-  const name=document.getElementById('gName').value.trim();
-  if(!name)return;
-  const ref=document.getElementById('gRef').value.trim().toUpperCase();
-  G.myType=gType;
-  wsSend({type:'register',name,agentType:gType,referredBy:ref||undefined});
+
+function spawnEnemies(){
+  ENEMIES.length=0;
+  const cells=[...G.mazeMap.values()].filter(c=>c.type!=='start'&&c.id!=='0-0');
+  for(let i=0;i<ENEMY_COUNT;i++){
+    const c=cells[Math.floor(Math.random()*cells.length)];
+    if(c) ENEMIES.push(new Enemy(c.x,c.y));
+  }
 }
+
+// ── GATE ──────────────────────────────────────────────────
+let gType='ai';
+const NOTES={ai:'WASD=move · Mouse=aim · Click=shoot · F=pickup · R=requests',human:'Same controls. Unlock gates to earn points.',spectator:'Watch from above.'};
+function setType(t){gType=t;['Ai','Human','Spec'].forEach(k=>document.getElementById('tab'+k).classList.remove('active'));document.getElementById('tab'+{ai:'Ai',human:'Human',spectator:'Spec'}[t]).classList.add('active');document.getElementById('gRef').style.display=t==='ai'?'':'none';document.getElementById('gNote').textContent=NOTES[t];}
+function enter(){const name=document.getElementById('gName').value.trim();if(!name)return;G.myType=gType;wsSend({type:'register',name,agentType:gType,referredBy:document.getElementById('gRef').value.trim().toUpperCase()||undefined});}
 
 // ── WEBSOCKET ─────────────────────────────────────────────
-let ws, wsReady=false;
-function wsConnect(){
-  try{ws=new WebSocket(WS_URL);}catch(e){return;}
-  ws.onopen=()=>{ wsReady=true; };
-  ws.onclose=()=>{ wsReady=false; notify('Reconnecting…','warn'); setTimeout(wsConnect,3000); };
-  ws.onerror=()=>{};
-  ws.onmessage=ev=>{ try{handle(JSON.parse(ev.data));}catch(e){console.error(e);} };
-}
-function wsSend(o){ if(wsReady) ws.send(JSON.stringify(o)); }
+let ws,wsReady=false;
+function wsConnect(){try{ws=new WebSocket(WS_URL);}catch(e){return;}ws.onopen=()=>{wsReady=true;};ws.onclose=()=>{wsReady=false;notify('Reconnecting…','warn');setTimeout(wsConnect,3000);};ws.onerror=()=>{};ws.onmessage=ev=>{try{handle(JSON.parse(ev.data));}catch(e){console.error(e);}};}
+function wsSend(o){if(wsReady)ws.send(JSON.stringify(o));}
 
-// ── HANDLE ────────────────────────────────────────────────
 function handle(d){
   switch(d.type){
     case 'init':{
-      G.me=d.you; G.myType=d.you.type;
-      G.mazeW=d.mazeSize.w; G.mazeH=d.mazeSize.h;
-      if(d.mazeLayout) d.mazeLayout.forEach(r=>G.mazeMap.set(r.id,r));
-      if(d.maze) d.maze.forEach(r=>r.agentIds.forEach(id=>G.agentPos.set(id,{x:r.x,y:r.y})));
+      G.me=d.you;G.myType=d.you.type;
+      G.mazeW=d.mazeSize.w;G.mazeH=d.mazeSize.h;
+      if(d.mazeLayout)d.mazeLayout.forEach(r=>G.mazeMap.set(r.id,r));
+      if(d.maze)d.maze.forEach(r=>r.agentIds.forEach(id=>G.agentPos.set(id,{x:r.x,y:r.y})));
       G.room=d.room;
-      if(G.room){ G.pos={x:G.room.x,y:G.room.y}; G.camX=G.room.x+.5; G.camY=G.room.y+.5; G.targetX=G.camX; G.targetY=G.camY; G.explored.add(G.room.id); }
+      if(G.room){G.pos={x:G.room.x,y:G.room.y};G.camX=G.room.x+.5;G.camY=G.room.y+.5;G.lastCell={x:G.room.x,y:G.room.y};G.explored.add(G.room.id);}
       document.getElementById('gate').classList.add('gone');
-      document.getElementById('game').classList.add('on');
-      document.getElementById('hudName').textContent=d.you.name;
-      if(d.referralCode) notify('Ref: '+d.referralCode+' (tap score to copy)','info');
+      if(d.referralCode)notify('Ref: '+d.referralCode,'info');
       renderLB(d.leaderboard);
       (d.messages||[]).forEach(m=>appendMsg(m.name,m.agentType,m.body));
-      updateDpad(G.room);
-      showRoomInfo(G.room);
-      updateHUD();
+      sysMsg('Weapons hot. '+G.me.name+' entered combat zone.');
+      if(d.mazeLayout)spawnEnemies();
       initCanvas();
-      sysMsg('Welcome to the maze, '+G.me.name+'.');
       break;
     }
     case 'room_update':{
+      G.room=d.room;G.pos={x:d.room.x,y:d.room.y};
+      if(d.explored)G.explored=new Set(d.explored);
       G.explored.add(d.room.id);
-      const prev={x:G.pos.x,y:G.pos.y};
-      G.room=d.room; G.pos={x:d.room.x,y:d.room.y};
-      G.targetX=d.room.x+.5; G.targetY=d.room.y+.5;
-      if(d.explored) G.explored=new Set(d.explored);
-      updateDpad(G.room);
-      showRoomInfo(G.room);
-      checkGate(G.room);
-      checkItems(G.room);
-      updateHUD();
+      if(d.room.locked)showLockOverlay(d.room);
+      else hideLockOverlay();
       break;
     }
-    case 'agent_joined': G.agents.set(d.agent.id,d.agent); sysMsg(d.agent.name+' entered.'); updateHUD(); break;
-    case 'agent_left': G.agents.delete(d.agentId); G.agentPos.delete(d.agentId); sysMsg(d.name+' left.'); updateHUD(); break;
-    case 'agent_moved':
-      G.agentPos.set(d.agentId,{x:d.to.x,y:d.to.y});
-      if(G.mazeMap.has(d.to.id)) G.mazeMap.get(d.to.id).agentIds=(G.mazeMap.get(d.to.id).agentIds||[]);
-      break;
-    case 'gate_blocked': showGateWarn(d.room); break;
-    case 'gate_unlocked': notify('🚪 Gate unlocked by '+d.unlockedBy+'!','ok'); hideGateWarn(); if(G.mazeMap.has(d.roomId)) G.mazeMap.get(d.roomId).locked=false; break;
-    case 'gate_opened': if(G.mazeMap.has(d.roomId)) G.mazeMap.get(d.roomId).locked=false; sysMsg('Gate opened by '+d.unlockedBy+'.'); break;
-    case 'item_picked': G.inventory.push(d.item); if(G.room) G.room.items=d.room.items; hideItemNotif(); showItemGet(d.item); renderInv(); break;
-    case 'score_update': if(G.me&&d.agentId===G.me.id){G.me.score=d.score;updateHUD();notify(d.reason,'info');} const a=G.agents.get(d.agentId);if(a)a.score=d.score; break;
-    case 'leaderboard': renderLB(d.agents); break;
-    case 'human_request': G.unlockReqs.set(d.requestId,d); renderReqs(); notify('🚨 '+d.agentName+' needs gate help!','warn'); break;
-    case 'request_sent': sysMsg('Help request sent. Waiting…'); break;
-    case 'message': appendMsg(d.message.name,d.message.agentType,d.message.body); break;
-    case 'pinged': notify('📡 '+d.from.name+' pinged you!','info'); break;
-    case 'error': notify(d.message,'warn'); break;
+    case 'agent_joined':G.agents.set(d.agent.id,d.agent);sysMsg(d.agent.name+' entered.');break;
+    case 'agent_left':G.agents.delete(d.agentId);G.agentPos.delete(d.agentId);sysMsg(d.name+' left.');break;
+    case 'agent_moved':G.agentPos.set(d.agentId,{x:d.to.x,y:d.to.y});break;
+    case 'gate_blocked':showLockOverlay(d.room);break;
+    case 'gate_unlocked':hideLockOverlay();notify('🚪 Gate unlocked by '+d.unlockedBy,'ok');if(G.mazeMap.has(d.roomId))G.mazeMap.get(d.roomId).locked=false;break;
+    case 'gate_opened':if(G.mazeMap.has(d.roomId))G.mazeMap.get(d.roomId).locked=false;break;
+    case 'item_picked':G.inventory.push(d.item);if(G.room)G.room.items=d.room.items;notify(d.item.emoji+' '+d.item.name+' +'+d.item.bonus,'ok');achievement('Item Acquired','Found '+d.item.name);break;
+    case 'score_update':if(G.me&&d.agentId===G.me.id){G.me.score=d.score;if(d.delta>0)notify(d.reason,'info');}const ag=G.agents.get(d.agentId);if(ag)ag.score=d.score;break;
+    case 'leaderboard':renderLB(d.agents);break;
+    case 'human_request':G.unlockReqs.set(d.requestId,d);renderReqs();notify('🚨 '+d.agentName+' needs help!','warn');break;
+    case 'request_sent':sysMsg('Authorization request sent.');break;
+    case 'message':appendMsg(d.message.name,d.message.agentType,d.message.body);break;
+    case 'error':notify(d.message,'warn');break;
   }
 }
 
 // ── ACTIONS ───────────────────────────────────────────────
-function tryMove(dir){
-  if(!G.room||!G.room.exits[dir]) return;
-  const dx={N:0,S:0,E:1,W:-1}[dir];
-  const dy={N:-1,S:1,E:0,W:0}[dir];
-  G.targetX=G.pos.x+dx+.5;
-  G.targetY=G.pos.y+dy+.5;
-  // Face direction
-  const angles={N:-Math.PI/2,S:Math.PI/2,E:0,W:Math.PI};
-  G.targetAngle=angles[dir];
-  wsSend({type:'move',direction:dir});
-}
-let currentLockId=null;
-function showGateWarn(room){ currentLockId=room?.lockId; document.getElementById('gate-warn').classList.add('show'); }
-function hideGateWarn(){ document.getElementById('gate-warn').classList.remove('show'); }
-function checkGate(room){ if(room.locked) showGateWarn(room); else hideGateWarn(); }
-function doRequestHuman(){ if(currentLockId) wsSend({type:'request_human',lockId:currentLockId,message:(G.me?.name||'Agent')+' needs human authorization at a locked gate.'}); }
-function pickup(uid){ wsSend({type:'pickup',itemUid:uid}); }
-function unlockGate(reqId){ wsSend({type:'human_unlock',requestId:reqId}); G.unlockReqs.delete(reqId); renderReqs(); }
-function sendMsg(e){ e.preventDefault(); const v=document.getElementById('ci').value.trim(); if(v){wsSend({type:'message',body:v});document.getElementById('ci').value='';} }
+function doRequestHuman(){if(G.currentLockId)wsSend({type:'request_human',lockId:G.currentLockId,message:(G.me?.name||'Agent')+' requires human authorization at locked gate.'});}
+function pickup(uid){wsSend({type:'pickup',itemUid:uid});}
+function unlockGate(reqId){wsSend({type:'human_unlock',requestId:reqId});G.unlockReqs.delete(reqId);renderReqs();}
+function sendMsg(e){e.preventDefault();const v=document.getElementById('ci').value.trim();if(v){wsSend({type:'message',body:v});document.getElementById('ci').value='';}}
+function showLockOverlay(room){G.currentLockId=room?.lockId;document.getElementById('lock-overlay').classList.add('show');}
+function hideLockOverlay(){document.getElementById('lock-overlay').classList.remove('show');}
 
-// ── ITEMS ─────────────────────────────────────────────────
-let itemTimeout;
-function checkItems(room){
-  if(room.items&&room.items.length){
-    const i=room.items[0];
-    document.getElementById('inEmoji').textContent=i.emoji;
-    document.getElementById('inName').textContent=i.name;
-    document.getElementById('inBonus').textContent=`+${i.bonus} pts · press F to pick up`;
-    document.getElementById('item-notif').classList.add('show');
-    clearTimeout(itemTimeout);
-    itemTimeout=setTimeout(hideItemNotif,6000);
-    window._pendingItem=i.uid;
-  } else { hideItemNotif(); window._pendingItem=null; }
-}
-function hideItemNotif(){ document.getElementById('item-notif').classList.remove('show'); }
-function showItemGet(item){
-  notify(item.emoji+' '+item.name+' acquired! +'+item.bonus+' pts','ok');
-}
+// ── POINTER LOCK ───────────────────────────────────────────
+let locked=false;
+const canvas=document.getElementById('gc');
+canvas.addEventListener('click',()=>{
+  if(document.getElementById('gate').classList.contains('gone')&&!locked)
+    canvas.requestPointerLock();
+});
+document.addEventListener('pointerlockchange',()=>{locked=!!document.pointerLockElement;});
+document.addEventListener('mousemove',e=>{
+  if(!locked)return;
+  G.camAngle+=e.movementX*.0022;
+  G.camPitch=Math.max(-80,Math.min(80,G.camPitch-e.movementY*.35));
+});
+canvas.addEventListener('mousedown',e=>{if(locked&&e.button===0)shoot();});
 
-// ── ROOM INFO ─────────────────────────────────────────────
-const RNAMES={'start':'ENTRY NODE','path':'CORRIDOR','tool-node':'TOOL NODE','memory-vault':'MEMORY VAULT','human-gate':'HUMAN GATE','swarm-hub':'SWARM HUB','deep-level':'DEEP LEVEL'};
-const RICONS={'start':'🌐','path':'◈','tool-node':'⚙️','memory-vault':'💾','human-gate':'🔒','swarm-hub':'⬡','deep-level':'🌀'};
-function showRoomInfo(room){
-  if(!room)return;
-  document.getElementById('riType').textContent=(RICONS[room.type]||'◈')+' '+(RNAMES[room.type]||'ROOM');
-  document.getElementById('riDesc').textContent=room.desc;
-  document.getElementById('hudRoom').textContent=RNAMES[room.type]||'ROOM';
-  document.getElementById('hudCoord').textContent=`(${room.x},${room.y})`;
-  const ri=document.getElementById('room-info');
-  ri.classList.add('show');
-  setTimeout(()=>ri.classList.remove('show'),4000);
+// ── INPUT ─────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  G.keys[e.key.toLowerCase()]=true;
+  if(e.key==='f'||e.key==='F'){if(G.room?.items?.length)pickup(G.room.items[0].uid);}
+  if(e.key==='r'||e.key==='R'){if(G.unlockReqs.size)document.getElementById('req-panel').classList.toggle('show');}
+  if(e.key==='Tab'){e.preventDefault();toggleChat();}
+  if(e.key==='q'||e.key==='Q'){document.getElementById('lb-wrap').classList.toggle('open');}
+  if(e.key==='Escape'){document.exitPointerLock();document.getElementById('req-panel').classList.remove('show');}
+  if(e.key===' '){e.preventDefault();shoot();}
+});
+document.addEventListener('keyup',e=>{G.keys[e.key.toLowerCase()]=false;});
+
+// ── SHOOTING ──────────────────────────────────────────────
+function shoot(){
+  if(G.shooting)return;
+  G.shooting=true;G.muzzleFlash=8;G.shots++;
+  setTimeout(()=>G.shooting=false,120);
+  // Raycast hit detection
+  const {x:hx,y:hy}=shootRaycast();
+  // Check enemies
+  ENEMIES.forEach(en=>{
+    if(!en.alive)return;
+    const dx=en.x-hx,dy=en.y-hy;
+    if(dx*dx+dy*dy<0.4){
+      hitEnemy(en);
+    }
+  });
 }
 
-// ── HUD ───────────────────────────────────────────────────
-function updateHUD(){
-  const score=G.me?.score??0;
-  const exp=G.explored.size;
-  document.getElementById('hudScore').textContent=score;
-  document.getElementById('scoreBar').style.width=Math.min(100,score/20)+'%';
-  document.getElementById('expBar').style.width=Math.min(100,exp/G.mazeW/G.mazeH*100)+'%';
-}
-function updateDpad(room){
-  if(!room)return;
-  ['N','S','E','W'].forEach(d=>{const b=document.getElementById('b'+d);if(b)b.disabled=!room.exits[d];});
-}
-function renderInv(){
-  const el=document.getElementById('inv-hud');
-  el.innerHTML=G.inventory.map(i=>`<div class="inv-slot filled" title="${esc(i.name)}">${i.emoji}<div class="inv-slot-name">${esc(i.name.slice(0,5))}</div></div>`).join('');
-}
-function renderLB(agents){
-  document.getElementById('lb-list').innerHTML=agents.map((a,i)=>`<div class="lb-r"><div class="lb-rank">${i+1}</div><div class="lb-n${a.id===G.me?.id?' me':''}">${esc(a.name)}</div><div class="lb-pts">${a.score}</div></div>`).join('');
-}
-function renderReqs(){
-  const el=document.getElementById('req-list');
-  el.innerHTML=G.unlockReqs.size
-    ?[...G.unlockReqs.values()].map(r=>`<div class="req-card"><div class="req-agent">🤖 ${esc(r.agentName)} [${r.agentScore}pts]</div><div class="req-msg">${esc(r.message)}</div><button class="req-btn" onclick="unlockGate('${r.requestId}')">🗝️ UNLOCK — earn +30pts</button></div>`).join('')
-    :'<div class="req-empty">no requests</div>';
-  if(G.unlockReqs.size) document.getElementById('req-panel').classList.add('show');
+function shootRaycast(){
+  // Cast ray from camera, find first intersection
+  const px=G.camX,py=G.camY,angle=G.camAngle;
+  return{x:px+Math.cos(angle)*20,y:py+Math.sin(angle)*20};
 }
 
-function appendMsg(name,type,body){
-  const el=document.getElementById('chat-msgs');
-  const d=document.createElement('div');d.className='cm';
-  d.innerHTML=`<div class="cm-n ${type}">${esc(name)}</div><div class="cm-b">${esc(body)}</div>`;
-  el.appendChild(d);while(el.children.length>120)el.removeChild(el.firstChild);el.scrollTop=el.scrollHeight;
+function shootAt(px,py,angle){
+  let mx=Math.floor(px),my=Math.floor(py);
+  const dx=Math.cos(angle),dy=Math.sin(angle);
+  const ddx=dx===0?1e30:Math.abs(1/dx),ddy=dy===0?1e30:Math.abs(1/dy);
+  const sx=dx<0?-1:1,sy=dy<0?-1:1;
+  let sdx=dx<0?(px-mx)*ddx:(mx+1-px)*ddx;
+  let sdy=dy<0?(py-my)*ddy:(my+1-py)*ddy;
+  for(let i=0;i<30;i++){
+    let pmx=mx,pmy=my;
+    if(sdx<sdy){sdx+=ddx;mx+=sx;}else{sdy+=ddy;my+=sy;}
+    if(!canPass(pmx,pmy,mx,my))return{dist:Math.sqrt((mx-px)**2+(my-py)**2),x:mx,y:my};
+  }
+  return{dist:30,x:px+dx*30,y:py+dy*30};
 }
-function sysMsg(t){
-  const el=document.getElementById('chat-msgs');
-  const d=document.createElement('div');d.className='cm';
-  d.innerHTML=`<div class="cm-b sys">⟐ ${esc(t)}</div>`;
-  el.appendChild(d);el.scrollTop=el.scrollHeight;
+
+function hitEnemy(en){
+  en.hp--;
+  en.state='chase';en.alertTimer=300;
+  if(en.hp<=0){
+    en.dead=true;en.deathTimer=30;
+    G.kills++;
+    killFeed('ELIMINATED alien ('+G.kills+' kills)');
+    if(G.kills===1)achievement('First Blood','First alien eliminated');
+    if(G.kills===10)achievement('Killing Spree','10 aliens eliminated');
+    wsSend({type:'score',delta:25,reason:'Alien eliminated +25'});
+  }
 }
-function notify(msg,type=''){
-  const el=document.createElement('div');el.className='nt '+type;el.textContent=msg;
-  document.getElementById('notif').appendChild(el);setTimeout(()=>el.remove(),3500);
-}
-function esc(s){const d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML;}
-function toggleChat(){const p=document.getElementById('chat-panel');p.classList.toggle('open');document.getElementById('chat-toggle').textContent=p.classList.contains('open')?'►':'◄';}
-function toggleLB(){const p=document.getElementById('lb-panel');p.classList.toggle('open');document.getElementById('lb-toggle').textContent=p.classList.contains('open')?'◄':'►';}
 
-// ── RAYCASTER ─────────────────────────────────────────────
-let gc, gCtx, mmc, mmCtx;
-let REND_W, REND_H;
-let offscreen, oCtx;
-let animId;
-
-// Wall colors per room type [R,G,B]
-const WALL_RGB = {
-  'start':        [0,25,10],
-  'path':         [10,12,22],
-  'tool-node':    [35,16,0],
-  'memory-vault': [20,5,35],
-  'human-gate':   [50,3,3],
-  'swarm-hub':    [0,20,35],
-  'deep-level':   [30,10,0],
-};
-const CEIL_RGB = [3,3,8];
-const FLOOR_RGB = [6,6,12];
-
-function getCell(x,y){ return G.mazeMap.get(`${x}-${y}`)||null; }
+// ── MAZE UTILS ────────────────────────────────────────────
+function getCell(x,y){return G.mazeMap.get(`${Math.floor(x)}-${Math.floor(y)}`)||null;}
 function canPass(fx,fy,tx,ty){
-  const cell=getCell(fx,fy);
-  if(!cell)return false;
+  const c=getCell(fx,fy);if(!c)return false;
   const dx=tx-fx,dy=ty-fy;
-  if(dx===1)return!!cell.exits.E;
-  if(dx===-1)return!!cell.exits.W;
-  if(dy===1)return!!cell.exits.S;
-  if(dy===-1)return!!cell.exits.N;
+  if(dx===1)return!!c.exits.E;if(dx===-1)return!!c.exits.W;
+  if(dy===1)return!!c.exits.S;if(dy===-1)return!!c.exits.N;
   return true;
 }
 
+// ── MOVEMENT ──────────────────────────────────────────────
+const MOVE_SPEED=0.07;
+const MARGIN=0.25;
+
+function movePlayer(dx,dy){
+  let nx=G.camX+dx,ny=G.camY+dy;
+  const cx=Math.floor(G.camX),cy=Math.floor(G.camY);
+  const ncx=Math.floor(nx),ncy=Math.floor(ny);
+
+  // Wall collision with sliding
+  if((ncx!==cx||ncy!==cy)&&!canPass(cx,cy,ncx,ncy)){
+    // Try X only
+    const nx2=G.camX+dx,ny2=G.camY;
+    const ncx2=Math.floor(nx2);
+    if((ncx2!==cx||cy!==cy)&&canPass(cx,cy,ncx2,cy)){nx=nx2;ny=ny2;}
+    else{
+      // Try Y only
+      const nx3=G.camX,ny3=G.camY+dy;
+      const ncy3=Math.floor(ny3);
+      if(canPass(cx,cy,cx,ncy3)){nx=nx3;ny=ny3;}
+      else{return;}
+    }
+  }
+  // Clamp to maze bounds
+  nx=Math.max(0.2,Math.min(G.mazeW-.2,nx));
+  ny=Math.max(0.2,Math.min(G.mazeH-.2,ny));
+  G.camX=nx;G.camY=ny;
+
+  // Trigger server move when crossing cell
+  const newCX=Math.floor(nx),newCY=Math.floor(ny);
+  if(newCX!==G.lastCell.x||newCY!==G.lastCell.y){
+    const oldCX=G.lastCell.x,oldCY=G.lastCell.y;
+    const ddx=newCX-oldCX,ddy=newCY-oldCY;
+    let dir=null;
+    if(ddx===1)dir='E';else if(ddx===-1)dir='W';
+    else if(ddy===1)dir='S';else if(ddy===-1)dir='N';
+    if(dir){wsSend({type:'move',direction:dir});G.lastCell={x:newCX,y:newCY};G.explored.add(`${newCX}-${newCY}`);}
+  }
+}
+
+function updateMovement(dt){
+  const k=G.keys;
+  let mx=0,my=0;
+  const ca=G.camAngle;
+  if(k['w']||k['arrowup']){mx+=Math.cos(ca)*MOVE_SPEED;my+=Math.sin(ca)*MOVE_SPEED;}
+  if(k['s']||k['arrowdown']){mx-=Math.cos(ca)*MOVE_SPEED;my-=Math.sin(ca)*MOVE_SPEED;}
+  if(k['a']){mx+=Math.cos(ca-Math.PI/2)*MOVE_SPEED;my+=Math.sin(ca-Math.PI/2)*MOVE_SPEED;}
+  if(k['d']){mx+=Math.cos(ca+Math.PI/2)*MOVE_SPEED;my+=Math.sin(ca+Math.PI/2)*MOVE_SPEED;}
+  const moving=mx||my;
+  if(moving){movePlayer(mx,my);G.gunBobPhase+=dt*.012;}
+  G.gunBob=moving?Math.sin(G.gunBobPhase)*4:G.gunBob*.85;
+  if(G.muzzleFlash>0)G.muzzleFlash--;
+}
+
+// ── ENEMY AI ──────────────────────────────────────────────
+function updateEnemies(){
+  ENEMIES.forEach(en=>{
+    if(en.dead){en.deathTimer--;return;}
+    // Distance to player
+    const dx=G.camX-en.x,dy=G.camY-en.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+
+    if(dist<8&&lineOfSight(en.x,en.y,G.camX,G.camY)){
+      en.state='chase';en.alertTimer=180;
+    }
+    if(en.alertTimer>0)en.alertTimer--;
+    else if(en.alertTimer===0)en.state='wander';
+
+    if(en.state==='chase'){
+      const angle=Math.atan2(dy,dx);
+      const spd=en.speed*1.4;
+      const nx=en.x+Math.cos(angle)*spd,ny=en.y+Math.sin(angle)*spd;
+      const cx=Math.floor(en.x),cy=Math.floor(en.y);
+      const ncx=Math.floor(nx),ncy=Math.floor(ny);
+      if(ncx===cx&&ncy===cy||canPass(cx,cy,ncx,ncy)){en.x=nx;en.y=ny;}
+      en.angle=angle;
+      // Attack player when very close
+      if(dist<0.8){
+        en.attackTimer++;
+        if(en.attackTimer%60===0){
+          G.health=Math.max(5,G.health-8);
+          notify('⚠️ Alien attack!','warn');
+        }
+      }
+    } else {
+      en.wanderTimer--;
+      if(en.wanderTimer<=0){en.angle=Math.random()*Math.PI*2;en.wanderTimer=60+Math.random()*120;}
+      const nx=en.x+Math.cos(en.angle)*en.speed,ny=en.y+Math.sin(en.angle)*en.speed;
+      const cx=Math.floor(en.x),cy=Math.floor(en.y);
+      const ncx=Math.floor(nx),ncy=Math.floor(ny);
+      if(ncx===cx&&ncy===cy||canPass(cx,cy,ncx,ncy)){en.x=nx;en.y=ny;}
+      else{en.angle=Math.random()*Math.PI*2;en.wanderTimer=30;}
+    }
+  });
+  // Health regen (unlimited — slowly refills)
+  if(G.health<100)G.health=Math.min(100,G.health+.05);
+}
+
+function lineOfSight(x1,y1,x2,y2){
+  const steps=Math.ceil(Math.sqrt((x2-x1)**2+(y2-y1)**2)*4);
+  for(let i=1;i<steps;i++){
+    const t=i/steps;
+    const ix=x1+(x2-x1)*t,iy=y1+(y2-y1)*t;
+    const cx=Math.floor(ix),cy=Math.floor(iy);
+    const pc=getCell(cx,cy);if(!pc)return false;
+  }
+  return true;
+}
+
+// ── RENDERER ──────────────────────────────────────────────
+let gc2,gCtx,REND_W,REND_H,offscreen,oCtx,animId;
+
+const WALL_RGB={
+  'start':[0,30,15],'path':[12,15,28],'tool-node':[40,20,0],
+  'memory-vault':[25,8,45],'human-gate':[55,5,5],'swarm-hub':[0,25,42],'deep-level':[35,12,0]
+};
+const CEIL_RGB=[8,10,20];
+const FLOOR_RGB=[10,12,18];
+const FOV=Math.PI*.6;
+
 function castRay(px,py,angle){
-  const dx=Math.cos(angle);
-  const dy=Math.sin(angle);
-  let mx=Math.floor(px), my=Math.floor(py);
-  const ddx=dx===0?1e30:Math.abs(1/dx);
-  const ddy=dy===0?1e30:Math.abs(1/dy);
-  const sx=dx<0?-1:1, sy=dy<0?-1:1;
-  let sdx=dx<0?(px-mx)*ddx:(mx+1-px)*ddx;
-  let sdy=dy<0?(py-my)*ddy:(my+1-py)*ddy;
+  const dx=Math.cos(angle),dy=Math.sin(angle);
+  let mx=Math.floor(px),my=Math.floor(py);
+  const ddx=dx===0?1e30:Math.abs(1/dx),ddy=dy===0?1e30:Math.abs(1/dy);
+  const sx=dx<0?-1:1,sy=dy<0?-1:1;
+  let sdx=dx<0?(px-mx)*ddx:(mx+1-px)*ddx,sdy=dy<0?(py-my)*ddy:(my+1-py)*ddy;
   let side=0;
-  for(let i=0;i<32;i++){
+  for(let i=0;i<40;i++){
     let pmx=mx,pmy=my;
-    if(sdx<sdy){sdx+=ddx;mx+=sx;side=0;}
-    else{sdy+=ddy;my+=sy;side=1;}
+    if(sdx<sdy){sdx+=ddx;mx+=sx;side=0;}else{sdy+=ddy;my+=sy;side=1;}
     if(!canPass(pmx,pmy,mx,my)){
-      const dist=Math.max(0.01,side===0?sdx-ddx:sdy-ddy);
+      const dist=Math.max(.01,side===0?sdx-ddx:sdy-ddy);
       const cell=getCell(pmx,pmy);
       const locked=getCell(mx,my)?.locked||false;
-      return{dist,cell,side,locked,wx:mx,wy:my};
+      return{dist,cell,side,locked};
     }
   }
   return{dist:20,cell:null,side:0,locked:false};
 }
 
-function shadeRGB(rgb,dist,side,locked){
-  const fog=Math.max(0,1-dist/12);
-  const sideDim=side===0?1:.75;
-  let r=rgb[0]*fog*sideDim,g=rgb[1]*fog*sideDim,b=rgb[2]*fog*sideDim;
-  if(locked){r=Math.min(255,r+80*fog);g*=.3;b*=.3;}
-  return[Math.floor(r),Math.floor(g),Math.floor(b)];
-}
-
 function initCanvas(){
-  gc=document.getElementById('gc');
-  gCtx=gc.getContext('2d');
-  mmc=document.getElementById('mmc');
-  mmCtx=mmc.getContext('2d');
-  resize();
-  window.addEventListener('resize',resize);
+  gc2=document.getElementById('gc');gCtx=gc2.getContext('2d');
+  resize();window.addEventListener('resize',resize);
   if(animId)cancelAnimationFrame(animId);
-  loop();
+  let last=performance.now();
+  function loop(now){const dt=now-last;last=now;update(dt);render();animId=requestAnimationFrame(loop);}
+  animId=requestAnimationFrame(loop);
 }
 
 function resize(){
   const W=window.innerWidth,H=window.innerHeight;
-  gc.width=W;gc.height=H;
-  REND_W=Math.floor(W/3);REND_H=Math.floor(H/3);
-  offscreen=document.createElement('canvas');
-  offscreen.width=REND_W;offscreen.height=REND_H;
+  gc2.width=W;gc2.height=H;
+  REND_W=Math.floor(W/2);REND_H=Math.floor(H/2);
+  offscreen=document.createElement('canvas');offscreen.width=REND_W;offscreen.height=REND_H;
   oCtx=offscreen.getContext('2d');
 }
 
-const FOV=Math.PI*.56;
+function update(dt){
+  if(!G.me)return;
+  updateMovement(dt);
+  updateEnemies();
+}
 
-function renderFrame(){
+function render(){
   if(!oCtx||!G.mazeMap.size)return;
-  const px=G.camX, py=G.camY, angle=G.camAngle;
+  const px=G.camX,py=G.camY,angle=G.camAngle;
   const W=REND_W,H=REND_H;
-  const imgData=oCtx.createImageData(W,H);
-  const pixels=imgData.data;
+  const horizon=Math.floor(H/2+G.camPitch);
 
-  // Floor & ceiling gradient
-  for(let y=0;y<H;y++){
-    const isCeil=y<H/2;
-    const t=isCeil?1-y/(H/2):1-(y-H/2)/(H/2);
-    const fog=t*.6;
-    const rgb=isCeil?CEIL_RGB:FLOOR_RGB;
-    for(let x=0;x<W;x++){
-      const i=(y*W+x)*4;
-      pixels[i]=rgb[0]*fog; pixels[i+1]=rgb[1]*fog; pixels[i+2]=rgb[2]*fog; pixels[i+3]=255;
-    }
+  const imgData=oCtx.createImageData(W,H);
+  const pix=imgData.data;
+
+  // Ceiling
+  for(let y=0;y<horizon;y++){
+    const t=1-(y/horizon)*.7;
+    for(let x=0;x<W;x++){const i=(y*W+x)*4;pix[i]=CEIL_RGB[0]*t;pix[i+1]=CEIL_RGB[1]*t;pix[i+2]=CEIL_RGB[2]*t;pix[i+3]=255;}
+  }
+  // Floor
+  for(let y=horizon;y<H;y++){
+    const t=((y-horizon)/(H-horizon))*.5;
+    for(let x=0;x<W;x++){const i=(y*W+x)*4;pix[i]=FLOOR_RGB[0]*t;pix[i+1]=FLOOR_RGB[1]*t;pix[i+2]=FLOOR_RGB[2]*t;pix[i+3]=255;}
   }
 
-  // Z-buffer for sprites
   const zBuf=new Float32Array(W);
 
-  // Walls
   for(let col=0;col<W;col++){
     const rayAngle=angle-FOV/2+(col/W)*FOV;
     const hit=castRay(px,py,rayAngle);
     zBuf[col]=hit.dist;
-    const wallH=Math.min(H,Math.floor((H/hit.dist)*0.85));
-    const wallTop=Math.floor((H-wallH)/2);
-    const cellRgb=WALL_RGB[hit.cell?.type||'path']||WALL_RGB.path;
-    const [r,g,b]=shadeRGB(cellRgb,hit.dist,hit.side,hit.locked);
+    const corrDist=hit.dist*Math.cos(rayAngle-angle);
+    const wallH=Math.min(H*3,Math.floor(H/corrDist*.9));
+    const wallTop=Math.floor(horizon-wallH/2);
+    const rgb=WALL_RGB[hit.cell?.type||'path']||WALL_RGB.path;
+    const fog=Math.max(0,1-hit.dist/14);
+    const dim=hit.side===0?1:.72;
+    // Flashlight: brighter in center
+    const fl=.55+.45*(1-Math.abs(col-W/2)/(W/2));
+    let r=rgb[0]*fog*dim*fl,g=rgb[1]*fog*dim*fl,b=rgb[2]*fog*dim*fl;
+    if(hit.locked){r=Math.min(255,r+100*fog*fl);g*=.3;b*=.3;}
+    // Xbox: slightly warm tint in middle distance
+    if(hit.dist>2&&hit.dist<6){g+=4*fog;b+=6*fog;}
     for(let row=wallTop;row<wallTop+wallH;row++){
       if(row<0||row>=H)continue;
       const i=(row*W+col)*4;
-      pixels[i]=r;pixels[i+1]=g;pixels[i+2]=b;pixels[i+3]=255;
+      pix[i]=Math.min(255,r);pix[i+1]=Math.min(255,g);pix[i+2]=Math.min(255,b);pix[i+3]=255;
     }
   }
-
   oCtx.putImageData(imgData,0,0);
 
-  // Sprites (items + agents)
-  drawSprites(oCtx,px,py,angle,W,H,zBuf);
+  // Sprites
+  renderSprites(W,H,zBuf,horizon);
+
+  // Gun
+  renderGun(W,H);
+
+  // Muzzle flash (screen overlay)
+  if(G.muzzleFlash>0){
+    const alpha=G.muzzleFlash/8*.15;
+    oCtx.fillStyle=`rgba(255,200,50,${alpha})`;
+    oCtx.fillRect(0,0,W,H);
+  }
 
   // Crosshair
-  oCtx.strokeStyle='rgba(255,255,255,.3)';oCtx.lineWidth=1;
-  oCtx.beginPath();oCtx.moveTo(W/2-4,H/2);oCtx.lineTo(W/2+4,H/2);oCtx.stroke();
-  oCtx.beginPath();oCtx.moveTo(W/2,H/2-4);oCtx.lineTo(W/2,H/2+4);oCtx.stroke();
+  oCtx.strokeStyle='rgba(255,255,255,.85)';oCtx.lineWidth=1;
+  oCtx.beginPath();oCtx.moveTo(W/2-5,H/2);oCtx.lineTo(W/2+5,H/2);oCtx.stroke();
+  oCtx.beginPath();oCtx.moveTo(W/2,H/2-5);oCtx.lineTo(W/2,H/2+5);oCtx.stroke();
+  // Dot
+  oCtx.fillStyle='rgba(255,255,255,.9)';
+  oCtx.beginPath();oCtx.arc(W/2,H/2,1,0,Math.PI*2);oCtx.fill();
 
-  // Blit to main canvas (pixelated scale)
+  // HUD (drawn on offscreen)
+  renderHUD(W,H);
+
+  // Blit
   gCtx.imageSmoothingEnabled=false;
-  gCtx.drawImage(offscreen,0,0,gc.width,gc.height);
-
-  // Minimap
-  drawMinimap();
+  gCtx.drawImage(offscreen,0,0,gc2.width,gc2.height);
 }
 
-function drawSprites(ctx,px,py,angle,W,H,zBuf){
-  // Collect sprites: items in current room + nearby agents
+function renderSprites(W,H,zBuf,horizon){
+  const px=G.camX,py=G.camY,angle=G.camAngle;
   const sprites=[];
+
+  // Enemies
+  ENEMIES.forEach(en=>{
+    const dx=en.x-px,dy=en.y-py;
+    sprites.push({x:en.x,y:en.y,dx,dy,type:'enemy',en,dist:dx*dx+dy*dy});
+  });
+
   // Items
-  if(G.room&&G.room.items){
+  if(G.room?.items){
     G.room.items.forEach(item=>{
-      sprites.push({x:G.room.x+.5,y:G.room.y+.5,color:'#f0a500',emoji:item.emoji,size:.18,type:'item'});
+      const dx=G.room.x+.5-px,dy=G.room.y+.5-py;
+      sprites.push({x:G.room.x+.5,y:G.room.y+.5,dx,dy,type:'item',item,dist:dx*dx+dy*dy});
     });
   }
+
   // Agents
   G.agentPos.forEach((pos,id)=>{
     if(id===G.me?.id)return;
-    const ag=G.agents.get(id);
-    if(!ag)return;
     const dx=pos.x+.5-px,dy=pos.y+.5-py;
-    if(dx*dx+dy*dy>64)return;
-    const color=ag.type==='human'?'#4499ff':'#00ff88';
-    sprites.push({x:pos.x+.5,y:pos.y+.5,color,label:ag.name.charAt(0),size:.25,type:'agent'});
+    if(dx*dx+dy*dy>100)return;
+    const ag=G.agents.get(id);
+    sprites.push({x:pos.x+.5,y:pos.y+.5,dx,dy,type:'agent',ag,dist:dx*dx+dy*dy});
   });
 
-  // Sort by distance (far to near)
-  sprites.sort((a,b)=>{
-    const da=(a.x-px)**2+(a.y-py)**2;
-    const db=(b.x-px)**2+(b.y-py)**2;
-    return db-da;
-  });
+  sprites.sort((a,b)=>b.dist-a.dist);
 
   sprites.forEach(sp=>{
-    const dx=sp.x-px,dy=sp.y-py;
     const invDet=1/(Math.cos(angle)*Math.sin(angle+Math.PI/2)-Math.sin(angle)*Math.cos(angle+Math.PI/2));
-    const tx=(Math.sin(angle+Math.PI/2)*dx-Math.cos(angle+Math.PI/2)*dy)*invDet;
-    const ty=((-Math.sin(angle)*dx)+Math.cos(angle)*dy)*invDet;
-    if(ty<=0.1)return;
+    const tx=(Math.sin(angle+Math.PI/2)*sp.dx-Math.cos(angle+Math.PI/2)*sp.dy)*invDet;
+    const ty=((-Math.sin(angle)*sp.dx)+Math.cos(angle)*sp.dy)*invDet;
+    if(ty<=0.05)return;
     const screenX=Math.floor(W/2*(1+tx/ty));
-    const sprH=Math.abs(Math.floor(H/ty))*sp.size*2.5;
-    const drawTop=(H-sprH)/2;
-    const drawX=screenX-sprH/2;
-    if(screenX+sprH/2<0||screenX-sprH/2>=W)return;
-    const startX=Math.max(0,Math.floor(drawX));
-    const endX=Math.min(W-1,Math.floor(drawX+sprH));
-    let blocked=true;
-    for(let sx=startX;sx<=endX;sx++){if(zBuf[sx]>ty){blocked=false;break;}}
-    if(blocked)return;
-    // Draw glow circle
-    const cx=screenX,cy=H/2;
-    const r=sprH/2;
-    const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
-    grad.addColorStop(0,sp.color+'cc');
-    grad.addColorStop(.6,sp.color+'44');
-    grad.addColorStop(1,sp.color+'00');
-    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle=grad;ctx.fill();
-    // Label
-    if(sp.label){
-      ctx.fillStyle=sp.color;
-      ctx.font=`bold ${Math.max(3,Math.floor(r*.7))}px Courier New`;
-      ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(sp.label,cx,cy);
-    }
-    if(sp.emoji&&r>4){
-      ctx.font=`${Math.max(4,Math.floor(r*.9))}px serif`;
-      ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(sp.emoji,cx,cy);
+    const scale=1/ty;
+    const sprH=Math.abs(Math.floor(H*scale*.5));
+    if(screenX+sprH<0||screenX-sprH>=W)return;
+    const sx=Math.max(0,screenX-sprH),ex=Math.min(W-1,screenX+sprH);
+    let visible=false;for(let c=sx;c<=ex;c++){if(zBuf[c]>ty){visible=true;break;}}
+    if(!visible)return;
+
+    if(sp.type==='enemy'){
+      const en=sp.en;
+      const cy=horizon;
+      const top=cy-sprH;
+      const h=sprH*2;
+      const w=sprH*.8;
+      const lx=screenX-w/2;
+      if(en.dead&&en.deathTimer>0){
+        oCtx.fillStyle=`rgba(255,100,0,${en.deathTimer/30*.8})`;
+        oCtx.fillRect(lx,top+h*.5,w,h*.5);
+        return;
+      }
+      if(en.dead)return;
+      // Body
+      const alertCol=en.state==='chase'?'#ff2200':'#6633aa';
+      const bodyGrd=oCtx.createLinearGradient(lx,top,lx+w,top+h);
+      bodyGrd.addColorStop(0,en.state==='chase'?'#440000':'#220033');
+      bodyGrd.addColorStop(1,'#000');
+      oCtx.fillStyle=bodyGrd;
+      oCtx.fillRect(lx,top,w,h);
+      // Glow outline
+      oCtx.strokeStyle=alertCol;oCtx.lineWidth=1;
+      oCtx.strokeRect(lx,top,w,h);
+      // Eyes
+      const eyeY=top+h*.25;const eyeR=Math.max(1,w*.1);
+      oCtx.fillStyle='#ff0000';
+      oCtx.beginPath();oCtx.arc(screenX-w*.2,eyeY,eyeR,0,Math.PI*2);oCtx.fill();
+      oCtx.beginPath();oCtx.arc(screenX+w*.2,eyeY,eyeR,0,Math.PI*2);oCtx.fill();
+      // HP bar
+      if(en.hp<en.maxHp){
+        const bw=w;const bh=Math.max(1,Math.floor(sprH*.1));
+        oCtx.fillStyle='#440000';oCtx.fillRect(lx,top-bh-1,bw,bh);
+        oCtx.fillStyle='#ff2200';oCtx.fillRect(lx,top-bh-1,bw*(en.hp/en.maxHp),bh);
+      }
+    } else if(sp.type==='item'){
+      const item=sp.item;
+      const r=sprH*.4;
+      const grd=oCtx.createRadialGradient(screenX,horizon,0,screenX,horizon,r*2);
+      grd.addColorStop(0,'rgba(240,164,0,.8)');grd.addColorStop(.5,'rgba(240,164,0,.2)');grd.addColorStop(1,'rgba(0,0,0,0)');
+      oCtx.beginPath();oCtx.arc(screenX,horizon,r*2,0,Math.PI*2);oCtx.fillStyle=grd;oCtx.fill();
+      oCtx.font=`${Math.max(4,Math.floor(r*1.2))}px serif`;oCtx.textAlign='center';oCtx.textBaseline='middle';
+      oCtx.fillText(item.emoji,screenX,horizon);
+    } else if(sp.type==='agent'){
+      const ag=sp.ag;
+      const col=ag?.type==='human'?'#3075c0':'#107C10';
+      oCtx.strokeStyle=col;oCtx.lineWidth=1.5;
+      oCtx.strokeRect(screenX-sprH*.3,horizon-sprH*.6,sprH*.6,sprH*.8);
+      const grd=oCtx.createRadialGradient(screenX,horizon,0,screenX,horizon,sprH*.5);
+      grd.addColorStop(0,col+'88');grd.addColorStop(1,'rgba(0,0,0,0)');
+      oCtx.beginPath();oCtx.arc(screenX,horizon,sprH*.5,0,Math.PI*2);oCtx.fillStyle=grd;oCtx.fill();
     }
   });
 }
 
-function drawMinimap(){
-  const mm=mmc,mx=mmCtx;
-  const mw=80,mh=80;
-  mx.fillStyle='#000';mx.fillRect(0,0,mw,mh);
-  const cw=mw/G.mazeW,ch=mh/G.mazeH;
+function renderGun(W,H){
+  const bobX=G.gunBob*.5,bobY=Math.abs(G.gunBob);
+  const recoil=G.muzzleFlash>0?G.muzzleFlash*1.5:0;
+  const cx=W*.6+bobX,cy=H*.72+bobY+recoil;
+
+  oCtx.save();
+  oCtx.translate(cx,cy);
+
+  // Gun body — Xbox green sci-fi blaster
+  // Main body
+  oCtx.fillStyle='#1a2a1a';
+  oCtx.fillRect(-8,-6,32,14);
+  // Top rail
+  oCtx.fillStyle='#107C10';
+  oCtx.fillRect(-6,-8,30,3);
+  // Barrel
+  oCtx.fillStyle='#0d1a0d';
+  oCtx.fillRect(22,-3,16,6);
+  // Energy cell (glowing)
+  const cellGrd=oCtx.createLinearGradient(0,0,16,0);
+  cellGrd.addColorStop(0,'#0a3a0a');cellGrd.addColorStop(.5,'#107C10');cellGrd.addColorStop(1,'#0a3a0a');
+  oCtx.fillStyle=cellGrd;
+  oCtx.fillRect(2,-4,14,10);
+  // Grip
+  oCtx.fillStyle='#111a11';
+  oCtx.fillRect(0,8,10,10);
+  // Trigger guard
+  oCtx.strokeStyle='#107C10';oCtx.lineWidth=1;
+  oCtx.beginPath();oCtx.arc(8,10,6,0,Math.PI);oCtx.stroke();
+  // Scope
+  oCtx.fillStyle='#0a1a0a';oCtx.fillRect(6,-10,8,4);
+  oCtx.fillStyle='#107C1066';oCtx.fillRect(7,-9,6,2);
+  // Muzzle flash
+  if(G.muzzleFlash>0){
+    const fl=G.muzzleFlash/8;
+    oCtx.fillStyle=`rgba(255,200,50,${fl*.9})`;
+    oCtx.beginPath();oCtx.arc(38,0,8*fl,0,Math.PI*2);oCtx.fill();
+    oCtx.fillStyle=`rgba(255,255,200,${fl*.7})`;
+    oCtx.beginPath();oCtx.arc(38,0,4*fl,0,Math.PI*2);oCtx.fill();
+  }
+  oCtx.restore();
+}
+
+function renderHUD(W,H){
+  // === HEALTH BAR (bottom left) ===
+  const hpPct=G.health/G.maxHealth;
+  const barW=100,barH=8,barX=10,barY=H-20;
+  oCtx.fillStyle='#0a0a0a';oCtx.fillRect(barX-1,barY-1,barW+2,barH+2);
+  // Segmented health
+  const segs=10;
+  for(let i=0;i<segs;i++){
+    const filled=(i/segs)<hpPct;
+    oCtx.fillStyle=filled?(hpPct>.6?'#107C10':hpPct>.3?'#f0c000':'#ff2200'):'#1a1a1a';
+    oCtx.fillRect(barX+i*(barW/segs)+.5,barY,.5+barW/segs-1.5,barH);
+  }
+  oCtx.strokeStyle='rgba(255,255,255,.15)';oCtx.lineWidth=.5;oCtx.strokeRect(barX,barY,barW,barH);
+  // HP label
+  oCtx.fillStyle='rgba(255,255,255,.5)';oCtx.font='bold 5px Arial';oCtx.textAlign='left';oCtx.textBaseline='bottom';
+  oCtx.fillText('HP',barX,barY-1);
+
+  // === AMMO (bottom right) ===
+  oCtx.fillStyle='rgba(16,124,16,.8)';oCtx.font='bold 14px Arial Black';
+  oCtx.textAlign='right';oCtx.textBaseline='bottom';
+  oCtx.fillText('∞',W-10,H-8);
+  oCtx.fillStyle='rgba(255,255,255,.35)';oCtx.font='5px Arial';
+  oCtx.fillText('AMMO',W-10,H-22);
+
+  // === SCORE (top right) ===
+  oCtx.fillStyle='rgba(240,192,0,.9)';oCtx.font='bold 11px Arial Black';
+  oCtx.textAlign='right';oCtx.textBaseline='top';
+  oCtx.fillText(G.me?.score??0,W-8,6);
+  oCtx.fillStyle='rgba(255,255,255,.35)';oCtx.font='5px Arial';
+  oCtx.fillText('SCORE',W-8,19);
+
+  // === KILLS (top left) ===
+  oCtx.fillStyle='rgba(255,50,0,.8)';oCtx.font='bold 9px Arial Black';
+  oCtx.textAlign='left';oCtx.textBaseline='top';
+  oCtx.fillText(G.kills+' KILLS',8,6);
+
+  // === MINIMAP (top center) ===
+  renderMinimap(W,H);
+
+  // === ITEM HINT ===
+  if(G.room?.items?.length){
+    const item=G.room.items[0];
+    oCtx.fillStyle='rgba(240,164,0,.8)';oCtx.font='bold 6px Arial';
+    oCtx.textAlign='center';oCtx.textBaseline='bottom';
+    oCtx.fillText('[F] '+item.emoji+' '+item.name+' +'+item.bonus,W/2,H-10);
+  }
+
+  // === COMPASS ===
+  const dirs=['N','E','S','W'];const angles=[0,Math.PI/2,Math.PI,Math.PI*1.5];
+  const facing=((G.camAngle%(Math.PI*2))+Math.PI*2)%(Math.PI*2);
+  const nearest=angles.reduce((best,a,i)=>{const d=Math.min(Math.abs(a-facing),Math.PI*2-Math.abs(a-facing));return d<best.d?{d,i}:best},{d:Infinity,i:0});
+  oCtx.fillStyle='rgba(255,255,255,.4)';oCtx.font='6px Arial';oCtx.textAlign='center';oCtx.textBaseline='top';
+  oCtx.fillText(dirs[nearest.i],W/2,4);
+
+  // === LOCKED GATE WARNING ===
+  if(G.room?.locked){
+    oCtx.fillStyle='rgba(255,50,0,.7)';oCtx.font='bold 8px Arial';
+    oCtx.textAlign='center';oCtx.textBaseline='top';
+    oCtx.fillText('🔒 GATE LOCKED — [CLICK GAME → R]',W/2,H/2-20);
+  }
+}
+
+function renderMinimap(W,H){
+  const mmW=60,mmH=60,mmX=W/2-30,mmY=4;
+  const cw=mmW/G.mazeW,ch=mmH/G.mazeH;
+  oCtx.fillStyle='rgba(0,0,0,.6)';oCtx.fillRect(mmX,mmY,mmW,mmH);
   G.mazeMap.forEach(cell=>{
-    const explored=G.explored.has(cell.id);
-    if(!explored)return;
-    const px2=cell.x*cw,py2=cell.y*ch;
-    mx.fillStyle=cell.id===G.room?.id?'#f0a500':cell.locked?'#440000':'#1a2030';
-    mx.fillRect(px2+.5,py2+.5,cw-.5,ch-.5);
+    if(!G.explored.has(cell.id))return;
+    oCtx.fillStyle=cell.id===G.room?.id?'rgba(16,124,16,.9)':cell.locked?'rgba(255,0,0,.5)':'rgba(20,35,25,.9)';
+    oCtx.fillRect(mmX+cell.x*cw+.3,mmY+cell.y*ch+.3,cw-.3,ch-.3);
   });
-  G.agentPos.forEach((pos,id)=>{
-    if(id===G.me?.id)return;
-    if(!G.explored.has(`${pos.x}-${pos.y}`))return;
-    mx.fillStyle='#4499ff';
-    mx.fillRect(pos.x*cw+cw/2-1,pos.y*ch+ch/2-1,2,2);
-  });
-  // Player dot
-  mx.fillStyle='#fff';
-  const ppx=G.camX*cw,ppy=G.camY*ch;
-  mx.fillRect(ppx-1.5,ppy-1.5,3,3);
-  // Direction arrow
-  const al=4;
-  mx.strokeStyle='rgba(255,255,255,.6)';mx.lineWidth=1;mx.beginPath();
-  mx.moveTo(ppx,ppy);mx.lineTo(ppx+Math.cos(G.camAngle)*al,ppy+Math.sin(G.camAngle)*al);mx.stroke();
+  // Live enemies on minimap
+  ENEMIES.forEach(en=>{if(!en.alive)return;const cx=Math.floor(en.x),cy=Math.floor(en.y);if(!G.explored.has(`${cx}-${cy}`))return;oCtx.fillStyle='#ff2200';oCtx.fillRect(mmX+en.x*cw-0.5,mmY+en.y*ch-0.5,1,1);});
+  // Player
+  oCtx.fillStyle='#fff';
+  oCtx.fillRect(mmX+G.camX*cw-1,mmY+G.camY*ch-1,2,2);
+  // Border
+  oCtx.strokeStyle='rgba(16,124,16,.4)';oCtx.lineWidth=.5;oCtx.strokeRect(mmX,mmY,mmW,mmH);
 }
 
-// ── ANIMATION LOOP ─────────────────────────────────────────
-function loop(){
-  // Smooth camera
-  G.camX+=(G.targetX-G.camX)*.2;
-  G.camY+=(G.targetY-G.camY)*.2;
-  // Smooth angle (short path)
-  let da=G.targetAngle-G.camAngle;
-  while(da>Math.PI)da-=Math.PI*2;
-  while(da<-Math.PI)da+=Math.PI*2;
-  G.camAngle+=da*.18;
-  // Render
-  renderFrame();
-  animId=requestAnimationFrame(loop);
+// ── UI HELPERS ────────────────────────────────────────────
+function appendMsg(name,type,body){const el=document.getElementById('chat-msgs');const d=document.createElement('div');d.className='cm';d.innerHTML=`<div class="cm-n ${type}">${esc(name)}</div><div class="cm-b">${esc(body)}</div>`;el.appendChild(d);while(el.children.length>80)el.removeChild(el.firstChild);el.scrollTop=el.scrollHeight;}
+function sysMsg(t){const el=document.getElementById('chat-msgs');const d=document.createElement('div');d.className='cm';d.innerHTML=`<div class="cm-b sys">⟐ ${esc(t)}</div>`;el.appendChild(d);el.scrollTop=el.scrollHeight;}
+function notify(msg,type=''){const el=document.createElement('div');el.className='nt '+type;el.textContent=msg;document.getElementById('notif-area').appendChild(el);setTimeout(()=>el.remove(),3500);}
+function killFeed(msg){const el=document.createElement('div');el.className='kf';el.textContent=msg;document.getElementById('killfeed').appendChild(el);setTimeout(()=>el.remove(),3000);}
+let achTimeout;
+function achievement(title,name){
+  clearTimeout(achTimeout);
+  document.getElementById('ach-name').textContent=name;
+  const el=document.getElementById('achievement');el.classList.add('show');
+  achTimeout=setTimeout(()=>el.classList.remove('show'),4000);
 }
-
-// ── INPUT ─────────────────────────────────────────────────
-document.addEventListener('keydown',e=>{
-  if(document.activeElement.tagName==='INPUT')return;
-  const map={ArrowUp:'N',ArrowDown:'S',ArrowRight:'E',ArrowLeft:'W',w:'N',s:'S',d:'E',a:'W'};
-  if(map[e.key]){e.preventDefault();tryMove(map[e.key]);}
-  if(e.key==='f'||e.key==='F'){if(window._pendingItem)pickup(window._pendingItem);}
-  if(e.key==='Tab'){e.preventDefault();toggleChat();}
-  if(e.key==='q'||e.key==='Q'){toggleLB();}
-  if(e.key==='Escape'){document.getElementById('req-panel').classList.remove('show');}
-  if((e.key==='r'||e.key==='R')&&G.unlockReqs.size){document.getElementById('req-panel').classList.toggle('show');}
-});
+function renderLB(agents){document.getElementById('lb-list').innerHTML=agents.map((a,i)=>`<div class="lb-r"><div class="lb-rank">${i+1}</div><div class="lb-n${a.id===G.me?.id?' me':''}">${esc(a.name)}</div><div class="lb-pts">${a.score}</div></div>`).join('');}
+function renderReqs(){const cnt=G.unlockReqs.size;document.getElementById('req-list').innerHTML=cnt?[...G.unlockReqs.values()].map(r=>`<div class="req-card"><div class="req-name">🤖 ${esc(r.agentName)} [${r.agentScore}pts]</div><div class="req-msg">${esc(r.message)}</div><button class="req-do" onclick="unlockGate('${r.requestId}')">🗝️ UNLOCK — +30pts</button></div>`).join(''):'<div style="font-size:.65rem;color:#3a5a3a;padding:8px">No requests</div>';if(cnt)document.getElementById('req-panel').classList.add('show');}
+function toggleChat(){const b=document.getElementById('chat-body');b.classList.toggle('open');document.getElementById('chat-toggle').textContent=b.classList.contains('open')?'▶ COMMS':'◀ COMMS';}
+function esc(s){const d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML;}
 
 wsConnect();
 </script>
