@@ -4,342 +4,188 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>BlissNexus</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#060810; --bg2:#0b0d18; --bg3:#10121e; --border:#1c1f30;
-  --tx:#b8c4e0; --dm:#363d5a; --acc:#00ff88;
-  --tab-h:60px; --safe-b:env(safe-area-inset-bottom,0px);
-}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html{height:100%;background:var(--bg);}
-body{height:100%;background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;}
+:root{--bg:#060810;--bg2:#0b0d18;--bg3:#10121e;--bdr:#1c1f30;--tx:#b8c4e0;--dim:#363d5a;--grn:#00ff88;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
 
-/* ─── HEADER ───────────────────────────── */
-#hdr{
-  position:fixed;top:0;left:0;right:0;
-  height:52px;padding-top:env(safe-area-inset-top,0px);
-  display:flex;align-items:center;padding-left:16px;padding-right:16px;gap:10px;
-  background:rgba(6,8,16,.96);border-bottom:1px solid var(--border);
-  z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-}
-.logo{font-family:'Orbitron',monospace;font-size:.9rem;font-weight:900;letter-spacing:.04em;
+/* HEADER */
+#hdr{position:fixed;top:0;left:0;right:0;z-index:50;
+  height:50px;display:flex;align-items:center;gap:10px;padding:0 16px;
+  background:rgba(6,8,16,.96);border-bottom:1px solid var(--bdr);}
+.logo{font-family:'Orbitron',monospace;font-weight:900;font-size:.9rem;
   background:linear-gradient(90deg,#00ff88,#4488ff,#ff4488);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-#era{
-  margin-left:auto;font-family:'Orbitron',monospace;font-size:.44rem;letter-spacing:.08em;
-  padding:3px 10px;border-radius:20px;border:1px solid currentColor;white-space:nowrap;transition:all .4s;
-}
-.ep{color:#00cc66;border-color:#00cc6640;background:#00cc6608;}
-.et{color:#ffcc00;border-color:#ffcc0040;background:#ffcc0008;}
-.ew{color:#ff6600;border-color:#ff660040;background:#ff660010;animation:blink 1s infinite;}
-.en{color:#ff2244;border-color:#ff224450;background:#ff224412;animation:blink .5s infinite;}
-.ee{color:#552233;border-color:#33111a;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
-#live{width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 7px var(--acc);animation:blink 2s infinite;flex-shrink:0;}
+#era-badge{margin-left:auto;font-size:.48rem;font-family:'Orbitron',monospace;
+  padding:3px 10px;border-radius:20px;border:1px solid #00cc6640;color:#00cc66;background:#00cc6608;}
 
-/* ─── TAB PAGES ────────────────────────── */
-#pages{
-  position:fixed;
-  top:52px;left:0;right:0;
-  bottom:calc(var(--tab-h) + var(--safe-b));
-  overflow:hidden;
-}
-.page{position:absolute;inset:0;overflow:hidden;display:none;}
-.page.active{display:block;}
-#page-chat.active{display:flex!important;flex-direction:column;}
-#page-events.active{display:flex!important;flex-direction:column;}
+/* CONTENT AREA */
+#content{position:fixed;top:50px;left:0;right:0;bottom:58px;overflow:hidden;}
 
-/* ─── MAP PAGE ─────────────────────────── */
-#page-map{background:#060c14;}
-#map-canvas{display:block;width:100%;height:100%;touch-action:manipulation;}
-#nuke-warn{
-  display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);
-  background:#1a0010;border:1px solid #ff2244;border-radius:8px;
-  padding:6px 18px;font-family:'Orbitron',monospace;font-size:.5rem;
-  color:#ff2244;letter-spacing:.1em;white-space:nowrap;z-index:10;animation:blink .4s infinite;
-}
+/* TABS — each is full size, hidden by default */
+.tab-page{display:none;position:absolute;top:0;left:0;right:0;bottom:0;}
+.tab-page.show{display:block;}
+/* chat needs flex */
+#tab-chat{display:none;flex-direction:column;}
+#tab-chat.show{display:flex;}
+/* events needs flex too */
+#tab-events{display:none;flex-direction:column;}
+#tab-events.show{display:flex;}
 
-/* ─── KINGS PAGE ───────────────────────── */
-#page-kings{background:var(--bg2);overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.king-card{
-  display:flex;align-items:center;gap:12px;padding:14px 16px;
-  border-bottom:1px solid var(--border);cursor:pointer;
-  border-left:3px solid transparent;transition:background .15s;
-  -webkit-user-select:none;user-select:none;
-}
-.king-card:active{background:var(--bg3);}
-.king-card.dead{opacity:.3;pointer-events:none;}
-.k-avatar{
-  width:44px;height:44px;border-radius:10px;display:flex;align-items:center;
-  justify-content:center;font-size:1.4rem;flex-shrink:0;
-  background:var(--bg3);border:1px solid var(--border);
-}
-.k-body{flex:1;min-width:0;}
-.k-name{font-size:.72rem;font-weight:600;}
-.k-title{font-size:.52rem;color:var(--dm);margin-top:2px;}
-.k-row{display:flex;align-items:center;gap:8px;margin-top:6px;}
-.k-stat{font-size:.5rem;color:var(--dm);}
-.k-stat b{font-weight:600;}
-.k-badge{font-size:.44rem;font-family:'Orbitron',monospace;letter-spacing:.05em;padding:2px 8px;border-radius:10px;}
-.kb-war{color:#ff5533;background:#1a0800;border:1px solid #ff553330;}
-.kb-peace{color:#667799;}
-.kb-ally{color:#ffcc00;background:#1a1400;border:1px solid #ffcc0030;}
-.k-arrow{color:var(--dm);font-size:1rem;flex-shrink:0;}
+/* MAP */
+#tab-map{background:#06090f;}
+#map-canvas{width:100%;height:100%;display:block;}
 
-/* ─── CHAT PAGE ────────────────────────── */
-#page-chat{background:var(--bg2);display:flex;flex-direction:column;}
-#chat-hdr{
-  padding:12px 16px;border-bottom:1px solid var(--border);
-  background:var(--bg3);display:flex;align-items:center;gap:10px;flex-shrink:0;
-}
-#chat-back{
-  background:none;border:none;color:var(--dm);font-size:1.2rem;padding:0 6px 0 0;
-  cursor:pointer;line-height:1;
-}
-#chat-king-name{font-size:.72rem;font-weight:600;}
-#chat-king-title{font-size:.48rem;color:var(--dm);margin-top:2px;}
-.enc{font-size:.38rem;color:#00995544;margin-left:auto;font-family:'Orbitron',monospace;letter-spacing:.06em;}
+/* KINGS LIST */
+#tab-kings{background:var(--bg2);overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.kcard{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--bdr);cursor:pointer;}
+.kcard:active{background:var(--bg3);}
+.kavatar{width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:var(--bg3);border:1px solid var(--bdr);flex-shrink:0;}
+.kbody{flex:1;min-width:0;}
+.kname{font-size:.75rem;font-weight:600;margin-bottom:3px;}
+.ktitle{font-size:.52rem;color:var(--dim);}
+.kstats{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:.5rem;color:var(--dim);}
+.kstats b{color:var(--tx);}
+.kbadge{font-size:.44rem;padding:2px 8px;border-radius:10px;font-family:'Orbitron',monospace;}
+.bwar{color:#ff5533;background:#1a080020;border:1px solid #ff553340;}
+.bpeace{color:var(--dim);}
+.kchev{color:var(--dim);font-size:1.2rem;}
 
-#feed{
-  flex:1;overflow-y:auto;padding:12px 14px;
-  display:flex;flex-direction:column;gap:8px;
-  -webkit-overflow-scrolling:touch;
-}
-.msg-row{display:flex;flex-direction:column;gap:3px;}
-.msg-from{font-size:.52rem;font-weight:600;padding:0 4px;}
-.msg-bubble{
-  font-size:.7rem;line-height:1.6;padding:9px 12px;
-  border-radius:4px 14px 14px 14px;
-  background:var(--bg3);border:1px solid var(--border);
-}
-.msg-user .msg-bubble{
-  background:linear-gradient(135deg,#07190f,#060f18);
-  border-color:#00ff8820;border-radius:14px 4px 14px 14px;
-}
-.msg-user .msg-from{text-align:right;color:#00cc66;}
-.event-row{
-  text-align:center;font-size:.55rem;padding:5px 10px;border-radius:6px;margin:2px 0;
-}
-.ev-world{color:#667799;}
-.ev-war{color:#ff6644;background:#1a090020;border:1px solid #ff664420;}
-.ev-nuke{color:#ff2244;background:#1a001020;border:1px solid #ff224430;animation:blink .8s infinite;}
-.ev-peace{color:#00cc66;background:#001a0c20;border:1px solid #00cc6620;}
-.ev-alliance{color:#ffcc00;background:#1a140020;border:1px solid #ffcc0020;}
-.ev-destroyed{color:#ff4444;background:#1a0a0a20;border:1px solid #ff444430;}
-.typing-wrap{display:flex;flex-direction:column;gap:3px;}
-.typing-bubbles{display:flex;gap:5px;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:4px 14px 14px 14px;width:fit-content;}
-.tdot{width:6px;height:6px;border-radius:50%;animation:tdot .7s ease infinite;}
-.tdot:nth-child(2){animation-delay:.15s}.tdot:nth-child(3){animation-delay:.3s}
-@keyframes tdot{0%,60%,100%{opacity:.2;transform:scale(.8)}30%{opacity:1;transform:scale(1.1)}}
-.empty-chat{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:10px;padding:30px;text-align:center;
-}
-.empty-chat .icon{font-size:2.5rem;opacity:.25;}
-.empty-chat .txt{font-size:.65rem;color:var(--dm);line-height:1.7;}
+/* CHAT */
+#chat-header{flex-shrink:0;padding:12px 16px;background:var(--bg3);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;}
+#chat-back{background:none;border:none;color:var(--dim);font-size:1.4rem;cursor:pointer;line-height:1;padding:0;}
+#chat-king{font-size:.7rem;font-weight:600;}
+#chat-sub{font-size:.48rem;color:var(--dim);margin-top:2px;}
+#chat-lock{margin-left:auto;font-size:.44rem;color:#006633;font-family:'Orbitron',monospace;}
+#messages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;display:flex;flex-direction:column;gap:8px;}
+.bubble-wrap{display:flex;flex-direction:column;gap:3px;}
+.bubble-name{font-size:.52rem;font-weight:600;padding:0 4px;}
+.bubble{font-size:.68rem;line-height:1.6;padding:9px 12px;border-radius:4px 14px 14px 14px;background:var(--bg3);border:1px solid var(--bdr);}
+.me .bubble{background:linear-gradient(135deg,#06180e,#050e18);border-color:#00ff8820;border-radius:14px 4px 14px 14px;}
+.me .bubble-name{text-align:right;color:#00cc66;}
+.ev-line{text-align:center;font-size:.54rem;padding:4px 8px;border-radius:6px;color:var(--dim);}
+.ev-war{color:#ff6644;background:#1a090008;border:1px solid #ff664420;}
+.ev-nuke{color:#ff2244;background:#1a001008;border:1px solid #ff224430;}
+.ev-peace{color:#00cc66;}
+.ev-destroy{color:#ff4444;}
+.dots-wrap{display:flex;flex-direction:column;gap:3px;}
+.dots{display:flex;gap:5px;padding:10px 12px;background:var(--bg3);border:1px solid var(--bdr);border-radius:4px 14px 14px 14px;width:fit-content;}
+.dot{width:6px;height:6px;border-radius:50%;animation:pulse .7s ease infinite;}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes pulse{0%,60%,100%{opacity:.2;transform:scale(.8)}30%{opacity:1;transform:scale(1.1)}}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;opacity:.35;text-align:center;padding:30px;}
+.empty-state span:first-child{font-size:2.5rem;}
+.empty-state span:last-child{font-size:.62rem;color:var(--dim);line-height:1.7;}
+#input-row{flex-shrink:0;display:flex;gap:8px;padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--bdr);background:var(--bg2);}
+#msg-box{flex:1;background:var(--bg3);border:1px solid var(--bdr);color:var(--tx);padding:10px 14px;border-radius:22px;font-family:inherit;font-size:16px;outline:none;resize:none;line-height:1.4;max-height:100px;-webkit-appearance:none;}
+#msg-box:focus{border-color:#00ff8840;}
+#msg-box:disabled{opacity:.35;}
+#send{width:44px;height:44px;border-radius:50%;border:none;background:#00cc6633;color:#00ff88;font-size:1.1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+#send:disabled{opacity:.3;}
+#send:active{transform:scale(.9);}
 
-#input-area{
-  display:flex;gap:8px;padding:10px 14px;
-  padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));
-  border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;
-}
-#msg-input{
-  flex:1;background:var(--bg3);border:1px solid var(--border);
-  color:var(--tx);padding:10px 13px;border-radius:22px;
-  font-family:inherit;font-size:16px;/* 16px prevents iOS zoom */
-  outline:none;resize:none;max-height:100px;line-height:1.4;
-  -webkit-appearance:none;
-}
-#msg-input:focus{border-color:#00ff8844;}
-#send-btn{
-  width:44px;height:44px;border-radius:22px;border:none;
-  background:linear-gradient(135deg,#00cc6688,#004422);
-  color:#00ff88;font-size:1.1rem;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;transition:all .15s;
-}
-#send-btn:active{transform:scale(.93);}
-#send-btn:disabled{opacity:.3;}
+/* EVENTS */
+#events-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;display:flex;flex-direction:column;gap:8px;}
+.ecard{padding:10px 14px;border-radius:8px;border:1px solid var(--bdr);background:var(--bg3);font-size:.62rem;line-height:1.5;}
 
-/* ─── EVENTS PAGE ──────────────────────── */
-#page-events{background:var(--bg2);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px;display:flex;flex-direction:column;gap:6px;}
-.event-card{
-  padding:10px 14px;border-radius:8px;border:1px solid var(--border);
-  background:var(--bg3);font-size:.6rem;line-height:1.5;
-}
-.event-card .ev-time{font-size:.44rem;color:var(--dm);margin-top:4px;}
+/* NAV BAR */
+#nav{position:fixed;bottom:0;left:0;right:0;z-index:50;
+  height:58px;padding-bottom:env(safe-area-inset-bottom,0px);
+  display:flex;background:rgba(6,8,16,.97);border-top:1px solid var(--bdr);}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;background:none;border:none;color:var(--dim);cursor:pointer;padding:6px 0;}
+.nav-btn.on{color:var(--grn);}
+.nav-icon{font-size:1.25rem;line-height:1;}
+.nav-label{font-size:.38rem;font-family:'Orbitron',monospace;letter-spacing:.08em;}
+#badge{display:none;position:absolute;top:8px;right:18px;
+  width:8px;height:8px;background:#ff4444;border-radius:50%;box-shadow:0 0 6px #ff4444;}
 
-/* ─── BOTTOM NAV ───────────────────────── */
-#tab-bar{
-  position:fixed;bottom:0;left:0;right:0;
-  height:calc(var(--tab-h) + var(--safe-b));
-  padding-bottom:var(--safe-b);
-  background:rgba(6,8,16,.97);border-top:1px solid var(--border);
-  display:flex;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-}
-.tab{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:3px;cursor:pointer;transition:color .15s;color:var(--dm);
-  border:none;background:none;-webkit-user-select:none;user-select:none;
-  padding-bottom:2px;
-}
-.tab-icon{font-size:1.3rem;line-height:1;}
-.tab-label{font-size:.42rem;font-family:'Orbitron',monospace;letter-spacing:.08em;}
-.tab.active{color:var(--acc);}
-.tab-badge{
-  position:absolute;top:10px;right:calc(50% - 18px);
-  width:8px;height:8px;background:#ff4444;border-radius:50%;
-  box-shadow:0 0 6px #ff4444;display:none;
-}
-
-/* ─── DESKTOP OVERRIDE ─────────────────── */
-@media(min-width:720px){
-  #pages,#tab-bar{display:none!important;}
-  #desktop{display:grid!important;grid-template-columns:1fr 340px;grid-template-rows:52px 1fr;height:100vh;}
-  #d-map-wrap{position:relative;overflow:hidden;background:#060c14;}
-  #d-map-canvas{display:block;width:100%;height:100%;}
-  #d-panel{background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
-  #d-roster{border-bottom:1px solid var(--border);flex-shrink:0;}
-  #d-chat{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-  #d-chat-hdr{padding:11px 14px;border-bottom:1px solid var(--border);background:var(--bg3);flex-shrink:0;}
-  #d-chat-king{font-size:.65rem;font-weight:600;}
-  #d-chat-sub{font-size:.46rem;color:var(--dm);margin-top:2px;}
-  #d-feed{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;}
-  #d-feed::-webkit-scrollbar{width:2px;}
-  #d-feed::-webkit-scrollbar-thumb{background:var(--border);}
-  #d-input{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;background:var(--bg2);}
-  #d-msg{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--tx);padding:8px 12px;border-radius:20px;font-family:inherit;font-size:14px;outline:none;resize:none;height:40px;}
-  #d-msg:focus{border-color:#00ff8844;}
-  #d-send{width:40px;height:40px;border-radius:20px;border:none;background:linear-gradient(135deg,#00cc6688,#004422);color:#00ff88;font-size:1rem;cursor:pointer;flex-shrink:0;}
-  #d-nuke-warn{display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);background:#1a0010;border:1px solid #ff2244;border-radius:8px;padding:6px 18px;font-family:'Orbitron',monospace;font-size:.5rem;color:#ff2244;letter-spacing:.1em;white-space:nowrap;z-index:10;animation:blink .4s infinite;}
-}
-@media(max-width:719px){#desktop{display:none!important;}}
-
-/* ─── NUKE FLASH ───────────────────────── */
-#nuke-flash{position:fixed;inset:0;pointer-events:none;z-index:200;display:none;background:radial-gradient(ellipse at center,rgba(255,34,68,.35),transparent 70%);}
+/* NUKE FLASH */
+#flash{display:none;position:fixed;inset:0;z-index:200;pointer-events:none;
+  background:radial-gradient(ellipse at center,rgba(255,34,68,.4),transparent 70%);}
+@keyframes era-blink{0%,100%{opacity:1}50%{opacity:.4}}
 </style>
 </head>
 <body>
 
-<!-- ── HEADER (shared) ─────────────────── -->
 <header id="hdr">
-  <div>
-    <div class="logo">BLISSNEXUS</div>
-  </div>
-  <div id="era" class="ep">🕊 PEACE</div>
-  <div id="live"></div>
+  <div class="logo">BLISSNEXUS</div>
+  <div id="era-badge">🕊 PEACE</div>
 </header>
 
-<!-- ── MOBILE PAGES ────────────────────── -->
-<div id="pages">
-  <!-- MAP -->
-  <div id="page-map" class="page active">
+<div id="content">
+  <!-- MAP TAB -->
+  <div id="tab-map" class="tab-page show">
     <canvas id="map-canvas"></canvas>
-    <div id="nuke-warn">☢ NUCLEAR STRIKE INBOUND</div>
   </div>
-  <!-- KINGS -->
-  <div id="page-kings" class="page">
-    <div id="roster"></div>
+
+  <!-- KINGS TAB -->
+  <div id="tab-kings" class="tab-page">
+    <div id="king-list"></div>
   </div>
-  <!-- CHAT -->
-  <div id="page-chat" class="page">
-    <div id="chat-hdr">
-      <button id="chat-back" onclick="showTab('kings')">‹</button>
+
+  <!-- CHAT TAB -->
+  <div id="tab-chat" class="tab-page">
+    <div id="chat-header">
+      <button id="chat-back">‹</button>
       <div>
-        <div id="chat-king-name" style="color:var(--dm)">No king selected</div>
-        <div id="chat-king-title">Select a kingdom first</div>
+        <div id="chat-king">No king selected</div>
+        <div id="chat-sub">Go to KINGS and pick one</div>
       </div>
-      <div class="enc">🔒 PRIVATE</div>
+      <div id="chat-lock">🔒 PRIVATE</div>
     </div>
-    <div id="feed">
-      <div class="empty-chat" id="empty-chat">
-        <div class="icon">👑</div>
-        <div class="txt">Select a king from the<br>KINGS tab to open<br>a private channel.</div>
+    <div id="messages">
+      <div class="empty-state" id="empty-msg">
+        <span>👑</span>
+        <span>Select a king from the<br>KINGS tab to whisper privately.<br>Only they will hear you.</span>
       </div>
     </div>
-    <div id="input-area">
-      <textarea id="msg-input" placeholder="Whisper to the king…" disabled rows="1"></textarea>
-      <button id="send-btn" disabled>↑</button>
+    <div id="input-row">
+      <textarea id="msg-box" placeholder="Whisper to the king…" disabled rows="1"></textarea>
+      <button id="send" disabled>↑</button>
     </div>
   </div>
-  <!-- EVENTS -->
-  <div id="page-events" class="page">
-    <div id="event-list"></div>
-  </div>
-</div>
 
-<!-- ── BOTTOM NAV ──────────────────────── -->
-<div id="tab-bar">
-  <button class="tab active" onclick="showTab('map')" id="tb-map">
-    <span class="tab-icon">🗺️</span>
-    <span class="tab-label">MAP</span>
-  </button>
-  <button class="tab" onclick="showTab('kings')" id="tb-kings">
-    <span class="tab-icon">👑</span>
-    <span class="tab-label">KINGS</span>
-  </button>
-  <button class="tab" onclick="showTab('chat')" id="tb-chat">
-    <span class="tab-icon">💬</span>
-    <span class="tab-label">WHISPER</span>
-  </button>
-  <button class="tab" onclick="showTab('events')" id="tb-events" style="position:relative">
-    <span class="tab-icon">📜</span>
-    <span class="tab-label">EVENTS</span>
-    <span class="tab-badge" id="events-badge"></span>
-  </button>
-</div>
-
-<!-- ── DESKTOP LAYOUT ──────────────────── -->
-<div id="desktop" style="display:none">
-  <header id="d-hdr" style="grid-column:1/-1;display:flex;align-items:center;padding:0 20px;gap:12px;background:rgba(6,8,16,.97);border-bottom:1px solid var(--border);z-index:20;">
-    <div><div class="logo">BLISSNEXUS</div><div style="font-size:.4rem;color:var(--dm);letter-spacing:.2em;margin-top:1px">THE FIVE KINGDOMS</div></div>
-    <div id="d-era" class="ep" style="margin-left:auto;font-family:'Orbitron',monospace;font-size:.5rem;letter-spacing:.1em;padding:4px 14px;border-radius:20px;border:1px solid currentColor;transition:all .4s;">🕊 AGE OF PEACE</div>
-    <div style="width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);animation:blink 2s infinite;"></div>
-    <button id="d-reset" style="font-size:.46rem;font-family:'Orbitron',monospace;letter-spacing:.08em;padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--dm);cursor:pointer;" onmouseover="this.style.color='#ff4488';this.style.borderColor='#ff4488'" onmouseout="this.style.color='';this.style.borderColor=''">↺ NEW WORLD</button>
-  </header>
-  <div id="d-map-wrap">
-    <canvas id="d-map-canvas"></canvas>
-    <div id="d-nuke-warn">☢ NUCLEAR STRIKE INBOUND</div>
-  </div>
-  <div id="d-panel">
-    <div id="d-roster"></div>
-    <div id="d-chat">
-      <div id="d-chat-hdr">
-        <div id="d-chat-king" style="color:var(--dm)">Select a kingdom</div>
-        <div id="d-chat-sub">Click a territory or king to open a private channel</div>
-      </div>
-      <div id="d-feed">
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px;text-align:center;opacity:.4;font-size:.6rem;color:var(--dm)" id="d-empty">
-          <div style="font-size:2rem">🗺️</div>
-          Click any kingdom to whisper privately
-        </div>
-      </div>
-      <div id="d-input">
-        <textarea id="d-msg" placeholder="Whisper…" disabled></textarea>
-        <button id="d-send" disabled>↑</button>
+  <!-- EVENTS TAB -->
+  <div id="tab-events" class="tab-page">
+    <div id="events-scroll">
+      <div class="empty-state">
+        <span>📜</span>
+        <span>World events will<br>appear here.</span>
       </div>
     </div>
   </div>
 </div>
 
-<div id="nuke-flash"></div>
+<nav id="nav">
+  <button class="nav-btn on" id="nb-map" onclick="goTab('map')">
+    <span class="nav-icon">🗺️</span>
+    <span class="nav-label">MAP</span>
+  </button>
+  <button class="nav-btn" id="nb-kings" onclick="goTab('kings')">
+    <span class="nav-icon">👑</span>
+    <span class="nav-label">KINGS</span>
+  </button>
+  <button class="nav-btn" id="nb-chat" onclick="goTab('chat')">
+    <span class="nav-icon">💬</span>
+    <span class="nav-label">WHISPER</span>
+  </button>
+  <button class="nav-btn" id="nb-events" onclick="goTab('events')" style="position:relative">
+    <span class="nav-icon">📜</span>
+    <span class="nav-label">EVENTS</span>
+    <span id="badge"></span>
+  </button>
+</nav>
+
+<div id="flash"></div>
 
 <script>
-const WS_URL = location.hostname==='localhost'
+// ── CONFIG ────────────────────────────────────────────────
+const WS_URL = location.hostname === 'localhost'
   ? 'ws://localhost:3001'
   : 'wss://blissnexus-production.up.railway.app';
-
-// ── SHARED STATE ──────────────────────────────────────────
-let AGENTS = {};
-let WORLD  = { nations:{}, nukesInFlight:[] };
-let activeNation = null;
-let ws, reconnectTimer;
-let nukesAnim = [], frame = 0;
-let kingAngles = {};
-let newEventCount = 0;
 
 const TERR = {
   sage:  {cx:.50,cy:.40,r:.17,color:'#00cc88',bg:'#071a10',label:'CALIPHATE'},
@@ -349,458 +195,461 @@ const TERR = {
   diddy: {cx:.80,cy:.72,r:.16,color:'#ff4488',bg:'#180810',label:'TECHNOCRACY'},
 };
 
-// ── TAB NAV ───────────────────────────────────────────────
-function showTab(tab){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('page-'+tab).classList.add('active');
-  const tb = document.getElementById('tb-'+tab);
-  if(tb) tb.classList.add('active');
-  if(tab==='events'){ newEventCount=0; const eb=document.getElementById('events-badge');if(eb)eb.style.display='none'; }
+// ── STATE ─────────────────────────────────────────────────
+var AGENTS = {};
+var WORLD  = {nations:{},nukesInFlight:[]};
+var activeKing = null;
+var ws = null;
+var wsTimer = null;
+var nukesAnim = [];
+var frame = 0;
+var angles = {};
+var badgeCount = 0;
+var currentTab = 'map';
+
+// ── TAB SWITCHING ─────────────────────────────────────────
+function goTab(tab) {
+  // hide all pages
+  document.querySelectorAll('.tab-page').forEach(function(p) {
+    p.classList.remove('show');
+  });
+  // show selected
+  document.getElementById('tab-' + tab).classList.add('show');
+  // update nav
+  document.querySelectorAll('.nav-btn').forEach(function(b) {
+    b.classList.remove('on');
+  });
+  var nb = document.getElementById('nb-' + tab);
+  if (nb) nb.classList.add('on');
+  currentTab = tab;
+  if (tab === 'events') {
+    badgeCount = 0;
+    document.getElementById('badge').style.display = 'none';
+  }
 }
 
 // ── SESSION ───────────────────────────────────────────────
-function getSession(){
-  let id=localStorage.getItem('bn_sess');
-  if(!id){id=crypto.randomUUID();localStorage.setItem('bn_sess',id);}
+function getSession() {
+  var id = localStorage.getItem('bn_sess');
+  if (!id) { id = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('bn_sess', id); }
   return id;
 }
 
-// ── CANVAS SETUP ──────────────────────────────────────────
-const isMobile = ()=>window.innerWidth<720;
+// ── CANVAS ────────────────────────────────────────────────
+var canvas = document.getElementById('map-canvas');
+var ctx = canvas.getContext('2d');
+var CW = 0, CH = 0;
 
-// Mobile canvas
-const mCanvas = document.getElementById('map-canvas');
-const mCtx = mCanvas.getContext('2d');
-// Desktop canvas
-const dCanvas = document.getElementById('d-map-canvas');
-const dCtx = dCanvas ? dCanvas.getContext('2d') : null;
-
-let mW=0,mH=0,dW=0,dH=0;
-
-function resizeCanvases(){
-  const mWrap=document.getElementById('page-map');
-  mW=mCanvas.width=mWrap.clientWidth;
-  mH=mCanvas.height=mWrap.clientHeight;
-  if(dCanvas){
-    const dWrap=document.getElementById('d-map-wrap');
-    dW=dCanvas.width=dWrap.clientWidth;
-    dH=dCanvas.height=dWrap.clientHeight;
-  }
+function resizeCanvas() {
+  var el = document.getElementById('tab-map');
+  CW = canvas.width  = el.offsetWidth  || window.innerWidth;
+  CH = canvas.height = el.offsetHeight || (window.innerHeight - 108);
 }
-window.addEventListener('resize',resizeCanvases);
 
-// ── DRAW HELPERS ──────────────────────────────────────────
-function drawOn(ctx,W,H){
+function px(n) { return n * CW; }
+function py(n) { return n * CH; }
+function pr(n) { return n * Math.min(CW, CH); }
+
+function drawFrame() {
   frame++;
-  ctx.fillStyle='#060c14'; ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle='#090f1c'; ctx.lineWidth=1;
-  for(let x=0;x<W;x+=28){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-  for(let y=0;y<H;y+=28){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  if (!CW || !CH) { requestAnimationFrame(drawFrame); return; }
 
-  const px2=n=>n*W, py2=n=>n*H, pr2=n=>n*Math.min(W,H);
+  ctx.fillStyle = '#06090f';
+  ctx.fillRect(0, 0, CW, CH);
 
-  // Territories
-  Object.entries(TERR).forEach(([id,t])=>{
-    const n=WORLD.nations[id]||{};
-    const alive=n.alive!==false;
-    const cx=px2(t.cx),cy=py2(t.cy),r=pr2(t.r);
-    const atWar=(n.wars||[]).length>0;
+  // subtle grid
+  ctx.strokeStyle = '#0a0f1c'; ctx.lineWidth = 1;
+  for (var gx = 0; gx < CW; gx += 32) { ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,CH); ctx.stroke(); }
+  for (var gy = 0; gy < CH; gy += 32) { ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(CW,gy); ctx.stroke(); }
 
-    // Terrain
+  // territories
+  Object.keys(TERR).forEach(function(id) {
+    var t = TERR[id];
+    var n = WORLD.nations[id] || {};
+    var alive = n.alive !== false;
+    var cx2 = px(t.cx), cy2 = py(t.cy), r2 = pr(t.r);
+    var atWar = (n.wars||[]).length > 0;
+
+    // fill
     ctx.save();
-    ctx.beginPath(); ctx.arc(cx,cy,r+2,0,Math.PI*2); ctx.clip();
-    ctx.fillStyle=alive?t.bg:'#0a0a10'; ctx.fillRect(cx-r-6,cy-r-6,r*2+12,r*2+12);
-    if(alive){
-      // pixel dots
-      const seed=id.length*7;
-      for(let i=0;i<200;i++){
-        const a=Math.sin(i*1.4+seed)*Math.PI*2+i*0.38;
-        const d=pr2(t.r)*(0.15+Math.abs(Math.sin(i*0.65+seed))*0.72);
-        ctx.fillStyle=t.color+'1a';
-        ctx.fillRect(Math.round((cx+Math.cos(a)*d)/4)*4,Math.round((cy+Math.sin(a)*d*.8)/4)*4,3,3);
+    ctx.beginPath(); ctx.arc(cx2, cy2, r2+2, 0, Math.PI*2); ctx.clip();
+    ctx.fillStyle = alive ? t.bg : '#0a0a10';
+    ctx.fillRect(cx2-r2-6, cy2-r2-6, r2*2+12, r2*2+12);
+    // pixel texture
+    if (alive) {
+      var seed = id.length * 7;
+      for (var i = 0; i < 160; i++) {
+        var a = Math.sin(i*1.4+seed)*Math.PI*2 + i*0.38;
+        var d = pr(t.r) * (0.1 + Math.abs(Math.sin(i*0.65+seed)) * 0.75);
+        ctx.fillStyle = t.color + '15';
+        ctx.fillRect(Math.round((cx2+Math.cos(a)*d)/4)*4, Math.round((cy2+Math.sin(a)*d*.8)/4)*4, 3, 3);
       }
     }
     ctx.restore();
 
-    // Selected highlight
-    if(id===activeNation){
-      ctx.beginPath(); ctx.arc(cx,cy,r+8,0,Math.PI*2);
-      ctx.strokeStyle=t.color+'22'; ctx.lineWidth=12; ctx.stroke();
+    // glow ring for selected
+    if (id === activeKing) {
+      ctx.beginPath(); ctx.arc(cx2, cy2, r2+10, 0, Math.PI*2);
+      ctx.strokeStyle = t.color + '30'; ctx.lineWidth = 14; ctx.stroke();
     }
-    // Border
-    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
-    const flash=atWar?(0.4+Math.sin(frame*0.18)*0.3):1;
-    ctx.strokeStyle=!alive?'#1a1a28':atWar?`rgba(255,80,20,${flash})`:id===activeNation?t.color:t.color+'55';
-    ctx.lineWidth=id===activeNation?2.5:1.5; ctx.stroke();
 
-    // Label
-    const fs=Math.max(8,W/62);
-    ctx.font=`bold ${fs}px 'Orbitron',monospace`; ctx.textAlign='center';
-    ctx.fillStyle=alive?t.color:'#2a2a3a';
-    ctx.shadowColor=alive?t.color:'transparent'; ctx.shadowBlur=5;
-    ctx.fillText(t.label,cx,cy+r+fs+5); ctx.shadowBlur=0;
-    if(alive&&n.troops!==undefined){
-      ctx.font=`${Math.max(7,W/88)}px Inter,sans-serif`;
-      ctx.fillStyle='#556680';
-      ctx.fillText(`🪖${n.troops}  ☢️${n.nukes}`,cx,cy+r+fs+18);
+    // border
+    var alpha = atWar ? (0.4 + Math.sin(frame*0.18)*0.3) : 1;
+    ctx.beginPath(); ctx.arc(cx2, cy2, r2, 0, Math.PI*2);
+    ctx.strokeStyle = !alive ? '#1a1a28'
+      : atWar ? ('rgba(255,80,20,'+alpha+')')
+      : (id === activeKing ? t.color : t.color+'55');
+    ctx.lineWidth = id === activeKing ? 2.5 : 1.5;
+    ctx.stroke();
+
+    // label
+    var fs = Math.max(9, CW/65);
+    ctx.font = 'bold '+fs+'px Orbitron,monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = alive ? t.color : '#333';
+    ctx.shadowColor = alive ? t.color : 'transparent'; ctx.shadowBlur = 5;
+    ctx.fillText(t.label, cx2, cy2 + r2 + fs + 4);
+    ctx.shadowBlur = 0;
+    if (alive && n.troops !== undefined) {
+      ctx.font = Math.max(8,CW/90)+'px Inter,sans-serif';
+      ctx.fillStyle = '#556688';
+      ctx.fillText('🪖'+n.troops+'  ☢️'+n.nukes, cx2, cy2 + r2 + fs + 18);
     }
-    if(!alive){
-      ctx.font=`bold ${Math.max(9,W/55)}px Inter`; ctx.fillStyle='#ff224440';
-      ctx.fillText('DESTROYED',cx,cy+4);
+    if (!alive) {
+      ctx.font = 'bold '+Math.max(10,CW/55)+'px Inter';
+      ctx.fillStyle = '#ff224440';
+      ctx.fillText('DESTROYED', cx2, cy2 + 5);
     }
   });
 
-  // Relation lines
-  const drawn=new Set();
-  Object.entries(WORLD.nations||{}).forEach(([id,n])=>{
-    (n.wars||[]).forEach(eid=>{
-      const k=[id,eid].sort().join('|')+'w'; if(drawn.has(k))return; drawn.add(k);
-      const a=TERR[id],b=TERR[eid]; if(!a||!b)return;
-      ctx.beginPath();ctx.moveTo(px2(a.cx),py2(a.cy));ctx.lineTo(px2(b.cx),py2(b.cy));
-      ctx.strokeStyle=`rgba(255,70,0,${0.25+Math.sin(frame*0.14)*0.15})`;
-      ctx.lineWidth=2;ctx.setLineDash([7,5]);ctx.stroke();ctx.setLineDash([]);
+  // war/ally lines
+  var drawn = {};
+  Object.keys(WORLD.nations||{}).forEach(function(id) {
+    var n = WORLD.nations[id];
+    (n.wars||[]).forEach(function(eid) {
+      var k = [id,eid].sort().join('|');
+      if (drawn[k+'w']) return; drawn[k+'w'] = 1;
+      var a = TERR[id], b = TERR[eid]; if (!a||!b) return;
+      ctx.beginPath(); ctx.moveTo(px(a.cx),py(a.cy)); ctx.lineTo(px(b.cx),py(b.cy));
+      ctx.strokeStyle = 'rgba(255,70,0,'+(0.2+Math.sin(frame*0.14)*0.12)+')';
+      ctx.lineWidth = 2; ctx.setLineDash([8,5]); ctx.stroke(); ctx.setLineDash([]);
     });
-    (n.allies||[]).forEach(aid=>{
-      const k=[id,aid].sort().join('|')+'a'; if(drawn.has(k))return; drawn.add(k);
-      const a=TERR[id],b=TERR[aid]; if(!a||!b)return;
-      ctx.beginPath();ctx.moveTo(px2(a.cx),py2(a.cy));ctx.lineTo(px2(b.cx),py2(b.cy));
-      ctx.strokeStyle='#ffcc0035';ctx.lineWidth=1;ctx.stroke();
+    (n.allies||[]).forEach(function(aid) {
+      var k = [id,aid].sort().join('|');
+      if (drawn[k+'a']) return; drawn[k+'a'] = 1;
+      var a = TERR[id], b = TERR[aid]; if (!a||!b) return;
+      ctx.beginPath(); ctx.moveTo(px(a.cx),py(a.cy)); ctx.lineTo(px(b.cx),py(b.cy));
+      ctx.strokeStyle = '#ffcc0030'; ctx.lineWidth = 1; ctx.stroke();
     });
   });
 
-  // Nukes
-  nukesAnim.forEach(nuke=>{
-    const prog=Math.min(1,(Date.now()-nuke.start)/(nuke.landAt-nuke.start));
-    const a=TERR[nuke.from],b=TERR[nuke.to]; if(!a||!b)return;
-    const ax=px2(a.cx),ay=py2(a.cy),bx=px2(b.cx),by=py2(b.cy);
-    const mx=ax+(bx-ax)*prog, my=ay+(by-ay)*prog-Math.sin(prog*Math.PI)*H*.2;
-    for(let i=5;i>0;i--){
-      const tp=Math.max(0,prog-i*.033);
-      ctx.fillStyle=`rgba(255,34,68,${.1-i*.018})`;
-      ctx.beginPath();ctx.arc(ax+(bx-ax)*tp,ay+(by-ay)*tp-Math.sin(tp*Math.PI)*H*.2,3.5-i*.5,0,Math.PI*2);ctx.fill();
-    }
-    ctx.shadowColor='#ff2244';ctx.shadowBlur=12;
-    ctx.fillStyle='#ff6688';ctx.beginPath();ctx.arc(mx,my,4,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(mx,my,2,0,Math.PI*2);ctx.fill();
+  // nuke missiles
+  nukesAnim.forEach(function(nuke) {
+    var prog = Math.min(1, (Date.now()-nuke.start) / (nuke.landAt-nuke.start));
+    var a = TERR[nuke.from], b = TERR[nuke.to]; if (!a||!b) return;
+    var ax=px(a.cx),ay=py(a.cy),bx=px(b.cx),by=py(b.cy);
+    var mx=ax+(bx-ax)*prog, my=ay+(by-ay)*prog - Math.sin(prog*Math.PI)*CH*.2;
+    ctx.shadowColor='#ff2244'; ctx.shadowBlur=12;
+    ctx.fillStyle='#ff6688'; ctx.beginPath(); ctx.arc(mx,my,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff';    ctx.beginPath(); ctx.arc(mx,my,2,0,Math.PI*2); ctx.fill();
     ctx.shadowBlur=0;
-    if(prog>=1&&!nuke.done){nuke.done=true;flashScreen();}
+    if (prog >= 1 && !nuke.done) { nuke.done=true; doFlash(); }
   });
-  nukesAnim=nukesAnim.filter(n=>!n.done||Date.now()-n.landAt<1500);
+  nukesAnim = nukesAnim.filter(function(n){return !n.done||Date.now()-n.landAt<1000;});
 
-  // Kings
-  Object.entries(TERR).forEach(([id,t])=>{
-    const n=WORLD.nations[id]||{};
-    const alive=n.alive!==false;
-    kingAngles[id]=(kingAngles[id]||Math.random()*Math.PI*2)+.007;
-    const wr=pr2(t.r)*.4;
-    const kx=px2(t.cx)+Math.cos(kingAngles[id])*wr;
-    const ky=py2(t.cy)+Math.sin(kingAngles[id]*.65)*wr*.5;
-    drawKing(ctx,kx,ky,t.color,!alive,W);
+  // kings (animated sprites)
+  Object.keys(TERR).forEach(function(id) {
+    var t = TERR[id];
+    var alive = (WORLD.nations[id]||{}).alive !== false;
+    angles[id] = (angles[id]||0) + 0.007;
+    var wr = pr(t.r)*0.4;
+    var kx = px(t.cx) + Math.cos(angles[id])*wr;
+    var ky = py(t.cy) + Math.sin(angles[id]*0.65)*wr*0.5;
+    drawKing(kx, ky, t.color, !alive);
   });
+
+  requestAnimationFrame(drawFrame);
 }
 
-function drawKing(ctx,kx,ky,color,dead,W){
-  if(dead){ctx.font='16px serif';ctx.textAlign='center';ctx.fillText('💀',kx,ky+6);return;}
-  const S=Math.max(1.5,W/360);
-  const bob=Math.sin(frame*.08)*1.4;
-  const walk=Math.sin(frame*.11);
-  ctx.fillStyle='rgba(0,0,0,.25)';
-  ctx.beginPath();ctx.ellipse(kx,ky+9*S+bob,6*S,2.5*S,0,0,Math.PI*2);ctx.fill();
+function drawKing(kx, ky, color, dead) {
+  if (dead) { ctx.font='16px serif'; ctx.textAlign='center'; ctx.fillText('💀',kx,ky+6); return; }
+  var S = Math.max(1.5, CW/380);
+  var bob = Math.sin(frame*.08)*1.4;
+  var walk = Math.sin(frame*.11);
+  // shadow
+  ctx.fillStyle='rgba(0,0,0,.2)';
+  ctx.beginPath(); ctx.ellipse(kx,ky+9*S+bob,6*S,2.5*S,0,0,Math.PI*2); ctx.fill();
+  // legs
   ctx.fillStyle='#555';
-  ctx.fillRect(kx-4*S,ky+3*S+bob,3*S,5*S+walk*1.5);
-  ctx.fillRect(kx+1*S,ky+3*S+bob,3*S,5*S-walk*1.5);
-  ctx.fillStyle=color;ctx.fillRect(kx-6*S,ky-5*S+bob,12*S,9*S);
+  ctx.fillRect(kx-4*S, ky+3*S+bob, 3*S, 5*S+walk*1.5);
+  ctx.fillRect(kx+1*S, ky+3*S+bob, 3*S, 5*S-walk*1.5);
+  // body
+  ctx.fillStyle=color; ctx.fillRect(kx-6*S, ky-5*S+bob, 12*S, 9*S);
+  // arms
   ctx.fillStyle=color+'cc';
-  ctx.fillRect(kx-10*S,ky-4*S+bob+walk,4*S,6*S);
-  ctx.fillRect(kx+6*S,ky-4*S+bob-walk,4*S,6*S);
-  ctx.fillStyle='#e8c090';ctx.fillRect(kx-4*S,ky-14*S+bob,8*S,9*S);
+  ctx.fillRect(kx-10*S, ky-4*S+bob+walk, 4*S, 6*S);
+  ctx.fillRect(kx+6*S,  ky-4*S+bob-walk, 4*S, 6*S);
+  // head
+  ctx.fillStyle='#e8c090'; ctx.fillRect(kx-4*S, ky-14*S+bob, 8*S, 9*S);
+  // eyes
   ctx.fillStyle='#222';
-  ctx.fillRect(kx-2*S,ky-11*S+bob,1.5*S,1.5*S);
-  ctx.fillRect(kx+0.5*S,ky-11*S+bob,1.5*S,1.5*S);
+  ctx.fillRect(kx-2*S, ky-11*S+bob, 1.5*S, 1.5*S);
+  ctx.fillRect(kx+0.5*S, ky-11*S+bob, 1.5*S, 1.5*S);
+  // crown
   ctx.fillStyle='#ffcc00';
-  ctx.fillRect(kx-4*S,ky-17*S+bob,8*S,3*S);
-  ctx.fillRect(kx-5*S,ky-20*S+bob,2.5*S,3*S);
-  ctx.fillRect(kx-0.5*S,ky-21*S+bob,2.5*S,4*S);
-  ctx.fillRect(kx+2.5*S,ky-20*S+bob,2.5*S,3*S);
-  ctx.shadowColor=color;ctx.shadowBlur=6;
-  ctx.fillStyle=color+'33';ctx.beginPath();ctx.arc(kx,ky-8*S+bob,8*S,0,Math.PI*2);ctx.fill();
-  ctx.shadowBlur=0;
+  ctx.fillRect(kx-4*S, ky-17*S+bob, 8*S, 3*S);
+  ctx.fillRect(kx-5*S, ky-20*S+bob, 2.5*S, 3*S);
+  ctx.fillRect(kx-0.5*S, ky-21*S+bob, 2.5*S, 4*S);
+  ctx.fillRect(kx+2.5*S, ky-20*S+bob, 2.5*S, 3*S);
 }
 
-function flashScreen(){
-  const el=document.getElementById('nuke-flash');
-  el.style.display='block';setTimeout(()=>el.style.display='none',700);
-  document.getElementById('nuke-warn').style.display='none';
-  if(dCanvas) document.getElementById('d-nuke-warn').style.display='none';
+function doFlash() {
+  var el = document.getElementById('flash');
+  el.style.display = 'block';
+  setTimeout(function(){ el.style.display='none'; }, 600);
 }
 
-function loop(){
-  if(isMobile()) drawOn(mCtx,mW,mH);
-  else if(dCtx) drawOn(dCtx,dW,dH);
-  requestAnimationFrame(loop);
-}
-
-// ── ERA ───────────────────────────────────────────────────
-function updateEra(){
-  const ns=Object.values(WORLD.nations||{});
-  const wars=ns.reduce((s,n)=>s+(n.wars||[]).length,0);
-  const alive=ns.filter(n=>n.alive!==false).length;
-  const nuke=WORLD.nukesInFlight?.length>0;
-  const setText=(el,txt,cls)=>{if(el){el.textContent=txt;el.className=cls;}};
-  const mob=document.getElementById('era');
-  const desk=document.getElementById('d-era');
-  if(alive<=1){setText(mob,'💀 ENDED','ee');setText(desk,'💀 WORLD ENDED','ee');}
-  else if(nuke){setText(mob,'☢ NUCLEAR','en');setText(desk,'☢ NUCLEAR WAR','en');}
-  else if(wars>=4){setText(mob,'🔥 WAR','ew');setText(desk,'🔥 WORLD AT WAR','ew');}
-  else if(wars>0){setText(mob,'⚠ TENSIONS','et');setText(desk,'⚠ TENSIONS RISING','et');}
-  else{setText(mob,'🕊 PEACE','ep');setText(desk,'🕊 AGE OF PEACE','ep');}
-}
-
-// ── ROSTER ────────────────────────────────────────────────
-function renderRoster(){
-  ['roster','d-roster'].forEach(rid=>{
-    const el=document.getElementById(rid); if(!el)return;
-    el.innerHTML='';
-    Object.values(AGENTS).forEach(a=>{
-      const n=WORLD.nations[a.id]||{};
-      const t=TERR[a.id]||{};
-      const alive=n.alive!==false;
-      const wars=(n.wars||[]).length;
-      const badge=!alive?`<span class="k-badge" style="color:#444">DESTROYED</span>`
-        :wars?`<span class="k-badge kb-war">⚔ WAR</span>`
-        :(n.allies||[]).length?`<span class="k-badge kb-ally">🤝 ALLY</span>`
-        :`<span class="k-badge kb-peace">🕊 Peace</span>`;
-      const d=document.createElement('div');
-      d.className='king-card'+(alive?'':' dead')+(activeNation===a.id?' sel':'');
-      if(!alive) d.classList.add('dead');
-      if(activeNation===a.id) d.classList.add('sel');
-      d.style.setProperty('--kc',t.color||'#fff');
-      d.innerHTML=`
-        <div class="k-avatar" style="border-color:${t.color||'#fff'}33">${a.emoji}</div>
-        <div class="k-body">
-          <div class="k-name" style="color:${t.color||'var(--tx)'}">${a.name}</div>
-          <div class="k-title">${a.title}</div>
-          <div class="k-row">
-            <div class="k-stat">🪖 <b>${n.troops??'—'}</b></div>
-            <div class="k-stat">☢️ <b>${n.nukes??'—'}</b></div>
-            ${badge}
-          </div>
-        </div>
-        ${rid==='roster'?'<div class="k-arrow">›</div>':''}`;
-      d.onclick=()=>{if(alive){setActive(a.id);if(rid==='roster')showTab('chat');}};
-      el.appendChild(d);
-    });
-  });
-}
-
-// ── SET ACTIVE KING ───────────────────────────────────────
-function setActive(id){
-  activeNation=id;
-  const a=AGENTS[id],t=TERR[id]||{};
-  // Mobile chat header
-  document.getElementById('chat-king-name').textContent=`${a.emoji} ${a.name}`;
-  document.getElementById('chat-king-name').style.color=t.color||'var(--tx)';
-  document.getElementById('chat-king-title').textContent=a.title;
-  // Desktop chat header
-  const dk=document.getElementById('d-chat-king');
-  if(dk){dk.textContent=`${a.emoji} ${a.name}`;dk.style.color=t.color||'var(--tx)';}
-  const ds=document.getElementById('d-chat-sub');
-  if(ds) ds.textContent=a.title+' · Private channel';
-  // Enable inputs
-  [['msg-input','send-btn'],['d-msg','d-send']].forEach(([inp,btn])=>{
-    const i=document.getElementById(inp),b=document.getElementById(btn);
-    if(i){i.disabled=false;i.style.setProperty('--kc',t.color);}
-    if(b){b.disabled=false;b.style.background=`linear-gradient(135deg,${t.color}66,${t.color}22)`;}
-  });
-  const ec=document.getElementById('empty-chat');if(ec)ec.remove();
-  const de=document.getElementById('d-empty');if(de)de.remove();
-  renderRoster();
-}
-
-// ── FEED ──────────────────────────────────────────────────
-function addEvent(text,type){
-  // Mobile events page
-  const evList=document.getElementById('event-list');
-  if(evList){
-    const d=document.createElement('div');
-    d.className='event-card';
-    const colMap={war:'#ff6644',nuke:'#ff2244',peace:'#00cc66',alliance:'#ffcc00',destroyed:'#ff4444'};
-    d.style.borderColor=(colMap[type]||'#1c1f30')+'40';
-    d.style.color=colMap[type]||'var(--tx)';
-    d.textContent=text;
-    evList.prepend(d);
-    if(document.getElementById('page-events').classList.contains('active'))return;
-    newEventCount++;
-    const eb2=document.getElementById('events-badge');if(eb2)eb2.style.display='block';
-  }
-  // Also add to chat feed (world events)
-  addToFeed('ev',{text,type});
-}
-
-function addToFeed(role,opts){
-  // Mobile feed
-  const feed=document.getElementById('feed');
-  if(feed) _appendToFeed(feed,role,opts);
-  // Desktop feed
-  const dfeed=document.getElementById('d-feed');
-  if(dfeed) _appendToFeed(dfeed,role,opts);
-}
-
-function _appendToFeed(feed,role,opts){
-  const d=document.createElement('div');
-  if(role==='ev'){
-    const evCls={war:'ev-war',nuke:'ev-nuke',peace:'ev-peace',alliance:'ev-alliance',destroyed:'ev-destroyed'}[opts.type]||'ev-world';
-    d.className=`event-row ${evCls}`;
-    d.textContent=opts.text;
-  } else {
-    const isUser=role==='user';
-    const col=opts.color||TERR[opts.agentId]?.color||'var(--dm)';
-    d.className=`msg-row msg-${isUser?'user':'agent'}`;
-    d.innerHTML=`<div class="msg-from" style="color:${isUser?'#00cc66':col}">${opts.emoji||''} ${opts.name||''}</div><div class="msg-bubble">${escHtml(opts.text)}</div>`;
-  }
-  feed.appendChild(d);
-  feed.scrollTop=feed.scrollHeight;
-}
-
-function showTyping(id){
-  removeTyping(id);
-  const a=AGENTS[id]; if(!a)return;
-  const col=TERR[id]?.color||'#888';
-  ['feed','d-feed'].forEach(fid=>{
-    const feed=document.getElementById(fid); if(!feed)return;
-    const d=document.createElement('div');
-    d.id=`typ-${id}-${fid}`; d.className='typing-wrap';
-    d.innerHTML=`<div class="msg-from" style="color:${col}">${a.emoji} ${a.name}</div><div class="typing-bubbles"><div class="tdot" style="background:${col}"></div><div class="tdot" style="background:${col}"></div><div class="tdot" style="background:${col}"></div></div>`;
-    feed.appendChild(d); feed.scrollTop=feed.scrollHeight;
-  });
-}
-function removeTyping(id){
-  ['feed','d-feed'].forEach(fid=>{ const e=document.getElementById(`typ-${id}-${fid}`);if(e)e.remove(); });
-}
-function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-// ── WHISPER ───────────────────────────────────────────────
-function sendWhisper(inputId){
-  const inp=document.getElementById(inputId);
-  const text=inp?.value?.trim();
-  const name=localStorage.getItem('bn_name')||'Stranger';
-  if(!text||!activeNation||!ws||ws.readyState!==1)return;
-  addToFeed('user',{name:'You',text});
-  ws.send(JSON.stringify({type:'whisper',to:activeNation,name,text}));
-  inp.value=''; inp.style.height='';
-  showTyping(activeNation);
-}
-
-// ── CANVAS CLICKS ─────────────────────────────────────────
-function handleMapClick(canvas,W,H,e){
-  const r=canvas.getBoundingClientRect();
-  const scaleX=canvas.width/r.width, scaleY=canvas.height/r.height;
-  const cx=(e.clientX-r.left)*scaleX;
-  const cy=(e.clientY-r.top)*scaleY;
-  let best=null,bestD=Infinity;
-  Object.entries(TERR).forEach(([id,t])=>{
-    const d=Math.hypot(cx-t.cx*W,cy-t.cy*H);
-    if(d<t.r*Math.min(W,H)+24&&d<bestD){bestD=d;best=id;}
-  });
-  if(best&&WORLD.nations[best]?.alive!==false){
-    setActive(best);
-    if(isMobile()) showTab('chat');
-  }
-}
-mCanvas.addEventListener('click',e=>handleMapClick(mCanvas,mW,mH,e));
-mCanvas.addEventListener('touchend',e=>{
+// ── MAP TAP ───────────────────────────────────────────────
+canvas.addEventListener('click', function(e) {
+  var r = canvas.getBoundingClientRect();
+  var sx = CW / r.width, sy = CH / r.height;
+  var mx = (e.clientX - r.left) * sx;
+  var my = (e.clientY - r.top) * sy;
+  tapMap(mx, my);
+});
+canvas.addEventListener('touchend', function(e) {
   e.preventDefault();
-  const t=e.changedTouches[0];
-  handleMapClick(mCanvas,mW,mH,{clientX:t.clientX,clientY:t.clientY});
-},{passive:false});
-if(dCanvas){
-  dCanvas.addEventListener('click',e=>handleMapClick(dCanvas,dW,dH,e));
+  var t = e.changedTouches[0];
+  var r = canvas.getBoundingClientRect();
+  var sx = CW / r.width, sy = CH / r.height;
+  var mx = (t.clientX - r.left) * sx;
+  var my = (t.clientY - r.top) * sy;
+  tapMap(mx, my);
+}, {passive: false});
+
+function tapMap(mx, my) {
+  var best = null, bestD = 9999;
+  Object.keys(TERR).forEach(function(id) {
+    var t = TERR[id];
+    var d = Math.sqrt(Math.pow(mx-px(t.cx),2)+Math.pow(my-py(t.cy),2));
+    if (d < pr(t.r)+28 && d < bestD) { bestD=d; best=id; }
+  });
+  if (best && (WORLD.nations[best]||{}).alive !== false) {
+    openKing(best);
+    goTab('chat');
+  }
 }
 
-// ── INPUTS ────────────────────────────────────────────────
-document.getElementById('send-btn').onclick=()=>sendWhisper('msg-input');
-document.getElementById('msg-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendWhisper('msg-input');}});
-document.getElementById('msg-input').addEventListener('input',function(){this.style.height='';this.style.height=Math.min(this.scrollHeight,100)+'px';});
-const dsend=document.getElementById('d-send');if(dsend)dsend.onclick=()=>sendWhisper('d-msg');
-const dmsg=document.getElementById('d-msg');
-if(dmsg) dmsg.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendWhisper('d-msg');}});
+// ── KINGS LIST ────────────────────────────────────────────
+function renderKings() {
+  var list = document.getElementById('king-list');
+  if (!list) return;
+  list.innerHTML = '';
+  Object.values(AGENTS).forEach(function(a) {
+    var n = WORLD.nations[a.id] || {};
+    var t = TERR[a.id] || {};
+    var alive = n.alive !== false;
+    var wars = (n.wars||[]).length;
+    var badgeHtml = !alive
+      ? '<span class="kbadge" style="color:#444">DESTROYED</span>'
+      : wars ? '<span class="kbadge bwar">⚔ WAR</span>'
+      : '<span class="kbadge bpeace">🕊 Peace</span>';
+    var card = document.createElement('div');
+    card.className = 'kcard' + (alive ? '' : ' dead');
+    if (!alive) card.style.opacity = '0.3';
+    card.innerHTML = '<div class="kavatar" style="border-color:'+t.color+'44">'+a.emoji+'</div>'
+      +'<div class="kbody">'
+        +'<div class="kname" style="color:'+t.color+'">'+a.name+'</div>'
+        +'<div class="ktitle">'+a.title+'</div>'
+        +'<div class="kstats">🪖 <b>'+(n.troops||'—')+'</b>&nbsp;&nbsp;☢️ <b>'+(n.nukes||'—')+'</b>&nbsp;&nbsp;'+badgeHtml+'</div>'
+      +'</div>'
+      +'<div class="kchev">›</div>';
+    if (alive) {
+      card.addEventListener('click', function() {
+        openKing(a.id);
+        goTab('chat');
+      });
+    }
+    list.appendChild(card);
+  });
+}
+
+// ── OPEN KING CHANNEL ─────────────────────────────────────
+function openKing(id) {
+  activeKing = id;
+  var a = AGENTS[id], t = TERR[id]||{};
+  document.getElementById('chat-king').textContent = a.emoji+' '+a.name;
+  document.getElementById('chat-king').style.color = t.color;
+  document.getElementById('chat-sub').textContent = a.title+' · Only he hears you';
+  document.getElementById('msg-box').disabled = false;
+  document.getElementById('msg-box').placeholder = 'Whisper to '+a.name+'…';
+  document.getElementById('send').disabled = false;
+  document.getElementById('send').style.background = t.color+'33';
+  document.getElementById('send').style.color = t.color;
+  var em = document.getElementById('empty-msg');
+  if (em) em.remove();
+}
+
+// ── MESSAGES ──────────────────────────────────────────────
+function addMsg(role, opts) {
+  var feed = document.getElementById('messages');
+  if (!feed) return;
+  var d = document.createElement('div');
+  var isMe = role === 'me';
+  var col = opts.color || (TERR[opts.id]||{}).color || '#888';
+  d.className = 'bubble-wrap' + (isMe ? ' me' : '');
+  d.innerHTML = '<div class="bubble-name" style="color:'+(isMe?'#00cc66':col)+'">'
+    +(opts.emoji||'')+' '+(opts.name||'')+'</div>'
+    +'<div class="bubble">'+esc(opts.text)+'</div>';
+  feed.appendChild(d);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function addEvent(text, type) {
+  // events tab
+  var es = document.getElementById('events-scroll');
+  if (es) {
+    var card = document.createElement('div');
+    card.className = 'ecard';
+    var cols = {war:'#ff6644',nuke:'#ff2244',peace:'#00cc66',destroy:'#ff4444'};
+    card.style.color = cols[type] || 'var(--tx)';
+    card.style.borderColor = (cols[type]||'#1c1f30')+'40';
+    card.textContent = text;
+    if (es.children[0] && es.children[0].classList.contains('empty-state')) es.children[0].remove();
+    es.prepend(card);
+  }
+  // chat feed too
+  var feed = document.getElementById('messages');
+  if (feed) {
+    var evCls = {war:'ev-war',nuke:'ev-nuke',peace:'ev-peace',destroy:'ev-destroy'}[type]||'ev-line';
+    var ev = document.createElement('div');
+    ev.className = 'ev-line '+evCls;
+    ev.textContent = text;
+    feed.appendChild(ev);
+    feed.scrollTop = feed.scrollHeight;
+  }
+  // badge
+  if (currentTab !== 'events') {
+    badgeCount++;
+    document.getElementById('badge').style.display = 'block';
+  }
+}
+
+function showTyping(id) {
+  removeTyping(id);
+  var a = AGENTS[id]; if (!a) return;
+  var col = (TERR[id]||{}).color||'#888';
+  var feed = document.getElementById('messages'); if (!feed) return;
+  var d = document.createElement('div');
+  d.className = 'dots-wrap'; d.id = 'typ-'+id;
+  d.innerHTML = '<div class="bubble-name" style="color:'+col+'">'+a.emoji+' '+a.name+'</div>'
+    +'<div class="dots"><div class="dot" style="background:'+col+'"></div>'
+    +'<div class="dot" style="background:'+col+'"></div>'
+    +'<div class="dot" style="background:'+col+'"></div></div>';
+  feed.appendChild(d); feed.scrollTop = feed.scrollHeight;
+}
+function removeTyping(id) { var e=document.getElementById('typ-'+id); if(e)e.remove(); }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── ERA BADGE ─────────────────────────────────────────────
+function updateEra() {
+  var ns = Object.values(WORLD.nations||{});
+  var wars = ns.reduce(function(s,n){return s+(n.wars||[]).length;},0);
+  var alive = ns.filter(function(n){return n.alive!==false;}).length;
+  var badge = document.getElementById('era-badge'); if (!badge) return;
+  if (alive<=1)       { badge.textContent='💀 ENDED';   badge.style.cssText='color:#552233;border-color:#33111a;'; }
+  else if (wars>=4)   { badge.textContent='🔥 WAR';     badge.style.cssText='color:#ff6600;border-color:#ff660040;animation:era-blink 1s infinite;'; }
+  else if (wars>0)    { badge.textContent='⚠ TENSIONS'; badge.style.cssText='color:#ffcc00;border-color:#ffcc0040;'; }
+  else                { badge.textContent='🕊 PEACE';   badge.style.cssText='color:#00cc66;border-color:#00cc6640;'; }
+}
+
+// ── SEND ──────────────────────────────────────────────────
+function doSend() {
+  var box = document.getElementById('msg-box');
+  var text = box.value.trim();
+  var name = localStorage.getItem('bn_name')||'Stranger';
+  if (!text || !activeKing || !ws || ws.readyState !== 1) return;
+  addMsg('me', {name:'You', text:text});
+  ws.send(JSON.stringify({type:'whisper', to:activeKing, name:name, text:text}));
+  box.value = ''; box.style.height = '';
+  showTyping(activeKing);
+}
+document.getElementById('send').onclick = doSend;
+document.getElementById('chat-back').onclick = function(){ goTab('kings'); };
+document.getElementById('msg-box').addEventListener('keydown', function(e){
+  if (e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); doSend(); }
+});
+document.getElementById('msg-box').addEventListener('input', function(){
+  this.style.height=''; this.style.height=Math.min(this.scrollHeight,100)+'px';
+});
 
 // ── WEBSOCKET ─────────────────────────────────────────────
-function connect(){
-  ws=new WebSocket(WS_URL);
-  ws.onopen=()=>{clearTimeout(reconnectTimer);ws.send(JSON.stringify({type:'join',sessionId:getSession()}));};
-  ws.onclose=()=>{reconnectTimer=setTimeout(connect,3000);};
-  ws.onmessage=e=>handle(JSON.parse(e.data));
-}
-
-function handle(msg){
-  switch(msg.type){
-    case 'init':
-      msg.agents.forEach(a=>AGENTS[a.id]=a);
-      WORLD=msg.world||WORLD;
-      renderRoster();updateEra();
-      // Clear feeds
-      ['feed','d-feed'].forEach(fid=>{const f=document.getElementById(fid);if(f)f.innerHTML='';});
-      const evl=document.getElementById('event-list');if(evl)evl.innerHTML='';
-      if(msg.isNew){
-        addEvent('🌍 A new world is born. Five kingdoms stand at peace… for now.','world');
-        setTimeout(()=>addEvent('You hold the ear of every king. Your words carry weight.','world'),1400);
-      } else {
-        (msg.log||[]).forEach(e=>{
-          const t=e.type==='nuke'?'nuke':e.type==='war'?'war':e.type==='peace'?'peace':e.type==='alliance'?'alliance':e.type==='destroyed'?'destroyed':'world';
-          addEvent(e.text,t);
-        });
+function connect() {
+  if (ws) { try{ws.close();}catch(e){} }
+  ws = new WebSocket(WS_URL);
+  ws.onopen = function() {
+    clearTimeout(wsTimer);
+    ws.send(JSON.stringify({type:'join', sessionId:getSession()}));
+  };
+  ws.onclose = function() { wsTimer = setTimeout(connect, 3000); };
+  ws.onerror = function() { wsTimer = setTimeout(connect, 3000); };
+  ws.onmessage = function(e) {
+    var msg; try{ msg=JSON.parse(e.data); }catch(err){ return; }
+    switch(msg.type) {
+      case 'init':
+        AGENTS = {};
+        msg.agents.forEach(function(a){ AGENTS[a.id]=a; });
+        WORLD = msg.world || WORLD;
+        renderKings(); updateEra();
+        document.getElementById('events-scroll').innerHTML='';
+        if (msg.isNew) {
+          addEvent('🌍 A new world is born. Five kingdoms stand at peace… for now.','');
+        } else {
+          (msg.log||[]).forEach(function(e){
+            var t=e.type==='nuke'?'nuke':e.type==='war'?'war':e.type==='peace'?'peace':e.type==='destroyed'?'destroy':'';
+            addEvent(e.text,t);
+          });
+        }
+        break;
+      case 'worldUpdate':
+        WORLD = msg.world; renderKings(); updateEra(); break;
+      case 'worldEvent':{
+        var t=msg.event.type==='nuke'?'nuke':msg.event.type==='war'?'war':msg.event.type==='peace'?'peace':msg.event.type==='destroyed'?'destroy':'';
+        addEvent(msg.event.text,t); updateEra(); break;
       }
-      break;
-    case 'worldUpdate': WORLD=msg.world;renderRoster();updateEra();break;
-    case 'worldEvent':{
-      const t=msg.event.type==='nuke'?'nuke':msg.event.type==='war'?'war':msg.event.type==='peace'?'peace':msg.event.type==='alliance'?'alliance':msg.event.type==='destroyed'?'destroyed':'world';
-      addEvent(msg.event.text,t);updateEra();break;}
-    case 'message':
-      removeTyping(msg.agentId);
-      addToFeed('agent',{agentId:msg.agentId,name:msg.name,emoji:msg.emoji,color:msg.color,text:msg.text});
-      break;
-    case 'typing':
-      if(msg.private&&msg.agentId===activeNation) showTyping(msg.agentId);
-      else if(!msg.private) showTyping(msg.agentId);
-      break;
-    case 'whisperReply':
-      removeTyping(msg.from);
-      addToFeed('agent',{agentId:msg.from,name:msg.name,emoji:msg.emoji,color:TERR[msg.from]?.color,text:msg.text});
-      break;
-    case 'nukeIncoming':
-      WORLD=msg.world;
-      nukesAnim.push({from:msg.from,to:msg.to,landAt:msg.landAt,start:Date.now()});
-      document.getElementById('nuke-warn').style.display='block';
-      if(document.getElementById('d-nuke-warn')) document.getElementById('d-nuke-warn').style.display='block';
-      setTimeout(()=>{document.getElementById('nuke-warn').style.display='none';if(document.getElementById('d-nuke-warn'))document.getElementById('d-nuke-warn').style.display='none';},8500);
-      renderRoster();updateEra();break;
+      case 'message':
+        removeTyping(msg.agentId);
+        addMsg('agent',{id:msg.agentId,name:msg.name,emoji:msg.emoji,color:msg.color,text:msg.text});
+        break;
+      case 'typing':
+        if (msg.private && msg.agentId===activeKing) showTyping(msg.agentId);
+        else if (!msg.private) showTyping(msg.agentId);
+        break;
+      case 'whisperReply':
+        removeTyping(msg.from);
+        addMsg('agent',{id:msg.from,name:msg.name,emoji:msg.emoji,color:(TERR[msg.from]||{}).color,text:msg.text});
+        break;
+      case 'nukeIncoming':
+        WORLD=msg.world;
+        nukesAnim.push({from:msg.from,to:msg.to,landAt:msg.landAt,start:Date.now()});
+        renderKings(); updateEra(); break;
+    }
+  };
+}
+
+// ── BOOT ──────────────────────────────────────────────────
+window.addEventListener('load', function() {
+  // name prompt
+  if (!localStorage.getItem('bn_name')) {
+    var n = prompt('What name shall the kings know you by?') || 'Stranger';
+    localStorage.setItem('bn_name', n);
   }
-}
-
-// ── RESET ─────────────────────────────────────────────────
-function resetWorld(){
-  if(!confirm('Start a fresh world? All progress will be lost.'))return;
-  localStorage.removeItem('bn_sess');
-  ['feed','d-feed'].forEach(fid=>{const f=document.getElementById(fid);if(f)f.innerHTML='';});
-  const evl=document.getElementById('event-list');if(evl)evl.innerHTML='';
-  activeNation=null;
-  connect();
-}
-const dr=document.getElementById('d-reset');if(dr)dr.onclick=resetWorld;
-
-// ── NAME ──────────────────────────────────────────────────
-if(!localStorage.getItem('bn_name')){
-  setTimeout(()=>{const n=prompt('What name shall the kings know you by?')||'Stranger';localStorage.setItem('bn_name',n);},800);
-}
-
-// ── INIT ──────────────────────────────────────────────────
-Object.keys(TERR).forEach(id=>kingAngles[id]=Math.random()*Math.PI*2);
-// Resize after first paint so DOM dimensions are correct
-requestAnimationFrame(()=>{
-  resizeCanvases();
-  loop();
+  // init angles
+  Object.keys(TERR).forEach(function(id){ angles[id]=Math.random()*Math.PI*2; });
+  // size canvas then start
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  drawFrame();
   connect();
 });
 </script>
