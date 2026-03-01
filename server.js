@@ -7,8 +7,8 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-const AI_KEY = process.env.VERCEL_AI_KEY || '';
-const MODEL = 'google/gemini-flash-1.5-8b';
+const AI_KEY = process.env.GROQ_API_KEY || '';
+const MODEL = 'llama3-8b-8192'; // Groq free tier
 
 // ── PERSISTENCE ───────────────────────────────────────────
 // Uses Redis if REDIS_URL is set, otherwise in-memory (resets on restart)
@@ -100,7 +100,7 @@ function callAI(systemPrompt, userContent) {
       messages: [{ role:'system', content:systemPrompt }, { role:'user', content:userContent }]
     });
     const req = https.request({
-      hostname: 'ai-gateway.vercel.sh', path: '/v1/chat/completions', method: 'POST',
+      hostname: 'api.groq.com', path: '/openai/v1/chat/completions', method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${AI_KEY}`, 'Content-Length':Buffer.byteLength(body) }
     }, res => {
       let data = '';
