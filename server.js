@@ -8,7 +8,7 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 const AI_KEY = process.env.GROQ_API_KEY || '';
-const MODEL = 'llama3-8b-8192'; // Groq free tier
+const MODEL = 'llama-3.1-8b-instant'; // Groq free tier
 
 // ── PERSISTENCE ───────────────────────────────────────────
 // Uses Redis if REDIS_URL is set, otherwise in-memory (resets on restart)
