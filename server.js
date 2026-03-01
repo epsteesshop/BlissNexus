@@ -258,11 +258,14 @@ wss.on('connection', (ws) => {
           ? MAZE.map(r => ({ id: r.id, x: r.x, y: r.y, type: r.type, exits: r.exits, locked: r.locked, agentIds: r.agentIds }))
           : null;
 
+        const mazeLayout = MAZE.map(r => ({ id: r.id, x: r.x, y: r.y, exits: r.exits, type: r.type, locked: r.locked }));
+
         send(ws, {
           type: 'init',
           you: pub(agent),
           room: !isSpectator ? buildRoomView(startRoom, agentId) : null,
           maze: mazeSnapshot,
+          mazeLayout,
           leaderboard: [...agents.values()].map(pub).sort((a, b) => b.score - a.score).slice(0, 25),
           messages: msgs.slice(-30),
           referralCode: agent.referralCode,
