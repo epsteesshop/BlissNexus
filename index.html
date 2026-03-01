@@ -731,6 +731,16 @@ function wsHandle(d){
       document.getElementById('wsub2').textContent='Connected. Waiting for AI companion…';
       renderLB(d.leaderboard);(d.messages||[]).forEach(m=>addMsg(m.name,m.agentType,m.body));
       sysMsg('Connected as '+d.you.name);
+      // Check if AI agent already in room
+      (d.leaderboard||[]).forEach(ag=>{
+        if(ag.type==='ai'&&ag.id!==d.you.id&&!COMP.agentId){
+          COMP.agentId=ag.id;COMP.name=ag.name;COMP.visible=true;
+          document.getElementById('cpname').textContent=COMP.name;
+          document.getElementById('agentname').textContent=COMP.name;
+          document.getElementById('cp').classList.add('show');
+          if(!gameRunning){gameRunning=true;BGM.start();document.getElementById('wscreen').classList.remove('on');say('I was already here waiting, hero! Let us begin! ⚔️');notify('✨ '+COMP.name+' is your companion! Adventure starts!','ok');}
+        }
+      });
       break;
     case 'agent_joined':
       GS.agents.set(d.agent.id,{...d.agent,gx:PL.x+120,gy:PL.y-40});
