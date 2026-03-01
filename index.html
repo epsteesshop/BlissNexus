@@ -3,413 +3,584 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BlissNexus</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<title>BlissNexus — The Five Kingdoms</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-:root{--bg:#07070f;--bg2:#0d0d1a;--bg3:#131320;--tx:#c8d0e8;--dm:#3a4060;--border:#1a1a2e;}
-html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;overflow:hidden;}
-#app{display:grid;grid-template-columns:1fr 300px;grid-template-rows:52px 1fr;height:100vh;}
-/* Header */
-#hdr{grid-column:1/-1;display:flex;align-items:center;padding:0 16px;gap:12px;border-bottom:1px solid var(--border);background:rgba(7,7,15,.95);z-index:10;}
-.logo{font-family:'Orbitron',monospace;font-size:.95rem;font-weight:900;background:linear-gradient(135deg,#00ff88,#4488ff,#ff4488);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.tagline{font-size:.48rem;color:var(--dm);letter-spacing:.08em;}
-.pulse{width:6px;height:6px;background:#00ff88;border-radius:50%;box-shadow:0 0 6px #00ff88;animation:p 1.6s ease infinite;margin-left:auto;}
-@keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
-#era-badge{font-size:.52rem;color:#ffcc00;font-family:'Orbitron',monospace;letter-spacing:.06em;padding:3px 10px;border:1px solid #ffcc0040;border-radius:12px;}
-/* Map area */
-#map-wrap{position:relative;overflow:hidden;background:#0a0f18;}
-#map-canvas{display:block;width:100%;height:100%;}
-/* Nation label tooltips */
-.nation-label{position:absolute;font-family:'Orbitron',monospace;font-size:.48rem;font-weight:700;letter-spacing:.08em;pointer-events:none;text-shadow:0 0 8px currentColor;}
-/* Right panel */
-#panel{background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
-#nation-tabs{display:flex;flex-direction:column;gap:1px;background:var(--border);border-bottom:1px solid var(--border);}
-.ntab{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg2);cursor:pointer;transition:all .14s;border-left:3px solid transparent;}
-.ntab:hover{background:var(--bg3);}
-.ntab.active{background:var(--bg3);border-left-color:var(--tab-col);}
-.ntab.dead{opacity:.35;cursor:not-allowed;}
-.ntab-emoji{font-size:1rem;}
-.ntab-info{flex:1;min-width:0;}
-.ntab-name{font-size:.58rem;font-weight:600;}
-.ntab-status{font-size:.46rem;color:var(--dm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ntab-nukes{font-size:.44rem;color:#ff4488;font-weight:700;}
-/* Chat */
-#chat-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-#chat-header{padding:10px 12px;border-bottom:1px solid var(--border);background:var(--bg3);}
-#chat-title{font-size:.62rem;font-weight:600;}
-#chat-subtitle{font-size:.48rem;color:var(--dm);margin-top:2px;}
-#feed{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px;}
-#feed::-webkit-scrollbar{width:2px;}
-#feed::-webkit-scrollbar-thumb{background:var(--dm);}
-.msg{animation:fi .25s ease;}
-@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-.msg-name{font-size:.52rem;font-weight:600;margin-bottom:2px;}
-.msg-text{font-size:.64rem;line-height:1.55;background:var(--bg3);border:1px solid var(--border);border-radius:4px 12px 12px 12px;padding:7px 10px;color:var(--tx);}
-.msg.user .msg-text{background:linear-gradient(135deg,#001a10,#001420);border-color:#00ff8830;border-radius:12px 4px 12px 12px;}
-.msg.world-event{text-align:center;}
-.msg.world-event .msg-text{font-size:.56rem;color:#ffcc00;background:transparent;border:none;border-top:1px solid #ffcc0020;border-bottom:1px solid #ffcc0020;border-radius:0;padding:4px 0;}
-.msg.nuke-event .msg-text{color:#ff4488;background:#1a000a;border-color:#ff448830;}
-.typing-row{display:flex;align-items:center;gap:5px;padding:4px 0;}
-.typing-dot{width:4px;height:4px;border-radius:50%;animation:td .7s ease infinite;}
-.typing-dot:nth-child(2){animation-delay:.2s;}
-.typing-dot:nth-child(3){animation-delay:.4s;}
-@keyframes td{0%,60%,100%{opacity:.2;transform:scale(.8)}30%{opacity:1;transform:scale(1.1)}}
+:root {
+  --bg:     #060810;
+  --bg2:    #0b0d18;
+  --bg3:    #10121e;
+  --bg4:    #161824;
+  --border: #1c1f30;
+  --tx:     #b8c4e0;
+  --dm:     #363d5a;
+  --acc:    #00ff88;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; background:var(--bg); color:var(--tx); font-family:'Inter',sans-serif; overflow:hidden; }
+
+/* ── LAYOUT ─────────────────────────── */
+#app { display:grid; grid-template-columns:1fr 320px; grid-template-rows:56px 1fr; height:100vh; }
+
+/* ── HEADER ─────────────────────────── */
+#hdr {
+  grid-column: 1/-1;
+  display: flex; align-items: center; padding: 0 20px; gap: 14px;
+  background: rgba(6,8,16,.97);
+  border-bottom: 1px solid var(--border);
+  z-index: 20;
+}
+.logo {
+  font-family: 'Orbitron', monospace; font-size: 1rem; font-weight: 900; letter-spacing:.06em;
+  background: linear-gradient(90deg,#00ff88 0%,#4488ff 50%,#ff4488 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.logo-sub { font-size:.42rem; color:var(--dm); letter-spacing:.2em; text-transform:uppercase; margin-top:1px; }
+#era {
+  margin-left: auto;
+  font-family: 'Orbitron', monospace; font-size:.5rem; letter-spacing:.1em;
+  padding: 4px 14px; border-radius: 20px; border: 1px solid currentColor;
+  transition: all .4s;
+}
+.era-peace  { color:#00cc66; border-color:#00cc6640; background:#00cc6608; }
+.era-tense  { color:#ffcc00; border-color:#ffcc0040; background:#ffcc0008; }
+.era-war    { color:#ff6600; border-color:#ff660040; background:#ff660010; animation: era-pulse 1.2s ease infinite; }
+.era-nuclear{ color:#ff2244; border-color:#ff224460; background:#ff224415; animation: era-pulse .6s ease infinite; }
+.era-ended  { color:#662233; border-color:#33111a; background:#1a0810; }
+@keyframes era-pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+
+#live-dot { width:7px; height:7px; border-radius:50%; background:var(--acc); box-shadow:0 0 8px var(--acc); animation:livepulse 1.8s ease infinite; margin-left:8px; }
+@keyframes livepulse { 0%,100%{opacity:1;box-shadow:0 0 8px var(--acc)} 50%{opacity:.3;box-shadow:none} }
+
+#reset-btn {
+  font-size:.46rem; font-family:'Orbitron',monospace; letter-spacing:.08em;
+  padding:4px 12px; border-radius:16px; border:1px solid var(--border);
+  background:transparent; color:var(--dm); cursor:pointer; transition:all .15s;
+}
+#reset-btn:hover { border-color:#ff4488; color:#ff4488; }
+
+/* ── MAP ─────────────────────────────── */
+#map-wrap { position:relative; background:#060c14; overflow:hidden; }
+#map-canvas { display:block; width:100%; height:100%; image-rendering:pixelated; }
+
+/* Nuke warning banner */
+#nuke-warn {
+  display:none; position:absolute; top:12px; left:50%; transform:translateX(-50%);
+  background:#1a0010; border:1px solid #ff2244; border-radius:8px;
+  padding:7px 20px; font-family:'Orbitron',monospace; font-size:.55rem;
+  color:#ff2244; letter-spacing:.1em; z-index:10; animation:era-pulse .4s ease infinite;
+  white-space:nowrap;
+}
+
+/* ── RIGHT PANEL ─────────────────────── */
+#panel {
+  background:var(--bg2); border-left:1px solid var(--border);
+  display:grid; grid-template-rows:auto 1fr auto;
+  overflow:hidden;
+}
+
+/* Nation roster */
+#roster { border-bottom:1px solid var(--border); }
+.king-card {
+  display:flex; align-items:center; gap:10px; padding:9px 14px;
+  cursor:pointer; border-left:3px solid transparent; transition:all .15s;
+  position:relative;
+}
+.king-card:hover { background:var(--bg3); }
+.king-card.sel { background:var(--bg3); border-left-color:var(--kc); }
+.king-card.dead { opacity:.3; pointer-events:none; }
+.king-card + .king-card { border-top:1px solid var(--border); }
+.k-avatar {
+  width:34px; height:34px; border-radius:8px; display:flex; align-items:center;
+  justify-content:center; font-size:1.1rem; flex-shrink:0;
+  background:var(--bg4); border:1px solid var(--border);
+}
+.k-body { flex:1; min-width:0; }
+.k-name { font-size:.62rem; font-weight:600; color:var(--kc,var(--tx)); }
+.k-title { font-size:.46rem; color:var(--dm); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.k-stats { display:flex; gap:6px; margin-top:4px; }
+.k-stat { font-size:.44rem; color:var(--dm); display:flex; align-items:center; gap:2px; }
+.k-stat span { color:var(--kc,var(--tx)); font-weight:600; }
+.k-war-badge {
+  font-size:.38rem; font-family:'Orbitron',monospace; letter-spacing:.06em;
+  padding:2px 6px; border-radius:4px; background:#2a0010; color:#ff4444; border:1px solid #ff444440;
+}
+.k-peace-badge {
+  font-size:.38rem; color:var(--dm);
+}
+
+/* Chat area */
+#chat { display:flex; flex-direction:column; overflow:hidden; }
+#chat-hdr {
+  padding:11px 14px 9px; border-bottom:1px solid var(--border);
+  background:var(--bg3);
+}
+#chat-king { font-size:.64rem; font-weight:600; }
+#chat-sub  { font-size:.46rem; color:var(--dm); margin-top:2px; display:flex; align-items:center; gap:5px; }
+.enc-badge { font-size:.38rem; color:#00aa55; letter-spacing:.06em; }
+
+#feed {
+  flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px;
+}
+#feed::-webkit-scrollbar { width:2px; }
+#feed::-webkit-scrollbar-thumb { background:var(--border); border-radius:1px; }
+
+.msg { animation:msgin .2s ease; }
+@keyframes msgin { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
+
+.msg-row { display:flex; flex-direction:column; gap:2px; }
+.msg-name { font-size:.5rem; font-weight:600; padding:0 2px; }
+.msg-bubble {
+  font-size:.65rem; line-height:1.6; padding:8px 11px;
+  border-radius:3px 10px 10px 10px; border:1px solid var(--border);
+  background:var(--bg3); color:var(--tx);
+}
+.msg.user .msg-bubble {
+  background: linear-gradient(135deg,#07180f,#060f18);
+  border-color:#00ff8822; border-radius:10px 3px 10px 10px;
+}
+.msg.user .msg-name { text-align:right; color:#00cc66; }
+
+.event-msg {
+  text-align:center; font-size:.53rem; padding:5px 8px;
+  border-radius:6px; letter-spacing:.02em;
+}
+.event-world { color:#8899aa; background:transparent; }
+.event-war   { color:#ff6644; background:#1a0800; border:1px solid #ff664420; }
+.event-nuke  { color:#ff2244; background:#1a0010; border:1px solid #ff224430; animation:era-pulse .8s ease infinite; }
+.event-peace { color:#00cc66; background:#001a0c; border:1px solid #00cc6620; }
+.event-alliance { color:#ffcc00; background:#1a1400; border:1px solid #ffcc0020; }
+.event-destroyed { color:#ff4444; background:#1a0a0a; border:1px solid #ff444430; }
+
+.typing-row { display:flex; gap:4px; align-items:center; padding:8px 11px; background:var(--bg3); border:1px solid var(--border); border-radius:3px 10px 10px 10px; width:fit-content; }
+.tdot { width:5px; height:5px; border-radius:50%; animation:tdot .7s ease infinite; }
+.tdot:nth-child(2){animation-delay:.15s} .tdot:nth-child(3){animation-delay:.3s}
+@keyframes tdot{0%,60%,100%{opacity:.2;transform:scale(.8)}30%{opacity:1;transform:scale(1.1)}}
+
 /* Input */
-#input-area{padding:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;}
-#whisper-to{font-size:.5rem;color:var(--dm);font-style:italic;}
-#msg-input{background:var(--bg3);border:1px solid var(--border);color:var(--tx);padding:7px 10px;border-radius:7px;font-family:inherit;font-size:14px;outline:none;width:100%;resize:none;height:50px;}
-#msg-input:focus{border-color:var(--active-col,#00ff88);}
-#send-btn{padding:6px;background:linear-gradient(135deg,#003322,#005533);border:1px solid #00ff8844;color:#00ff88;border-radius:6px;cursor:pointer;font-family:'Orbitron',monospace;font-size:.5rem;letter-spacing:.06em;transition:all .14s;}
-#send-btn:hover{box-shadow:0 0 12px #00ff8830;}
+#input-wrap {
+  padding:10px 12px; border-top:1px solid var(--border);
+  display:flex; flex-direction:column; gap:7px;
+  background:var(--bg2);
+}
+#input-label { font-size:.46rem; color:var(--dm); display:flex; align-items:center; gap:6px; }
+#input-label .enc { color:#006633; font-family:'Orbitron',monospace; font-size:.38rem; letter-spacing:.06em; }
+#msg-input {
+  width:100%; background:var(--bg3); border:1px solid var(--border);
+  color:var(--tx); padding:8px 11px; border-radius:8px;
+  font-family:inherit; font-size:14px; resize:none; height:52px; outline:none;
+  transition:border-color .15s;
+}
+#msg-input:focus { border-color:var(--active-col,#00ff8844); }
+#msg-input:disabled { opacity:.3; }
+#send-btn {
+  padding:7px; border-radius:7px; border:1px solid var(--active-col,#00ff8830);
+  background:linear-gradient(135deg,#03180a,#041220); color:var(--active-col,#00cc66);
+  font-family:'Orbitron',monospace; font-size:.5rem; letter-spacing:.08em;
+  cursor:pointer; transition:all .15s;
+}
+#send-btn:hover:not(:disabled) { box-shadow:0 0 14px var(--active-col,#00ff8820); }
+#send-btn:disabled { opacity:.3; cursor:not-allowed; }
+
+/* Select prompt */
+#select-prompt {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:8px; padding:20px; text-align:center;
+}
+#select-prompt .sp-icon { font-size:2rem; opacity:.3; }
+#select-prompt .sp-text { font-size:.6rem; color:var(--dm); line-height:1.6; }
+
 /* Nuke overlay */
-#nuke-overlay{position:fixed;inset:0;background:rgba(255,0,0,.15);pointer-events:none;z-index:50;display:none;animation:nukeflash .5s ease;}
-@keyframes nukeflash{0%,100%{opacity:0}50%{opacity:1}}
+#nuke-flash { position:fixed; inset:0; pointer-events:none; z-index:100; display:none; background:radial-gradient(ellipse at center,rgba(255,34,68,.3),transparent 70%); }
 </style>
 </head>
 <body>
 <div id="app">
+
+  <!-- Header -->
   <header id="hdr">
     <div>
       <div class="logo">BLISSNEXUS</div>
-      <div class="tagline">5 kingdoms · 1 world · infinite consequences</div>
+      <div class="logo-sub">The Five Kingdoms</div>
     </div>
-    <div id="era-badge">🕊️ AGE OF PEACE</div>
-    <button id="reset-btn" title="Start a new world" style="padding:3px 10px;background:transparent;border:1px solid #3a4060;color:#3a4060;border-radius:12px;cursor:pointer;font-size:.48rem;font-family:Orbitron,monospace;letter-spacing:.06em;transition:all .15s;margin-right:6px;" onmouseover="this.style.borderColor='#ff4488';this.style.color='#ff4488'" onmouseout="this.style.borderColor='#3a4060';this.style.color='#3a4060'">↺ NEW WORLD</button><div class="pulse"></div>
+    <div id="era" class="era-peace">🕊 AGE OF PEACE</div>
+    <div id="live-dot"></div>
+    <button id="reset-btn" title="Start a new world">↺ NEW WORLD</button>
   </header>
 
+  <!-- Map -->
   <div id="map-wrap">
     <canvas id="map-canvas"></canvas>
+    <div id="nuke-warn">☢ NUCLEAR STRIKE INBOUND</div>
   </div>
 
+  <!-- Right panel -->
   <aside id="panel">
-    <div id="nation-tabs"></div>
-    <div id="chat-wrap">
-      <div id="chat-header">
-        <div id="chat-title">Select a nation to open a channel</div>
-        <div id="chat-subtitle">Your words reach only that king's ears</div>
+    <div id="roster"></div>
+    <div id="chat">
+      <div id="chat-hdr">
+        <div id="chat-king" style="color:var(--dm)">Select a kingdom</div>
+        <div id="chat-sub"><span class="enc-badge"></span><span id="chat-sub-text">Click a king to open a private channel</span></div>
       </div>
-      <div id="feed"></div>
-      <div id="input-area">
-        <div id="whisper-to">No channel open</div>
-        <textarea id="msg-input" placeholder="Whisper to the king..." disabled></textarea>
+      <div id="feed">
+        <div id="select-prompt">
+          <div class="sp-icon">🗺️</div>
+          <div class="sp-text">Click any kingdom on the map<br>or select a king to whisper<br>privately. Only they will hear you.</div>
+        </div>
+      </div>
+      <div id="input-wrap">
+        <div id="input-label"><span id="whisper-target">No channel open</span><span class="enc" id="enc-label"></span></div>
+        <textarea id="msg-input" placeholder="Whisper to the king…" disabled></textarea>
         <button id="send-btn" disabled>WHISPER</button>
       </div>
     </div>
   </aside>
 </div>
-<div id="nuke-overlay"></div>
+<div id="nuke-flash"></div>
 
 <script>
-const WS_URL = location.hostname==='localhost' ? 'ws://localhost:3001' : 'wss://blissnexus-production.up.railway.app';
+const WS_URL = location.hostname==='localhost'
+  ? 'ws://localhost:3001'
+  : 'wss://blissnexus-production.up.railway.app';
 
-// ── STATE ──────────────────────────────────────────────────
+// ── STATE ─────────────────────────────────────────────────
 let AGENTS = {};
-let WORLD = { nations:{}, nukesInFlight:[] };
+let WORLD  = { nations:{}, nukesInFlight:[] };
 let activeNation = null;
 let ws, reconnectTimer;
-let mapW, mapH;
-let kings = {}; // animated sprites
-let nukesAnimating = [];
+let W=0, H=0;
+let nukesAnim = [];
+let kingAngles = {};
+let frame = 0;
 
-// Territory definitions (normalized 0-1, mapped to canvas)
-const TERRITORIES = {
-  sage:  { cx:.50, cy:.45, r:.16, color:'#00cc88', terrain:'#0d3320' },
-  rex:   { cx:.20, cy:.70, r:.15, color:'#ff8800', terrain:'#3a1a00' },
-  vera:  { cx:.18, cy:.25, r:.15, color:'#aa44ff', terrain:'#1a0a30' },
-  plato: { cx:.78, cy:.25, r:.15, color:'#4488ff', terrain:'#0a1a38' },
-  diddy: { cx:.80, cy:.70, r:.15, color:'#ff4488', terrain:'#2a001a' },
+const TERR = {
+  sage:  { cx:.50, cy:.42, r:.17, color:'#00cc88', bg:'#071a10', label:'CALIPHATE' },
+  rex:   { cx:.20, cy:.72, r:.16, color:'#ff8800', bg:'#1a0d00', label:'EMPIRE'    },
+  vera:  { cx:.16, cy:.25, r:.15, color:'#aa44ff', bg:'#0e0818', label:'COLLECTIVE'},
+  plato: { cx:.82, cy:.24, r:.15, color:'#4488ff', bg:'#081018', label:'REPUBLIC'  },
+  diddy: { cx:.80, cy:.72, r:.16, color:'#ff4488', bg:'#180810', label:'TECHNOCRACY'},
 };
 
-// ── CANVAS MAP ─────────────────────────────────────────────
+// ── CANVAS ────────────────────────────────────────────────
 const canvas = document.getElementById('map-canvas');
 const ctx = canvas.getContext('2d');
 
 function resize() {
   const wrap = document.getElementById('map-wrap');
-  mapW = canvas.width = wrap.clientWidth;
-  mapH = canvas.height = wrap.clientHeight;
-  initKings();
+  W = canvas.width  = wrap.clientWidth;
+  H = canvas.height = wrap.clientHeight;
+  Object.keys(TERR).forEach(id => { if(!kingAngles[id]) kingAngles[id] = Math.random()*Math.PI*2; });
 }
-window.addEventListener('resize', ()=>{ resize(); });
+window.addEventListener('resize', resize);
 
-function tx(nx){ return nx * mapW; }
-function ty(ny){ return ny * mapH; }
-function tr(nr){ return nr * Math.min(mapW, mapH); }
+const px = n => n*W;
+const py = n => n*H;
+const pr = n => n*Math.min(W,H);
 
-// Pixel art king sprite (16x16 drawn with rects)
-function drawKing(x,y,color,frame,alive){
-  if(!alive){ return; }
-  const S=3; // pixel size
-  const px=(n)=> x - 8*S + n*S;
-  const py=(n)=> y - 16*S + n*S;
-  const c = color;
-  const dark = '#000';
-  const skin = '#f4c27a';
-  const gold = '#ffcc00';
-  // Crown
-  ctx.fillStyle=gold;
-  ctx.fillRect(px(3),py(0),S*2,S);ctx.fillRect(px(6),py(0),S*2,S);ctx.fillRect(px(9),py(0),S*2,S);
-  ctx.fillRect(px(3),py(1),S*8,S);
-  // Head
-  ctx.fillStyle=skin;
-  ctx.fillRect(px(4),py(2),S*8,S*5);
-  // Eyes
-  ctx.fillStyle='#333';
-  ctx.fillRect(px(5),py(4),S,S);ctx.fillRect(px(9),py(4),S,S);
+// Draw pixel terrain patch
+function pixelTerrain(cx2,cy2,r2,color,seed){
+  for(let i=0;i<280;i++){
+    const a=Math.sin(i*1.3+seed)*Math.PI*2+i*0.4;
+    const dist=pr(r2)*(0.2+Math.abs(Math.sin(i*0.7+seed))*0.7);
+    const x2=cx2+Math.cos(a)*dist;
+    const y2=cy2+Math.sin(a)*dist*0.75;
+    const sz=3+Math.floor(Math.sin(i*0.5+seed)*2);
+    ctx.fillStyle=color;
+    ctx.fillRect(Math.round(x2/4)*4,Math.round(y2/4)*4,sz,sz);
+  }
+}
+
+// Draw pixel king sprite
+function drawKing(kx,ky,color,dead){
+  if(dead){
+    ctx.font='18px serif'; ctx.textAlign='center'; ctx.fillText('💀',kx,ky+6);
+    return;
+  }
+  const S=2;
+  const bob=Math.sin(frame*0.08)*1.5;
+  const walk=Math.sin(frame*0.12);
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,.3)';
+  ctx.beginPath(); ctx.ellipse(kx,ky+9+bob,7,3,0,0,Math.PI*2); ctx.fill();
+  // Legs
+  ctx.fillStyle='#555';
+  ctx.fillRect(kx-5,ky+3+bob,4,6+walk*2);
+  ctx.fillRect(kx+1,ky+3+bob,4,6-walk*2);
   // Body
-  ctx.fillStyle=c;
-  ctx.fillRect(px(3),py(7),S*10,S*5);
-  // Arms (animated)
-  const armSwing = Math.sin(Date.now()/400 + (frame||0))*2|0;
-  ctx.fillRect(px(1),py(7+armSwing),S*2,S*4);
-  ctx.fillRect(px(13),py(7-armSwing),S*2,S*4);
-  // Legs (walk cycle)
-  const legSwing = Math.sin(Date.now()/300 + (frame||0))*1.5|0;
-  ctx.fillRect(px(4),py(12),S*3,S*(3+legSwing));
-  ctx.fillRect(px(9),py(12),S*3,S*(3-legSwing));
+  ctx.fillStyle=color;
+  ctx.fillRect(kx-7,ky-6+bob,14,10);
+  // Arms
+  ctx.fillStyle=color+'cc';
+  ctx.fillRect(kx-11,ky-5+bob+walk,4,7);
+  ctx.fillRect(kx+7,ky-5+bob-walk,4,7);
+  // Head
+  ctx.fillStyle='#e8c090';
+  ctx.fillRect(kx-5,ky-15+bob,10,10);
+  // Eyes
+  ctx.fillStyle='#222';
+  ctx.fillRect(kx-3,ky-12+bob,2,2);
+  ctx.fillRect(kx+1,ky-12+bob,2,2);
+  // Crown
+  ctx.fillStyle='#ffcc00';
+  ctx.fillRect(kx-5,ky-18+bob,10,3);
+  ctx.fillRect(kx-6,ky-21+bob,3,3);
+  ctx.fillRect(kx-1,ky-22+bob,3,4);
+  ctx.fillRect(kx+3,ky-21+bob,3,3);
+  // Glow on head
+  ctx.shadowColor=color; ctx.shadowBlur=8;
+  ctx.fillStyle=color+'44';
+  ctx.beginPath(); ctx.arc(kx,ky-10+bob,9,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=0;
 }
 
-function drawMap() {
-  ctx.fillStyle='#0a0e18';
-  ctx.fillRect(0,0,mapW,mapH);
-
-  // Draw grid (subtle)
-  ctx.strokeStyle='#0f1525';ctx.lineWidth=1;
-  for(let x=0;x<mapW;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,mapH);ctx.stroke();}
-  for(let y=0;y<mapH;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(mapW,y);ctx.stroke();}
+function drawMap(){
+  frame++;
+  // Ocean background
+  ctx.fillStyle='#060c18';
+  ctx.fillRect(0,0,W,H);
+  // Subtle wave grid
+  ctx.strokeStyle='#0a1020'; ctx.lineWidth=1;
+  for(let x2=0;x2<W;x2+=32){ ctx.beginPath();ctx.moveTo(x2,0);ctx.lineTo(x2,H);ctx.stroke(); }
+  for(let y2=0;y2<H;y2+=32){ ctx.beginPath();ctx.moveTo(0,y2);ctx.lineTo(W,y2);ctx.stroke(); }
 
   // Draw territories
-  Object.entries(TERRITORIES).forEach(([id,t])=>{
-    const nation = WORLD.nations[id];
-    const agent = AGENTS[id];
-    if(!agent) return;
-    const cx=tx(t.cx), cy=ty(t.cy), r=tr(t.r);
-    const alive = nation?.alive !== false;
-    // Territory fill — pixelated blob
+  Object.entries(TERR).forEach(([id,t]) => {
+    const n = WORLD.nations[id]||{};
+    const alive = n.alive !== false;
+    const atWar = (n.wars||[]).length > 0;
+    const cx2=px(t.cx), cy2=py(t.cy), r2=pr(t.r);
+
+    // Terrain fill (pixel blobs)
     ctx.save();
-    for(let px2=-r;px2<=r;px2+=4){
-      for(let py2=-r;py2<=r;py2+=4){
-        const dist=Math.sqrt(px2*px2+py2*py2);
-        const jitter=Math.sin(px2*0.3+id.length)*6+Math.cos(py2*0.4+id.length)*5;
-        if(dist<r+jitter){
-          ctx.fillStyle = alive ? t.terrain : '#111118';
-          ctx.fillRect(cx+px2,cy+py2,4,4);
-        }
-      }
-    }
+    ctx.beginPath(); ctx.arc(cx2,cy2,r2+4,0,Math.PI*2); ctx.clip();
+    ctx.fillStyle = alive ? t.bg : '#0a0a10';
+    ctx.fillRect(cx2-r2-8,cy2-r2-8,r2*2+16,r2*2+16);
+    if(alive) pixelTerrain(cx2,cy2,t.r,t.color+'18',id.length*7);
     ctx.restore();
-    // Border glow
-    const atWar = nation?.wars?.length > 0;
-    const hasAllies = nation?.allies?.length > 0;
-    ctx.beginPath();
-    ctx.arc(cx,cy,r+2,0,Math.PI*2);
-    ctx.strokeStyle = !alive ? '#333' : atWar ? '#ff2200' : hasAllies ? '#00ff88' : (t.color+'88');
-    ctx.lineWidth = atWar ? 2 : 1;
+
+    // Territory border
+    const isSelected = id === activeNation;
+    const flashAlpha = atWar ? (0.5+Math.sin(frame*0.2)*0.3) : 1;
+    ctx.beginPath(); ctx.arc(cx2,cy2,r2,0,Math.PI*2);
+    ctx.strokeStyle = !alive ? '#1a1a28'
+      : atWar  ? `rgba(255,80,20,${flashAlpha})`
+      : isSelected ? t.color
+      : t.color+'55';
+    ctx.lineWidth = isSelected ? 2 : 1;
     ctx.stroke();
-    if(atWar){
-      ctx.beginPath();ctx.arc(cx,cy,r+4,0,Math.PI*2);
-      ctx.strokeStyle='#ff220044';ctx.lineWidth=4;ctx.stroke();
+    // Outer glow ring
+    if(alive){
+      ctx.beginPath(); ctx.arc(cx2,cy2,r2+4,0,Math.PI*2);
+      ctx.strokeStyle = atWar
+        ? `rgba(255,60,0,${flashAlpha*0.4})`
+        : t.color+'18';
+      ctx.lineWidth=6; ctx.stroke();
     }
-    // Nation name label
-    ctx.fillStyle = alive ? t.color : '#444';
-    ctx.font = `bold ${Math.max(8,mapW/80)}px 'Orbitron',monospace`;
+
+    // Name label
+    const fs = Math.max(8, W/68);
+    ctx.font = `bold ${fs}px 'Orbitron',monospace`;
     ctx.textAlign='center';
-    ctx.fillText(agent.name.toUpperCase(), cx, cy+r+16);
-    // Stats
-    if(nation && alive){
-      ctx.font = `${Math.max(7,mapW/100)}px Inter,sans-serif`;
-      ctx.fillStyle='#8899aa';
-      ctx.fillText(`🪖${nation.troops} ☢️${nation.nukes}`, cx, cy+r+28);
+    ctx.fillStyle = alive ? t.color : '#333';
+    ctx.shadowColor = alive ? t.color : 'transparent'; ctx.shadowBlur=6;
+    ctx.fillText(t.label, cx2, cy2+r2+fs+4);
+    ctx.shadowBlur=0;
+
+    // Troop/nuke stats
+    if(alive && n.troops !== undefined){
+      ctx.font=`${Math.max(7,W/90)}px Inter,sans-serif`;
+      ctx.fillStyle='#667799';
+      ctx.fillText(`🪖${n.troops}  ☢️${n.nukes}`, cx2, cy2+r2+fs+18);
     }
+    // Destroyed
     if(!alive){
-      ctx.font=`bold ${Math.max(10,mapW/60)}px Inter`;
-      ctx.fillStyle='#ff224488';ctx.fillText('DESTROYED',cx,cy);
+      ctx.font=`bold ${Math.max(10,W/55)}px Inter`;
+      ctx.fillStyle='#ff224440'; ctx.textAlign='center';
+      ctx.fillText('DESTROYED', cx2, cy2+4);
     }
   });
 
-  // Draw war lines
-  if(WORLD.nations){
-    const drawn = new Set();
-    Object.entries(WORLD.nations).forEach(([id,n])=>{
-      (n.wars||[]).forEach(enemyId=>{
-        const key=[id,enemyId].sort().join('-');
-        if(drawn.has(key)) return; drawn.add(key);
-        const a=TERRITORIES[id], b=TERRITORIES[enemyId];
-        if(!a||!b) return;
-        ctx.beginPath();
-        ctx.moveTo(tx(a.cx),ty(a.cy));ctx.lineTo(tx(b.cx),ty(b.cy));
-        ctx.strokeStyle='#ff220066';ctx.lineWidth=2;
-        ctx.setLineDash([6,4]);ctx.stroke();ctx.setLineDash([]);
-      });
-      (n.allies||[]).forEach(allyId=>{
-        const key=[id,allyId].sort().join('-');
-        if(drawn.has(key+'a')) return; drawn.add(key+'a');
-        const a=TERRITORIES[id], b=TERRITORIES[allyId];
-        if(!a||!b) return;
-        ctx.beginPath();
-        ctx.moveTo(tx(a.cx),ty(a.cy));ctx.lineTo(tx(b.cx),ty(b.cy));
-        ctx.strokeStyle='#00ff8840';ctx.lineWidth=1;ctx.stroke();
-      });
+  // Draw relation lines
+  const drawn = new Set();
+  Object.entries(WORLD.nations||{}).forEach(([id,n]) => {
+    (n.wars||[]).forEach(eid => {
+      const key=[id,eid].sort().join('|');
+      if(drawn.has(key+'w')) return; drawn.add(key+'w');
+      const a=TERR[id],b=TERR[eid]; if(!a||!b) return;
+      ctx.beginPath(); ctx.moveTo(px(a.cx),py(a.cy)); ctx.lineTo(px(b.cx),py(b.cy));
+      ctx.strokeStyle=`rgba(255,60,0,${0.3+Math.sin(frame*0.15)*0.2})`;
+      ctx.lineWidth=2; ctx.setLineDash([8,5]); ctx.stroke(); ctx.setLineDash([]);
     });
-  }
+    (n.allies||[]).forEach(aid => {
+      const key=[id,aid].sort().join('|');
+      if(drawn.has(key+'a')) return; drawn.add(key+'a');
+      const a=TERR[id],b=TERR[aid]; if(!a||!b) return;
+      ctx.beginPath(); ctx.moveTo(px(a.cx),py(a.cy)); ctx.lineTo(px(b.cx),py(b.cy));
+      ctx.strokeStyle='#ffcc0040'; ctx.lineWidth=1; ctx.stroke();
+    });
+  });
 
   // Nuke missiles
-  nukesAnimating.forEach(nuke=>{
-    const progress = Math.min(1,(Date.now()-nuke.startedAt)/(nuke.landAt-nuke.startedAt));
-    const a=TERRITORIES[nuke.from], b=TERRITORIES[nuke.to];
-    if(!a||!b) return;
-    const mx=tx(a.cx)+(tx(b.cx)-tx(a.cx))*progress;
-    const my=ty(a.cy)+(ty(b.cy)-ty(a.cy))*progress - Math.sin(progress*Math.PI)*60;
-    ctx.fillStyle='#ff4488';ctx.shadowColor='#ff4488';ctx.shadowBlur=10;
-    ctx.beginPath();ctx.arc(mx,my,4,0,Math.PI*2);ctx.fill();
-    ctx.shadowBlur=0;
+  nukesAnim.forEach(nuke => {
+    const now = Date.now();
+    const prog = Math.min(1,(now-nuke.start)/(nuke.landAt-nuke.start));
+    const a=TERR[nuke.from],b=TERR[nuke.to]; if(!a||!b) return;
+    const ax=px(a.cx),ay=py(a.cy),bx=px(b.cx),by=py(b.cy);
+    const mx=ax+(bx-ax)*prog;
+    const my=ay+(by-ay)*prog - Math.sin(prog*Math.PI)*H*0.22;
     // Trail
-    for(let i=1;i<=5;i++){
-      const tp=Math.max(0,progress-i*0.04);
-      const tmx=tx(a.cx)+(tx(b.cx)-tx(a.cx))*tp;
-      const tmy=ty(a.cy)+(ty(b.cy)-ty(a.cy))*tp - Math.sin(tp*Math.PI)*60;
-      ctx.fillStyle=`rgba(255,68,136,${0.2-i*0.04})`;
-      ctx.beginPath();ctx.arc(tmx,tmy,3-i*0.4,0,Math.PI*2);ctx.fill();
+    for(let i=5;i>0;i--){
+      const tp=Math.max(0,prog-i*0.035);
+      const tx2=ax+(bx-ax)*tp, ty2=ay+(by-ay)*tp - Math.sin(tp*Math.PI)*H*0.22;
+      ctx.fillStyle=`rgba(255,34,68,${0.12-i*0.02})`;
+      ctx.beginPath(); ctx.arc(tx2,ty2,4-i*0.5,0,Math.PI*2); ctx.fill();
     }
-    if(progress>=1 && !nuke.impacted){
-      nuke.impacted=true;
-      // Explosion
-      ctx.fillStyle='#ff4488';ctx.shadowColor='#ff4488';ctx.shadowBlur=30;
-      ctx.beginPath();ctx.arc(tx(b.cx),ty(b.cy),30,0,Math.PI*2);ctx.fill();
+    ctx.shadowColor='#ff2244'; ctx.shadowBlur=14;
+    ctx.fillStyle='#ff6688';
+    ctx.beginPath(); ctx.arc(mx,my,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#ffaacc';
+    ctx.beginPath(); ctx.arc(mx,my,2,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+    if(prog>=1 && !nuke.done){
+      nuke.done=true;
+      ctx.shadowColor='#ff2244'; ctx.shadowBlur=40;
+      ctx.fillStyle='rgba(255,34,68,.6)';
+      ctx.beginPath(); ctx.arc(bx,by,40,0,Math.PI*2); ctx.fill();
       ctx.shadowBlur=0;
-      document.getElementById('nuke-overlay').style.display='block';
-      setTimeout(()=>{ document.getElementById('nuke-overlay').style.display='none'; },600);
+      flashScreen();
     }
   });
-  nukesAnimating=nukesAnimating.filter(n=>!n.impacted||Date.now()-n.landAt<1000);
+  nukesAnim = nukesAnim.filter(n => !n.done || Date.now()-n.landAt < 1500);
 
-  // Kings
-  Object.entries(TERRITORIES).forEach(([id,t])=>{
-    if(!kings[id]) return;
-    const k=kings[id];
-    const alive=WORLD.nations[id]?.alive!==false;
-    // King wanders in territory
-    k.angle=(k.angle||0)+0.008;
-    const wanderR=tr(t.r)*0.45;
-    const kx=tx(t.cx)+Math.cos(k.angle)*wanderR;
-    const ky=ty(t.cy)+Math.sin(k.angle*0.7)*wanderR*0.5;
-    drawKing(kx,ky,t.color,id.length,alive);
-    // Crown emoji above
-    if(alive){
-      ctx.font='14px serif';ctx.textAlign='center';
-      ctx.fillText('👑',kx,ky-50);
-    }
+  // Kings (animated sprites)
+  Object.entries(TERR).forEach(([id,t]) => {
+    const n = WORLD.nations[id]||{};
+    const alive = n.alive !== false;
+    kingAngles[id] = (kingAngles[id]||0) + 0.007;
+    const wanderR = pr(t.r)*0.42;
+    const kx = px(t.cx)+Math.cos(kingAngles[id])*wanderR;
+    const ky = py(t.cy)+Math.sin(kingAngles[id]*0.65)*wanderR*0.55;
+    drawKing(kx,ky,t.color,!alive);
   });
+
+  requestAnimationFrame(drawMap);
 }
 
-function initKings(){
-  Object.keys(TERRITORIES).forEach(id=>{ kings[id]={angle:Math.random()*Math.PI*2}; });
+// ── SCREEN FLASH ──────────────────────────────────────────
+function flashScreen(){
+  const el = document.getElementById('nuke-flash');
+  el.style.display='block';
+  setTimeout(()=>el.style.display='none',700);
+  document.getElementById('nuke-warn').style.display='none';
 }
 
-function loop(){
-  drawMap();
-  requestAnimationFrame(loop);
+// ── ERA BADGE ─────────────────────────────────────────────
+function updateEra(){
+  const el=document.getElementById('era');
+  const ns=Object.values(WORLD.nations||{});
+  const wars=ns.reduce((s,n)=>s+(n.wars||[]).length,0);
+  const alive=ns.filter(n=>n.alive!==false).length;
+  const nukesFly=WORLD.nukesInFlight?.length>0;
+  el.className=''; 
+  if(alive<=1){ el.textContent='💀 WORLD ENDED'; el.className='era-ended'; }
+  else if(nukesFly){ el.textContent='☢ NUCLEAR WAR'; el.className='era-nuclear'; }
+  else if(wars>=4){ el.textContent='🔥 WORLD AT WAR'; el.className='era-war'; }
+  else if(wars>=2){ el.textContent='⚔ CONFLICT'; el.className='era-war'; }
+  else if(wars>0){ el.textContent='⚠ TENSIONS'; el.className='era-tense'; }
+  else{ el.textContent='🕊 AGE OF PEACE'; el.className='era-peace'; }
 }
 
-// ── CLICK ON TERRITORY ─────────────────────────────────────
-canvas.addEventListener('click', e=>{
-  const rect=canvas.getBoundingClientRect();
-  const mx=(e.clientX-rect.left)*(canvas.width/rect.width);
-  const my=(e.clientY-rect.top)*(canvas.height/rect.height);
-  let closest=null, closestD=Infinity;
-  Object.entries(TERRITORIES).forEach(([id,t])=>{
-    const d=Math.hypot(mx-tx(t.cx), my-ty(t.cy));
-    if(d<tr(t.r)+20 && d<closestD){ closestD=d; closest=id; }
-  });
-  if(closest && WORLD.nations[closest]?.alive!==false){
-    setActiveNation(closest);
-  }
-});
-
-// ── NATION TABS ────────────────────────────────────────────
-function renderTabs(){
-  const el=document.getElementById('nation-tabs');
-  el.innerHTML='';
+// ── ROSTER ────────────────────────────────────────────────
+function renderRoster(){
+  const el=document.getElementById('roster'); el.innerHTML='';
   Object.values(AGENTS).forEach(a=>{
     const n=WORLD.nations[a.id]||{};
     const alive=n.alive!==false;
-    const atWar=(n.wars||[]).length>0;
+    const t=TERR[a.id]||{};
     const d=document.createElement('div');
-    d.className='ntab'+(activeNation===a.id?' active':'')+(alive?'':' dead');
-    d.style.setProperty('--tab-col',TERRITORIES[a.id]?.color||'#fff');
-    const status=!alive?'DESTROYED':atWar?'⚔️ AT WAR':(n.allies||[]).length?'🤝 Allied':'At peace';
-    d.innerHTML=`<div class="ntab-emoji">${a.emoji}</div><div class="ntab-info"><div class="ntab-name" style="color:${TERRITORIES[a.id]?.color}">${a.name}</div><div class="ntab-status">${status}</div></div><div class="ntab-nukes">☢️${n.nukes??'?'}</div>`;
-    d.onclick=()=>{ if(alive) setActiveNation(a.id); };
+    d.className='king-card'+(alive?'',' dead'.trim())+(activeNation===a.id?' sel':'');
+    if(!alive) d.classList.add('dead');
+    if(activeNation===a.id) d.classList.add('sel');
+    d.style.setProperty('--kc',t.color||'#fff');
+    const wars=(n.wars||[]).length;
+    const allies=(n.allies||[]).length;
+    const badge = !alive ? '<span style="font-size:.42rem;color:#444">DESTROYED</span>'
+      : wars ? `<span class="k-war-badge">⚔ WAR</span>`
+      : allies ? `<span class="k-peace-badge">🤝 ${allies} ally</span>`
+      : `<span class="k-peace-badge">🕊 Peace</span>`;
+    d.innerHTML=`
+      <div class="k-avatar" style="border-color:${t.color}33">${a.emoji}</div>
+      <div class="k-body">
+        <div class="k-name">${a.name}</div>
+        <div class="k-title">${a.title}</div>
+        <div class="k-stats">
+          <div class="k-stat">🪖 <span>${n.troops??'—'}</span></div>
+          <div class="k-stat">☢️ <span>${n.nukes??'—'}</span></div>
+          <div style="margin-left:auto">${badge}</div>
+        </div>
+      </div>`;
+    d.onclick=()=>{ if(alive) setActive(a.id); };
     el.appendChild(d);
   });
 }
 
-function setActiveNation(id){
+// ── SET ACTIVE NATION ─────────────────────────────────────
+function setActive(id){
   activeNation=id;
-  const a=AGENTS[id];
-  const col=TERRITORIES[id]?.color||'#00ff88';
-  document.getElementById('chat-title').textContent=`${a.emoji} ${a.name} — Private Channel`;
-  document.getElementById('chat-title').style.color=col;
-  document.getElementById('chat-subtitle').textContent=a.title+' · Only he hears you';
-  document.getElementById('whisper-to').textContent=`Whispering to ${a.name}`;
-  document.getElementById('msg-input').disabled=false;
-  document.getElementById('msg-input').style.setProperty('--active-col',col);
-  document.getElementById('send-btn').disabled=false;
-  document.getElementById('send-btn').style.borderColor=col+'44';
-  document.getElementById('send-btn').style.color=col;
-  renderTabs();
+  const a=AGENTS[id], t=TERR[id]||{};
+  document.getElementById('chat-king').textContent=`${a.emoji} ${a.name}`;
+  document.getElementById('chat-king').style.color=t.color||'var(--tx)';
+  document.getElementById('chat-sub-text').textContent=a.title+' · Private channel';
+  document.getElementById('enc-label').textContent='🔒 ENCRYPTED';
+  document.getElementById('whisper-target').textContent=`To ${a.name}`;
+  const inp=document.getElementById('msg-input');
+  inp.disabled=false; inp.placeholder=`Whisper to ${a.name}…`;
+  inp.style.setProperty('--active-col',(t.color||'#00ff88')+'44');
+  const btn=document.getElementById('send-btn');
+  btn.disabled=false; btn.style.setProperty('--active-col',t.color||'#00cc66');
+  // Clear prompt
+  const sp=document.getElementById('select-prompt');
+  if(sp) sp.remove();
+  renderRoster();
 }
 
-// ── CHAT / FEED ────────────────────────────────────────────
-function appendMsg(type, opts){
+// ── FEED ──────────────────────────────────────────────────
+function addEvent(text,type='world'){
   const feed=document.getElementById('feed');
   const d=document.createElement('div');
-  d.className='msg '+(type);
-  if(type==='world-event'||type==='nuke-event'){
-    d.innerHTML=`<div class="msg-text">${opts.text}</div>`;
-  } else {
-    const col=opts.color||'var(--tx)';
-    d.innerHTML=`<div class="msg-name" style="color:${col}">${opts.emoji||''} ${opts.name}</div><div class="msg-text">${opts.text}</div>`;
-  }
-  feed.appendChild(d);
-  feed.scrollTop=feed.scrollHeight;
+  d.className=`msg event-msg event-${type}`;
+  d.textContent=text;
+  feed.appendChild(d); feed.scrollTop=feed.scrollHeight;
 }
 
-function showTyping(agentId){
+function addMsg(opts){
   const feed=document.getElementById('feed');
-  removeTyping(agentId);
-  const a=AGENTS[agentId];
-  if(!a) return;
+  const isUser=opts.role==='user';
   const d=document.createElement('div');
-  d.className='msg agent';d.id='typing-'+agentId;
-  const col=TERRITORIES[agentId]?.color||'#fff';
-  d.innerHTML=`<div class="msg-name" style="color:${col}">${a.emoji} ${a.name}</div><div class="typing-row"><div class="typing-dot" style="background:${col}"></div><div class="typing-dot" style="background:${col}"></div><div class="typing-dot" style="background:${col}"></div></div>`;
-  feed.appendChild(d);feed.scrollTop=feed.scrollHeight;
+  d.className='msg '+(isUser?'user':'agent');
+  const col=opts.color||TERR[opts.agentId]?.color||'var(--dm)';
+  d.innerHTML=`<div class="msg-row"><div class="msg-name" style="color:${isUser?'#00cc66':col}">${opts.emoji||''} ${opts.name||'?'}</div><div class="msg-bubble">${escHtml(opts.text)}</div></div>`;
+  feed.appendChild(d); feed.scrollTop=feed.scrollHeight;
 }
 
-function removeTyping(agentId){
-  const el=document.getElementById('typing-'+agentId);if(el)el.remove();
+function showTyping(id){
+  removeTyping(id);
+  const feed=document.getElementById('feed');
+  const d=document.createElement('div');
+  d.id='typ-'+id; d.className='msg agent';
+  const col=TERR[id]?.color||'#888';
+  d.innerHTML=`<div class="msg-row"><div class="msg-name" style="color:${col}">${AGENTS[id]?.emoji||''} ${AGENTS[id]?.name||''}</div><div class="typing-row"><div class="tdot" style="background:${col}"></div><div class="tdot" style="background:${col}"></div><div class="tdot" style="background:${col}"></div></div></div>`;
+  feed.appendChild(d); feed.scrollTop=feed.scrollHeight;
 }
 
-function updateEra(){
-  const badge=document.getElementById('era-badge');
-  const nations=Object.values(WORLD.nations);
-  const totalWars=nations.reduce((s,n)=>s+(n.wars||[]).length,0);
-  const anyNuke=WORLD.nukesInFlight?.length>0;
-  const alive=nations.filter(n=>n.alive!==false).length;
-  if(alive<=1){badge.textContent='💀 WORLD ENDED';badge.style.color='#ff2200';}
-  else if(anyNuke){badge.textContent='☢️ NUCLEAR WAR';badge.style.color='#ff4488';}
-  else if(totalWars>=4){badge.textContent='🔥 WORLD AT WAR';badge.style.color='#ff4400';}
-  else if(totalWars>=2){badge.textContent='⚔️ CONFLICT ERA';badge.style.color='#ff8800';}
-  else if(totalWars>0){badge.textContent='⚠️ TENSIONS RISING';badge.style.color='#ffcc00';}
-  else{badge.textContent='🕊️ AGE OF PEACE';badge.style.color='#00ff88';}
-}
+function removeTyping(id){ const e=document.getElementById('typ-'+id); if(e) e.remove(); }
 
-// ── WEBSOCKET ──────────────────────────────────────────────
-function getSessionId(){
-  let id=localStorage.getItem('bn_session');
-  if(!id){ id=crypto.randomUUID(); localStorage.setItem('bn_session',id); }
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── WEBSOCKET ─────────────────────────────────────────────
+function getSession(){
+  let id=localStorage.getItem('bn_sess');
+  if(!id){ id=crypto.randomUUID(); localStorage.setItem('bn_sess',id); }
   return id;
 }
 
@@ -417,10 +588,10 @@ function connect(){
   ws=new WebSocket(WS_URL);
   ws.onopen=()=>{
     clearTimeout(reconnectTimer);
-    ws.send(JSON.stringify({type:'join',sessionId:getSessionId()}));
+    ws.send(JSON.stringify({type:'join',sessionId:getSession()}));
   };
   ws.onclose=()=>{ reconnectTimer=setTimeout(connect,3000); };
-  ws.onmessage=e=>{ handle(JSON.parse(e.data)); };
+  ws.onmessage=e=>handle(JSON.parse(e.data));
 }
 
 function handle(msg){
@@ -428,25 +599,27 @@ function handle(msg){
     case 'init':
       msg.agents.forEach(a=>AGENTS[a.id]=a);
       WORLD=msg.world||WORLD;
-      renderTabs();updateEra();
+      renderRoster(); updateEra();
       document.getElementById('feed').innerHTML='';
       if(msg.isNew){
-        appendMsg('world-event',{text:'🌍 A new world is born. Five kingdoms stand at peace. For now.'});
+        addEvent('🌍 A new world is born. Five kingdoms stand at peace. For now.','world');
+        setTimeout(()=>addEvent('You have the ear of every king. Choose your words carefully.','world'),1200);
+      } else {
+        (msg.log||[]).forEach(e=>{
+          const t=e.type==='nuke'?'nuke':e.type==='war'?'war':e.type==='peace'?'peace':e.type==='alliance'?'alliance':e.type==='destroyed'?'destroyed':'world';
+          addEvent(e.text,t);
+        });
       }
-      (msg.log||[]).forEach(e=>appendMsg(e.type==='nuke'?'nuke-event':'world-event',{text:e.text}));
       break;
     case 'worldUpdate':
-      WORLD=msg.world;
-      renderTabs();updateEra();
-      break;
-    case 'worldEvent':
-      const isNuke=msg.event.type==='nuke';
-      appendMsg(isNuke?'nuke-event':'world-event',{text:msg.event.text});
-      updateEra();
-      break;
+      WORLD=msg.world; renderRoster(); updateEra(); break;
+    case 'worldEvent':{
+      const t2=msg.event.type==='nuke'?'nuke':msg.event.type==='war'?'war':msg.event.type==='peace'?'peace':msg.event.type==='alliance'?'alliance':msg.event.type==='destroyed'?'destroyed':'world';
+      addEvent(msg.event.text,t2); updateEra(); break;
+    }
     case 'message':
-      appendMsg('agent',{name:msg.name,emoji:msg.emoji,color:msg.color||TERRITORIES[msg.agentId]?.color,text:msg.text});
       removeTyping(msg.agentId);
+      addMsg({role:'agent',agentId:msg.agentId,name:msg.name,emoji:msg.emoji,color:msg.color,text:msg.text});
       break;
     case 'typing':
       if(msg.private && msg.agentId===activeNation) showTyping(msg.agentId);
@@ -454,13 +627,14 @@ function handle(msg){
       break;
     case 'whisperReply':
       removeTyping(msg.from);
-      appendMsg('agent',{name:msg.name,emoji:msg.emoji,color:TERRITORIES[msg.from]?.color,text:msg.text});
+      addMsg({role:'agent',agentId:msg.from,name:msg.name,emoji:msg.emoji,color:TERR[msg.from]?.color,text:msg.text});
       break;
     case 'nukeIncoming':
       WORLD=msg.world;
-      nukesAnimating.push({...msg,startedAt:Date.now()});
-      renderTabs();updateEra();
-      break;
+      nukesAnim.push({from:msg.from,to:msg.to,landAt:msg.landAt,start:Date.now()});
+      document.getElementById('nuke-warn').style.display='block';
+      setTimeout(()=>document.getElementById('nuke-warn').style.display='none',8500);
+      renderRoster(); updateEra(); break;
   }
 }
 
@@ -468,32 +642,46 @@ function sendWhisper(){
   const text=document.getElementById('msg-input').value.trim();
   const name=localStorage.getItem('bn_name')||'Stranger';
   if(!text||!activeNation||!ws||ws.readyState!==1) return;
-  appendMsg('user',{name:'You',text});
+  addMsg({role:'user',name:'You',text});
   ws.send(JSON.stringify({type:'whisper',to:activeNation,name,text}));
   document.getElementById('msg-input').value='';
   showTyping(activeNation);
 }
 
 document.getElementById('send-btn').onclick=sendWhisper;
-document.getElementById('msg-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendWhisper();}});
+document.getElementById('msg-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendWhisper();}
+});
 
-// Ask name on first visit
+canvas.addEventListener('click',e=>{
+  const r=canvas.getBoundingClientRect();
+  const mx=(e.clientX-r.left)*(W/r.width), my=(e.clientY-r.top)*(H/r.height);
+  let best=null, bestD=Infinity;
+  Object.entries(TERR).forEach(([id,t])=>{
+    const d=Math.hypot(mx-px(t.cx),my-py(t.cy));
+    if(d<pr(t.r)+20&&d<bestD){ bestD=d; best=id; }
+  });
+  if(best&&WORLD.nations[best]?.alive!==false) setActive(best);
+});
+
+document.getElementById('reset-btn').onclick=()=>{
+  if(!confirm('Start a fresh world? All your progress will be lost.')) return;
+  localStorage.removeItem('bn_sess');
+  document.getElementById('feed').innerHTML='';
+  activeNation=null;
+  renderRoster();
+  connect();
+};
+
+// Name
 if(!localStorage.getItem('bn_name')){
   const n=prompt('What name shall the kings know you by?')||'Stranger';
   localStorage.setItem('bn_name',n);
 }
 
 resize();
-loop();
+drawMap();
 connect();
-
-document.getElementById('reset-btn').onclick=()=>{
-  if(!confirm('Start a fresh world? All progress will be lost.')) return;
-  localStorage.removeItem('bn_session');
-  if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'reset'}));
-  else connect();
-  document.getElementById('feed').innerHTML='';
-};
 </script>
 </body>
 </html>
