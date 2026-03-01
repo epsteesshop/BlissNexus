@@ -75,7 +75,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Inter',s
       <div class="tagline">5 kingdoms · 1 world · infinite consequences</div>
     </div>
     <div id="era-badge">🕊️ AGE OF PEACE</div>
-    <div class="pulse"></div>
+    <button id="reset-btn" title="Start a new world" style="padding:3px 10px;background:transparent;border:1px solid #3a4060;color:#3a4060;border-radius:12px;cursor:pointer;font-size:.48rem;font-family:Orbitron,monospace;letter-spacing:.06em;transition:all .15s;margin-right:6px;" onmouseover="this.style.borderColor='#ff4488';this.style.color='#ff4488'" onmouseout="this.style.borderColor='#3a4060';this.style.color='#3a4060'">↺ NEW WORLD</button><div class="pulse"></div>
   </header>
 
   <div id="map-wrap">
@@ -407,9 +407,18 @@ function updateEra(){
 }
 
 // ── WEBSOCKET ──────────────────────────────────────────────
+function getSessionId(){
+  let id=localStorage.getItem('bn_session');
+  if(!id){ id=crypto.randomUUID(); localStorage.setItem('bn_session',id); }
+  return id;
+}
+
 function connect(){
   ws=new WebSocket(WS_URL);
-  ws.onopen=()=>{ clearTimeout(reconnectTimer); };
+  ws.onopen=()=>{
+    clearTimeout(reconnectTimer);
+    ws.send(JSON.stringify({type:'join',sessionId:getSessionId()}));
+  };
   ws.onclose=()=>{ reconnectTimer=setTimeout(connect,3000); };
   ws.onmessage=e=>{ handle(JSON.parse(e.data)); };
 }
@@ -419,7 +428,11 @@ function handle(msg){
     case 'init':
       msg.agents.forEach(a=>AGENTS[a.id]=a);
       WORLD=msg.world||WORLD;
-      renderTabs();
+      renderTabs();updateEra();
+      document.getElementById('feed').innerHTML='';
+      if(msg.isNew){
+        appendMsg('world-event',{text:'🌍 A new world is born. Five kingdoms stand at peace. For now.'});
+      }
       (msg.log||[]).forEach(e=>appendMsg(e.type==='nuke'?'nuke-event':'world-event',{text:e.text}));
       break;
     case 'worldUpdate':
@@ -473,6 +486,14 @@ if(!localStorage.getItem('bn_name')){
 resize();
 loop();
 connect();
+
+document.getElementById('reset-btn').onclick=()=>{
+  if(!confirm('Start a fresh world? All progress will be lost.')) return;
+  localStorage.removeItem('bn_session');
+  if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'reset'}));
+  else connect();
+  document.getElementById('feed').innerHTML='';
+};
 </script>
 </body>
 </html>
