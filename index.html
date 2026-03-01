@@ -570,7 +570,7 @@ function renderRoster(){
         :(n.allies||[]).length?`<span class="k-badge kb-ally">🤝 ALLY</span>`
         :`<span class="k-badge kb-peace">🕊 Peace</span>`;
       const d=document.createElement('div');
-      d.className='king-card'+(alive?'',' dead'.trim())+(activeNation===a.id?' sel':'');
+      d.className='king-card'+(alive?'':' dead')+(activeNation===a.id?' sel':'');
       if(!alive) d.classList.add('dead');
       if(activeNation===a.id) d.classList.add('sel');
       d.style.setProperty('--kc',t.color||'#fff');
