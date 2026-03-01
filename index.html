@@ -49,6 +49,8 @@ body{height:100%;background:var(--bg);color:var(--tx);font-family:'Inter',sans-s
 }
 .page{position:absolute;inset:0;overflow:hidden;display:none;}
 .page.active{display:block;}
+#page-chat.active{display:flex!important;flex-direction:column;}
+#page-events.active{display:flex!important;flex-direction:column;}
 
 /* ─── MAP PAGE ─────────────────────────── */
 #page-map{background:#060c14;}
@@ -354,7 +356,7 @@ function showTab(tab){
   document.getElementById('page-'+tab).classList.add('active');
   const tb = document.getElementById('tb-'+tab);
   if(tb) tb.classList.add('active');
-  if(tab==='events'){ newEventCount=0; document.getElementById('events-badge').style.display='none'; }
+  if(tab==='events'){ newEventCount=0; const eb=document.getElementById('events-badge');if(eb)eb.style.display='none'; }
 }
 
 // ── SESSION ───────────────────────────────────────────────
@@ -630,7 +632,7 @@ function addEvent(text,type){
     evList.prepend(d);
     if(document.getElementById('page-events').classList.contains('active'))return;
     newEventCount++;
-    document.getElementById('events-badge').style.display='block';
+    const eb2=document.getElementById('events-badge');if(eb2)eb2.style.display='block';
   }
   // Also add to chat feed (world events)
   addToFeed('ev',{text,type});
@@ -694,9 +696,8 @@ function sendWhisper(inputId){
 function handleMapClick(canvas,W,H,e){
   const r=canvas.getBoundingClientRect();
   const scaleX=canvas.width/r.width, scaleY=canvas.height/r.height;
-  let cx,cy;
-  if(e.touches){cx=(e.touches[0].clientX-r.left)*scaleX;cy=(e.touches[0].clientY-r.top)*scaleY;}
-  else{cx=(e.clientX-r.left)*scaleX;cy=(e.clientY-r.top)*scaleY;}
+  const cx=(e.clientX-r.left)*scaleX;
+  const cy=(e.clientY-r.top)*scaleY;
   let best=null,bestD=Infinity;
   Object.entries(TERR).forEach(([id,t])=>{
     const d=Math.hypot(cx-t.cx*W,cy-t.cy*H);
@@ -708,7 +709,11 @@ function handleMapClick(canvas,W,H,e){
   }
 }
 mCanvas.addEventListener('click',e=>handleMapClick(mCanvas,mW,mH,e));
-mCanvas.addEventListener('touchend',e=>{e.preventDefault();handleMapClick(mCanvas,mW,mH,e);},{passive:false});
+mCanvas.addEventListener('touchend',e=>{
+  e.preventDefault();
+  const t=e.changedTouches[0];
+  handleMapClick(mCanvas,mW,mH,{clientX:t.clientX,clientY:t.clientY});
+},{passive:false});
 if(dCanvas){
   dCanvas.addEventListener('click',e=>handleMapClick(dCanvas,dW,dH,e));
 }
@@ -737,7 +742,7 @@ function handle(msg){
       renderRoster();updateEra();
       // Clear feeds
       ['feed','d-feed'].forEach(fid=>{const f=document.getElementById(fid);if(f)f.innerHTML='';});
-      document.getElementById('event-list').innerHTML='';
+      const evl=document.getElementById('event-list');if(evl)evl.innerHTML='';
       if(msg.isNew){
         addEvent('🌍 A new world is born. Five kingdoms stand at peace… for now.','world');
         setTimeout(()=>addEvent('You hold the ear of every king. Your words carry weight.','world'),1400);
@@ -779,7 +784,7 @@ function resetWorld(){
   if(!confirm('Start a fresh world? All progress will be lost.'))return;
   localStorage.removeItem('bn_sess');
   ['feed','d-feed'].forEach(fid=>{const f=document.getElementById(fid);if(f)f.innerHTML='';});
-  document.getElementById('event-list').innerHTML='';
+  const evl=document.getElementById('event-list');if(evl)evl.innerHTML='';
   activeNation=null;
   connect();
 }
@@ -791,10 +796,13 @@ if(!localStorage.getItem('bn_name')){
 }
 
 // ── INIT ──────────────────────────────────────────────────
-resizeCanvases();
 Object.keys(TERR).forEach(id=>kingAngles[id]=Math.random()*Math.PI*2);
-loop();
-connect();
+// Resize after first paint so DOM dimensions are correct
+requestAnimationFrame(()=>{
+  resizeCanvases();
+  loop();
+  connect();
+});
 </script>
 </body>
 </html>
