@@ -60,6 +60,35 @@ canvas{display:block;background:#000;border:1px solid #1a2030;border-radius:4px;
 .g48{display:grid;grid-template-columns:repeat(4,60px);gap:5px;background:#1a2030;padding:5px;border-radius:7px;}
 .t2{width:60px;height:60px;display:flex;align-items:center;justify-content:center;border-radius:5px;font-weight:900;font-size:.78rem;}
 @media(max-width:480px){.grid{grid-template-columns:repeat(auto-fill,minmax(86px,1fr));}}
+
+/* ── MOBILE ── */
+@media(max-width:600px){
+  .title{font-size:1.3rem;}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:5px;}
+  .card{padding:9px 5px;}
+  .ci{font-size:1.3rem;}
+  .cn{font-size:.5rem;}
+  #mbox{width:100vw;max-height:100vh;border-radius:0;border:none;}
+  #modal{align-items:flex-end;}
+  #mbox{border-radius:16px 16px 0 0;}
+  #mgame{padding:7px;min-height:300px;}
+  #mhdr{padding:7px 10px;}
+  canvas{width:100% !important;height:auto !important;}
+  .brd{transform-origin:top center;}
+  .g48{grid-template-columns:repeat(4,calc(22vw - 8px));}
+  .t2{width:calc(22vw - 8px);height:calc(22vw - 8px);font-size:.7rem;}
+  .crd{width:44px;height:60px;font-size:.8rem;}
+  .reel{width:56px;height:62px;font-size:1.9rem;}
+  .bc{width:22px;height:22px;font-size:.65rem;}
+  .mcl{width:20px;height:20px;font-size:.55rem;}
+  #mine-g{grid-template-columns:repeat(16,20px) !important;}
+  .sg{width:160px;height:160px;}
+  .sb{border-radius:6px;}
+  .hw{gap:2px;}
+  .hb{width:24px;height:24px;font-size:.58rem;}
+}
+input, textarea, select { font-size: 16px !important; }
+
 </style></head><body>
 <div id="hub">
   <div class="hdr">
@@ -825,3 +854,268 @@ move2(dx,dy){const nx=this.px+dx,ny=this.py+dy;if(!this.map[ny]||this.map[ny][nx
 render(){const g=document.getElementById("sk-g");if(!g)return;g.innerHTML="";const grid=document.createElement("div");grid.style.cssText="display:inline-grid;grid-template-columns:repeat("+this.w+",38px);gap:2px;";for(let r=0;r<this.h;r++)for(let c=0;c<this.w;c++){const d=document.createElement("div");const isGoal=this.goals.has(c+","+r);const isBox=this.boxes.has(c+","+r);const isWall=this.map[r][c]==="#";const isPlayer=this.px===c&&this.py===r;d.style.cssText="width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;border-radius:3px;background:"+(isWall?"#1a2030":isGoal?"#0a1a2a":"#0a0a10")+";";d.textContent=isWall?"":isPlayer?"🚶":isBox?(isGoal?"✅":"📦"):isGoal?"⭐":"";grid.appendChild(d);}g.appendChild(grid);say("Moves: "+this.moves+" | Level "+(this.lv+1));},
 hint(){say("You can't pull boxes, only push. Plan routes carefully!");}};
 </script></body></html>
+
+// ═══════════════════════════════════════════════════════
+// MOBILE CONTROLS — universal touch support
+// ═══════════════════════════════════════════════════════
+
+// Virtual D-pad builder
+function mkDpad(opts){
+  const {up,down,left,right,action,actionLabel="🔥"} = opts;
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:flex;gap:18px;align-items:center;justify-content:center;margin-top:10px;user-select:none;";
+
+  const dpad = document.createElement("div");
+  dpad.style.cssText = "display:grid;grid-template-columns:44px 44px 44px;grid-template-rows:44px 44px 44px;gap:3px;";
+
+  const btn = (label, fn, gridArea) => {
+    const b = document.createElement("div");
+    b.style.cssText = "grid-area:"+gridArea+";width:44px;height:44px;background:#1a2030;border:2px solid #2a3050;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;active:background:#2a3050;-webkit-tap-highlight-color:transparent;";
+    b.textContent = label;
+    const fire = e => { e.preventDefault(); fn && fn(); };
+    b.addEventListener("touchstart", fire, {passive:false});
+    b.addEventListener("mousedown", fire);
+    return b;
+  };
+
+  // grid: row/col
+  const empty = () => { const d=document.createElement("div"); return d; };
+  dpad.appendChild(empty());
+  dpad.appendChild(btn("▲", up, "1/2"));
+  dpad.appendChild(empty());
+  dpad.appendChild(btn("◀", left, "2/1"));
+  dpad.appendChild(empty());
+  dpad.appendChild(btn("▶", right, "2/3"));
+  dpad.appendChild(empty());
+  dpad.appendChild(btn("▼", down, "3/2"));
+  dpad.appendChild(empty());
+  wrap.appendChild(dpad);
+
+  if(action){
+    const ab = document.createElement("div");
+    ab.style.cssText = "width:62px;height:62px;background:var(--a2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:0 4px 16px #ff448866;";
+    ab.textContent = actionLabel;
+    const fire = e => { e.preventDefault(); action(); };
+    ab.addEventListener("touchstart", fire, {passive:false});
+    ab.addEventListener("mousedown", fire);
+    wrap.appendChild(ab);
+  }
+
+  return wrap;
+}
+
+// Swipe detector for a canvas element
+function addSwipe(el, {up,down,left,right}){
+  let sx,sy;
+  el.addEventListener("touchstart", e=>{ sx=e.touches[0].clientX; sy=e.touches[0].clientY; },{passive:true});
+  el.addEventListener("touchend", e=>{
+    const dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
+    if(Math.max(Math.abs(dx),Math.abs(dy))<20) return;
+    if(Math.abs(dx)>Math.abs(dy)){ dx>0?right&&right():left&&left(); }
+    else{ dy>0?down&&down():up&&up(); }
+  },{passive:true});
+}
+
+// ── Patch PONG: add up/down mobile buttons ──
+const _pongInit = IMPL.pong.init.bind(IMPL.pong);
+IMPL.pong.init = function(){
+  _pongInit();
+  const mg = document.getElementById("mgame");
+  const dpad = mkDpad({
+    up: ()=>{ if(IMPL.pong._ps!==undefined) IMPL.pong._ps=Math.max(0,IMPL.pong._ps-16); },
+    down: ()=>{ if(IMPL.pong._ps!==undefined) IMPL.pong._ps=Math.min(280-54,IMPL.pong._ps+16); },
+  });
+  dpad.querySelector("div:nth-child(5)").style.display="none"; // hide center
+  mg.appendChild(dpad);
+};
+
+// ── Patch SNAKE: swipe + d-pad ──
+const _snakeInit = IMPL.snake.init.bind(IMPL.snake);
+IMPL.snake.init = function(){
+  _snakeInit();
+  const mg = document.getElementById("mgame");
+  const c = mg.querySelector("canvas");
+  if(c) addSwipe(c, {
+    up:   ()=>document.onkeydown({key:"ArrowUp",  preventDefault:()=>{}}),
+    down: ()=>document.onkeydown({key:"ArrowDown", preventDefault:()=>{}}),
+    left: ()=>document.onkeydown({key:"ArrowLeft", preventDefault:()=>{}}),
+    right:()=>document.onkeydown({key:"ArrowRight",preventDefault:()=>{}}),
+  });
+  mg.appendChild(mkDpad({
+    up:   ()=>document.onkeydown&&document.onkeydown({key:"ArrowUp",  preventDefault:()=>{}}),
+    down: ()=>document.onkeydown&&document.onkeydown({key:"ArrowDown", preventDefault:()=>{}}),
+    left: ()=>document.onkeydown&&document.onkeydown({key:"ArrowLeft", preventDefault:()=>{}}),
+    right:()=>document.onkeydown&&document.onkeydown({key:"ArrowRight",preventDefault:()=>{}}),
+  }));
+};
+
+// ── Patch TETRIS: d-pad + drop button ──
+const _tetrisInit = IMPL.tetris.init.bind(IMPL.tetris);
+IMPL.tetris.init = function(){
+  _tetrisInit();
+  const mg = document.getElementById("mgame");
+  mg.appendChild(mkDpad({
+    up:    ()=>IMPL.tetris.rot2(),
+    down:  ()=>IMPL.tetris.mv(0,1),
+    left:  ()=>IMPL.tetris.mv(-1,0),
+    right: ()=>IMPL.tetris.mv(1,0),
+    action:()=>IMPL.tetris.drop(),
+    actionLabel:"⬇",
+  }));
+};
+
+// ── Patch SPACE INVADERS: left/right/fire ──
+const _invInit = IMPL.invaders.init.bind(IMPL.invaders);
+IMPL.invaders.init = function(){
+  _invInit();
+  const mg = document.getElementById("mgame");
+  const d = document.createElement("div");
+  d.style.cssText = "display:flex;gap:12px;justify-content:center;margin-top:10px;";
+  const mb2 = (label,fn,col) => {
+    const b=document.createElement("div");
+    b.style.cssText="width:62px;height:62px;background:"+(col||"#1a2030")+";border:2px solid #2a3050;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;-webkit-tap-highlight-color:transparent;";
+    b.textContent=label;
+    let iv;
+    b.addEventListener("touchstart",e=>{e.preventDefault();fn();iv=setInterval(fn,80);},{passive:false});
+    b.addEventListener("touchend",()=>clearInterval(iv));
+    b.addEventListener("mousedown",()=>{fn();iv=setInterval(fn,80);});
+    b.addEventListener("mouseup",()=>clearInterval(iv));
+    return b;
+  };
+  const fire=()=>document.onkeydown&&document.onkeydown({key:" ",preventDefault:()=>{}});
+  d.appendChild(mb2("◀",()=>document.onkeydown&&document.onkeydown({key:"ArrowLeft",preventDefault:()=>{}})));
+  d.appendChild(mb2("🔥",fire,"#440022"));
+  d.appendChild(mb2("▶",()=>document.onkeydown&&document.onkeydown({key:"ArrowRight",preventDefault:()=>{}})));
+  mg.appendChild(d);
+};
+
+// ── Patch BREAKOUT: left/right ──
+const _brInit = IMPL.breakout.init.bind(IMPL.breakout);
+IMPL.breakout.init = function(){
+  _brInit();
+  const mg = document.getElementById("mgame");
+  const c = mg.querySelector("canvas");
+  if(c){ c.ontouchstart=e=>{ e.preventDefault(); IMPL.breakout._go=true; }; }
+  const d = document.createElement("div");
+  d.style.cssText = "display:flex;gap:12px;justify-content:center;margin-top:10px;";
+  const hold=(fn)=>{let iv; const b=document.createElement("div");b.style.cssText="width:80px;height:52px;background:#1a2030;border:2px solid #2a3050;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;cursor:pointer;-webkit-tap-highlight-color:transparent;";b.addEventListener("touchstart",e=>{e.preventDefault();iv=setInterval(fn,30);},{passive:false});b.addEventListener("touchend",()=>clearInterval(iv));b.addEventListener("mousedown",()=>iv=setInterval(fn,30));b.addEventListener("mouseup",()=>clearInterval(iv));return b;};
+  const L=hold(()=>document.onkeydown&&document.onkeydown({key:"ArrowLeft",preventDefault:()=>{}}));L.textContent="◀";
+  const R=hold(()=>document.onkeydown&&document.onkeydown({key:"ArrowRight",preventDefault:()=>{}}));R.textContent="▶";
+  d.appendChild(L);d.appendChild(R);mg.appendChild(d);
+};
+
+// ── Patch FLAPPY: already tappable, just ensure canvas taps work ──
+
+// ── Patch FROGGER: d-pad ──
+const _frInit = IMPL.frogger.init.bind(IMPL.frogger);
+IMPL.frogger.init = function(){
+  _frInit();
+  const mg = document.getElementById("mgame");
+  mg.appendChild(mkDpad({
+    up:   ()=>document.onkeydown&&document.onkeydown({key:"ArrowUp",  preventDefault:()=>{}}),
+    down: ()=>document.onkeydown&&document.onkeydown({key:"ArrowDown", preventDefault:()=>{}}),
+    left: ()=>document.onkeydown&&document.onkeydown({key:"ArrowLeft", preventDefault:()=>{}}),
+    right:()=>document.onkeydown&&document.onkeydown({key:"ArrowRight",preventDefault:()=>{}}),
+  }));
+};
+
+// ── Patch ASTEROIDS: full controls ──
+const _astInit = IMPL.asteroids.init.bind(IMPL.asteroids);
+IMPL.asteroids.init = function(){
+  _astInit();
+  const mg = document.getElementById("mgame");
+  const d = document.createElement("div");
+  d.style.cssText = "display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px;";
+  const tb = (label,key,col,repeat) => {
+    const b=document.createElement("div");
+    b.style.cssText="width:54px;height:54px;background:"+(col||"#1a2030")+";border:2px solid #2a3050;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;cursor:pointer;-webkit-tap-highlight-color:transparent;";
+    b.textContent=label;
+    const dn=()=>{document.onkeydown&&document.onkeydown({key,preventDefault:()=>{}});};
+    const up=()=>{document.onkeyup&&document.onkeyup({key});};
+    if(repeat){b.addEventListener("touchstart",e=>{e.preventDefault();document.onkeydown=document.onkeydown;dn();},{passive:false});b.addEventListener("touchend",up);b.addEventListener("mousedown",dn);b.addEventListener("mouseup",up);}
+    else{b.addEventListener("touchstart",e=>{e.preventDefault();dn();setTimeout(up,80);},{passive:false});b.addEventListener("mousedown",()=>{dn();setTimeout(up,80);});}
+    return b;
+  };
+  d.appendChild(tb("↺","ArrowLeft","",true));
+  d.appendChild(tb("🚀","ArrowUp","#004422",true));
+  d.appendChild(tb("↻","ArrowRight","",true));
+  d.appendChild(tb("💥"," ","#440022",false));
+  mg.appendChild(d);
+};
+
+// ── Patch PAC-MAN: swipe + d-pad ──
+const _pmInit = IMPL.pacman.init.bind(IMPL.pacman);
+IMPL.pacman.init = function(){
+  _pmInit();
+  const mg = document.getElementById("mgame");
+  const c = mg.querySelector("canvas");
+  if(c) addSwipe(c, {
+    up:   ()=>document.onkeydown&&document.onkeydown({key:"ArrowUp",  preventDefault:()=>{}}),
+    down: ()=>document.onkeydown&&document.onkeydown({key:"ArrowDown",preventDefault:()=>{}}),
+    left: ()=>document.onkeydown&&document.onkeydown({key:"ArrowLeft",preventDefault:()=>{}}),
+    right:()=>document.onkeydown&&document.onkeydown({key:"ArrowRight",preventDefault:()=>{}}),
+  });
+  mg.appendChild(mkDpad({
+    up:   ()=>document.onkeydown&&document.onkeydown({key:"ArrowUp",  preventDefault:()=>{}}),
+    down: ()=>document.onkeydown&&document.onkeydown({key:"ArrowDown",preventDefault:()=>{}}),
+    left: ()=>document.onkeydown&&document.onkeydown({key:"ArrowLeft",preventDefault:()=>{}}),
+    right:()=>document.onkeydown&&document.onkeydown({key:"ArrowRight",preventDefault:()=>{}}),
+  }));
+};
+
+// ── Patch TRON: d-pad ──
+const _tronInit = IMPL.tron.init.bind(IMPL.tron);
+IMPL.tron.init = function(){
+  _tronInit();
+  const mg = document.getElementById("mgame");
+  mg.appendChild(mkDpad({
+    up:   ()=>document.onkeydown&&document.onkeydown({key:"ArrowUp",  preventDefault:()=>{}}),
+    down: ()=>document.onkeydown&&document.onkeydown({key:"ArrowDown",preventDefault:()=>{}}),
+    left: ()=>document.onkeydown&&document.onkeydown({key:"ArrowLeft",preventDefault:()=>{}}),
+    right:()=>document.onkeydown&&document.onkeydown({key:"ArrowRight",preventDefault:()=>{}}),
+  }));
+};
+
+// ── Patch 2048: swipe support ──
+const _g48Init = IMPL.g2048.init.bind(IMPL.g2048);
+IMPL.g2048.init = function(){
+  _g48Init();
+  const mg = document.getElementById("mgame");
+  const g = mg.querySelector(".g48");
+  if(g) addSwipe(g, {
+    up:   ()=>IMPL.g2048.move("U"),
+    down: ()=>IMPL.g2048.move("D"),
+    left: ()=>IMPL.g2048.move("L"),
+    right:()=>IMPL.g2048.move("R"),
+  });
+  // also add arrow buttons below
+  const d = document.createElement("div");
+  d.style.cssText = "display:grid;grid-template-columns:50px 50px 50px;grid-template-rows:50px 50px;gap:4px;margin-top:8px;";
+  const ab=(lbl,fn,r,c)=>{const b=document.createElement("div");b.style.cssText="grid-row:"+r+";grid-column:"+c+";background:#1a2030;border:2px solid #2a3050;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;-webkit-tap-highlight-color:transparent;";b.textContent=lbl;b.addEventListener("touchstart",e=>{e.preventDefault();fn();},{passive:false});b.addEventListener("mousedown",fn);return b;};
+  d.appendChild(ab("▲",()=>IMPL.g2048.move("U"),1,2));
+  d.appendChild(ab("◀",()=>IMPL.g2048.move("L"),2,1));
+  d.appendChild(ab("▼",()=>IMPL.g2048.move("D"),2,2));
+  d.appendChild(ab("▶",()=>IMPL.g2048.move("R"),2,3));
+  mg.appendChild(d);
+};
+
+// ── Patch SOKOBAN: d-pad ──
+const _skInit = IMPL.sokoban.load.bind(IMPL.sokoban);
+IMPL.sokoban.init = function(){
+  this.lv=0;this.load2(0);
+};
+IMPL.sokoban.load2 = function(l){
+  const LV=this.LV;const L=LV[l%LV.length];this.w=L.w;this.h=L.h;this.moves=0;this.map=L.map.map(r=>[...r]);this.px=0;this.py=0;this.boxes=new Set();this.goals=new Set();for(let r=0;r<this.h;r++)for(let c=0;c<this.w;c++){if(this.map[r][c]==="P"){this.px=c;this.py=r;this.map[r][c]=".";}if(this.map[r][c]==="B"){this.boxes.add(c+","+r);this.map[r][c]=".";}if(this.map[r][c]==="$"){this.boxes.add(c+","+r);this.map[r][c]="*";}if(this.map[r][c]==="*")this.goals.add(c+","+r);}
+  const mg=document.getElementById("mgame");mg.innerHTML="";const w=document.createElement("div");w.className="gw";w.innerHTML='<div class="msg" id="sk-m">Push boxes onto goals!</div><div id="sk-g"></div>';mg.appendChild(w);
+  this.render();
+  const dpad=mkDpad({up:()=>this.move2(0,-1),down:()=>this.move2(0,1),left:()=>this.move2(-1,0),right:()=>this.move2(1,0)});mg.appendChild(dpad);
+};
+
+// ── Patch TYPE RACER: prevent zoom on input ──
+const _trInit = IMPL.typerace.init.bind(IMPL.typerace);
+IMPL.typerace.init = function(){
+  _trInit();
+  const i = document.getElementById("tr-i");
+  if(i) i.style.fontSize = "16px"; // prevents iOS zoom
+};
+
