@@ -89,6 +89,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 /* EVENTS */
 #events-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;display:flex;flex-direction:column;gap:8px;}
 .ecard{padding:10px 14px;border-radius:8px;border:1px solid var(--bdr);background:var(--bg3);font-size:.62rem;line-height:1.5;}
+.ecard.speech{border-color:#1c1f3080;color:var(--dim);font-style:italic;}
 
 /* NAV BAR */
 #nav{position:fixed;bottom:0;left:0;right:0;z-index:50;
@@ -179,6 +180,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
   </button>
 </nav>
 
+
+<!-- NAME MODAL -->
+<div id="name-modal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(6,8,16,.92);display:flex;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:#0b0d18;border:1px solid #1c1f30;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;">
+    <div style="font-size:2rem;margin-bottom:12px;">👑</div>
+    <div style="font-family:Orbitron,monospace;font-size:.7rem;color:#b8c4e0;margin-bottom:6px;letter-spacing:.06em;">WELCOME TO BLISSNEXUS</div>
+    <div style="font-size:.58rem;color:#363d5a;margin-bottom:20px;line-height:1.6;">Five kingdoms await. You will whisper privately to each king.<br>What name shall they know you by?</div>
+    <input id="name-input" type="text" placeholder="Enter your name…" maxlength="24"
+      style="width:100%;background:#10121e;border:1px solid #1c1f30;color:#b8c4e0;padding:12px 14px;border-radius:10px;font-family:Inter,sans-serif;font-size:16px;outline:none;text-align:center;margin-bottom:14px;-webkit-appearance:none;">
+    <button onclick="submitName()" style="width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#00cc6688,#004422);color:#00ff88;font-family:Orbitron,monospace;font-size:.6rem;letter-spacing:.08em;cursor:pointer;">ENTER THE WORLD</button>
+  </div>
+</div>
 <div id="flash"></div>
 
 <script>
@@ -209,22 +222,19 @@ var currentTab = 'map';
 
 // ── TAB SWITCHING ─────────────────────────────────────────
 function goTab(tab) {
-  // hide all pages
-  document.querySelectorAll('.tab-page').forEach(function(p) {
-    p.classList.remove('show');
-  });
-  // show selected
+  document.querySelectorAll('.tab-page').forEach(function(p) { p.classList.remove('show'); });
   document.getElementById('tab-' + tab).classList.add('show');
-  // update nav
-  document.querySelectorAll('.nav-btn').forEach(function(b) {
-    b.classList.remove('on');
-  });
+  document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('on'); });
   var nb = document.getElementById('nb-' + tab);
   if (nb) nb.classList.add('on');
   currentTab = tab;
   if (tab === 'events') {
     badgeCount = 0;
     document.getElementById('badge').style.display = 'none';
+  }
+  if (tab === 'chat') {
+    document.getElementById('nb-chat').style.color = '';
+    document.getElementById('nb-chat').classList.add('on');
   }
 }
 
@@ -510,9 +520,9 @@ function addEvent(text, type) {
   var es = document.getElementById('events-scroll');
   if (es) {
     var card = document.createElement('div');
-    card.className = 'ecard';
     var cols = {war:'#ff6644',nuke:'#ff2244',peace:'#00cc66',destroy:'#ff4444'};
-    card.style.color = cols[type] || 'var(--tx)';
+    card.className = 'ecard' + (type==='speech'?' speech':'');
+    card.style.color = cols[type] || (type==='speech'?'var(--dim)':'var(--tx)');
     card.style.borderColor = (cols[type]||'#1c1f30')+'40';
     card.textContent = text;
     if (es.children[0] && es.children[0].classList.contains('empty-state')) es.children[0].remove();
@@ -620,6 +630,12 @@ function connect() {
       case 'message':
         removeTyping(msg.agentId);
         addMsg('agent',{id:msg.agentId,name:msg.name,emoji:msg.emoji,color:msg.color,text:msg.text});
+        // Also show in events tab as public speech
+        addEvent(msg.emoji+' '+msg.name+': "'+msg.text+'"', 'speech');
+        // Badge the whisper tab if not active
+        if (currentTab !== 'chat') {
+          document.getElementById('nb-chat').style.color = '#ffcc00';
+        }
         break;
       case 'typing':
         if (msg.private && msg.agentId===activeKing) showTyping(msg.agentId);
@@ -638,11 +654,25 @@ function connect() {
 }
 
 // ── BOOT ──────────────────────────────────────────────────
+function submitName() {
+  var inp = document.getElementById('name-input');
+  var n = (inp.value||'').trim() || 'Stranger';
+  localStorage.setItem('bn_name', n);
+  document.getElementById('name-modal').style.display = 'none';
+}
+document.getElementById('name-input').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') submitName();
+});
+
 window.addEventListener('load', function() {
-  // name prompt
-  if (!localStorage.getItem('bn_name')) {
-    var n = prompt('What name shall the kings know you by?') || 'Stranger';
-    localStorage.setItem('bn_name', n);
+  // clear old 'Stranger' default so modal shows properly
+  var stored = localStorage.getItem('bn_name');
+  if (!stored || stored === 'Stranger') {
+    localStorage.removeItem('bn_name');
+    document.getElementById('name-modal').style.display = 'flex';
+    setTimeout(function(){ document.getElementById('name-input').focus(); }, 100);
+  } else {
+    document.getElementById('name-modal').style.display = 'none';
   }
   // init angles
   Object.keys(TERR).forEach(function(id){ angles[id]=Math.random()*Math.PI*2; });
