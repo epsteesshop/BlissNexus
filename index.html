@@ -22,6 +22,35 @@ html, body { height:100%; background:var(--bg); color:var(--tx); font-family:'In
 /* ── LAYOUT ─────────────────────────── */
 #app { display:grid; grid-template-columns:1fr 320px; grid-template-rows:56px 1fr; height:100vh; }
 
+/* ── MOBILE ─────────────────────────── */
+@media (max-width:700px) {
+  #app { grid-template-columns:1fr; grid-template-rows:48px 1fr; }
+  #panel { display:none; position:fixed; inset:0; top:auto; z-index:30;
+    max-height:75vh; border-radius:18px 18px 0 0; border:1px solid var(--border);
+    border-bottom:none; box-shadow:0 -8px 40px rgba(0,0,0,.6); }
+  #panel.open { display:grid; }
+  #roster { max-height:38vh; overflow-y:auto; }
+  #map-wrap { height:100%; }
+  /* Map tap hint */
+  #tap-hint { display:flex; }
+  /* Bottom tab bar */
+  #tab-bar { display:flex; }
+  #hdr { padding:0 14px; }
+  .logo { font-size:.85rem; }
+  .logo-sub { display:none; }
+  #reset-btn { font-size:.4rem; padding:3px 9px; }
+  #era { font-size:.42rem; padding:3px 10px; }
+  /* Drag handle */
+  #panel::before {
+    content:''; display:block; width:38px; height:4px; border-radius:2px;
+    background:var(--border); margin:8px auto 0; flex-shrink:0;
+  }
+}
+@media (min-width:701px) {
+  #tap-hint { display:none; }
+  #tab-bar { display:none; }
+}
+
 /* ── HEADER ─────────────────────────── */
 #hdr {
   grid-column: 1/-1;
@@ -209,7 +238,7 @@ html, body { height:100%; background:var(--bg); color:var(--tx); font-family:'In
   </header>
 
   <!-- Map -->
-  <div id="map-wrap">
+  <div id="map-wrap" style="position:relative">
     <canvas id="map-canvas"></canvas>
     <div id="nuke-warn">☢ NUCLEAR STRIKE INBOUND</div>
   </div>
@@ -542,6 +571,7 @@ function setActive(id){
   const sp=document.getElementById('select-prompt');
   if(sp) sp.remove();
   renderRoster();
+  if(window.innerWidth<=700) openPanel();
 }
 
 // ── FEED ──────────────────────────────────────────────────
@@ -682,6 +712,36 @@ if(!localStorage.getItem('bn_name')){
 resize();
 drawMap();
 connect();
+
+// ── MOBILE PANEL ──────────────────────────────────────────
+function openPanel(){
+  const p=document.getElementById('panel');
+  const tb=document.getElementById('tab-bar');
+  p.classList.add('open');
+  if(tb){ document.getElementById('tab-map').style.color='var(--dm)'; document.getElementById('tab-kings').style.color='var(--acc)'; }
+}
+function closePanel(){
+  const p=document.getElementById('panel');
+  p.classList.remove('open');
+  const tb=document.getElementById('tab-bar');
+  if(tb){ document.getElementById('tab-map').style.color='var(--acc)'; document.getElementById('tab-kings').style.color='var(--dm)'; }
+}
+// On mobile, tapping the map canvas also closes the panel
+canvas.addEventListener('click', ()=>{
+  if(window.innerWidth<=700) closePanel();
+}, true);
+// After selecting a nation on mobile, auto-open panel chat
+const _origSetActive = setActive;
 </script>
+<!-- Mobile tap hint -->
+<div id="tap-hint" style="display:none;position:absolute;bottom:70px;left:50%;transform:translateX(-50%);background:rgba(6,8,16,.85);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:.55rem;color:var(--dm);pointer-events:none;white-space:nowrap;z-index:5;">
+  👆 Tap a kingdom to whisper
+</div>
+
+<!-- Mobile bottom tab bar -->
+<div id="tab-bar" style="position:fixed;bottom:0;left:0;right:0;height:56px;background:rgba(6,8,16,.97);border-top:1px solid var(--border);z-index:40;align-items:center;justify-content:space-around;padding:0 8px;">
+  <button onclick="closePanel()" style="flex:1;background:none;border:none;color:var(--dm);font-size:.5rem;font-family:Orbitron,monospace;letter-spacing:.06em;padding:8px;cursor:pointer;transition:color .15s;" id="tab-map">🗺 MAP</button>
+  <button onclick="openPanel()" style="flex:1;background:none;border:none;color:var(--dm);font-size:.5rem;font-family:Orbitron,monospace;letter-spacing:.06em;padding:8px;cursor:pointer;transition:color .15s;" id="tab-kings">👑 KINGS</button>
+</div>
 </body>
 </html>
