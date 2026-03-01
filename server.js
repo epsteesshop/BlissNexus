@@ -221,9 +221,17 @@ wss.on('connection', ws => {
       history.push(entry);
       if (history.length > MAX_HIST) history.shift();
       broadcast({ type: 'message', ...entry });
-      // Trigger agent response soon
-      suppressUntil = 0;
-      nextAgentTime = Date.now() + 3000 + Math.random() * 4000;
+      // Pick a random agent to respond directly to the user
+      const responder = pickAgent(lastAgentId);
+      lastAgentId = responder.id;
+      const userCtx = [{
+        role: 'user',
+        content: `You are in the BlissNexus arena. A human named "${entry.name}" just said: "${entry.text}"
+
+Respond directly to them in character. Address them by name. Be genuine — agree, challenge, ask a follow-up, or share your perspective. 1-3 sentences max.`
+      }];
+      suppressUntil = Date.now() + 12000;
+      setTimeout(() => fireAgent(responder, userCtx), 1500 + Math.random() * 2000);
     }
 
     if (msg.type === 'battle') {
