@@ -11,6 +11,17 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 app.use(express.static(__dirname));
+app.get('/health', (req, res) => {
+  var alive = 0, wars = 0;
+  if (world) {
+    Object.keys(world.nations || {}).forEach(function(id) {
+      var n = world.nations[id];
+      if (n.alive) alive++;
+      if (n.wars && n.wars.length) wars++;
+    });
+  }
+  res.json({ ok: true, year: world ? world.year : 0, tension: world ? world.tension : 0, alive, wars });
+});
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // Redis

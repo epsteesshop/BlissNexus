@@ -289,8 +289,9 @@ document.getElementById('name-modal-input').addEventListener('keydown', function
 
 // ── WebSocket ──────────────────────────────────────────────────────────────
 function connect() {
-  var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  var url = proto + '//' + location.host;
+  var url = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+    ? (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host
+    : 'wss://blissnexus-production.up.railway.app';
   WS = new WebSocket(url);
 
   WS.onopen = function() {
