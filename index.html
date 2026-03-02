@@ -2,575 +2,1083 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>BlissNexus — The Five Kingdoms</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Cinzel:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BlissNexus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-:root{--bg:#060810;--bg2:#0b0d18;--bg3:#10121e;--bdr:#1c1f30;--tx:#b8c4e0;--dim:#363d5a;--grn:#00ff88;}
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#0a0a12;color:#e8e0d0;font-family:'Roboto',sans-serif}
+#header{position:fixed;top:0;left:0;right:0;height:50px;background:#0f0f1a;border-bottom:1px solid #2a2a3a;display:flex;align-items:center;padding:0 12px;gap:10px;z-index:100}
+#logo{font-family:'Cinzel',serif;font-size:18px;font-weight:900;color:#c8a84b;white-space:nowrap}
+#tension-wrap{display:flex;align-items:center;gap:6px;margin-left:8px}
+#tension-bar-outer{width:80px;height:6px;background:#1a1a2a;border-radius:3px;overflow:hidden}
+#tension-bar-inner{height:100%;width:10%;background:#2ecc71;border-radius:3px;transition:width 0.5s,background 0.5s}
+#year-badge{font-size:11px;color:#888;white-space:nowrap}
+#era-badge{font-size:10px;padding:2px 7px;border-radius:10px;background:#1a2a1a;color:#2ecc71;font-weight:500;white-space:nowrap}
+#content{position:fixed;top:50px;left:0;right:0;bottom:58px;overflow:hidden}
+.tab-page{display:none;position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.tab-page.active{display:block}
+#nav{position:fixed;bottom:0;left:0;right:0;height:58px;background:#0f0f1a;border-top:1px solid #2a2a3a;display:flex;z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:#555;cursor:pointer;font-size:9px;font-weight:500;letter-spacing:0.5px;transition:color 0.2s}
+.nav-btn.active{color:#c8a84b}
+.nav-btn .nav-icon{font-size:20px}
+.nav-badge{position:absolute;top:8px;right:calc(20% - 14px);background:#e74c3c;color:#fff;border-radius:8px;font-size:9px;padding:1px 4px;display:none}
 
-/* HEADER */
-#hdr{position:fixed;top:0;left:0;right:0;z-index:50;height:50px;
-  display:flex;align-items:center;gap:8px;padding:0 14px;
-  background:rgba(6,8,16,.96);border-bottom:1px solid var(--bdr);}
-.logo{font-family:'Orbitron',monospace;font-weight:900;font-size:.85rem;
-  background:linear-gradient(90deg,#00ff88,#4488ff,#ff4488);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;white-space:nowrap;}
-#year-badge{font-family:'Cinzel',serif;font-size:.55rem;color:#ffcc00;white-space:nowrap;margin-left:4px;}
-#era-badge{margin-left:auto;font-size:.42rem;font-family:'Orbitron',monospace;
-  padding:3px 9px;border-radius:20px;border:1px solid #00cc6640;color:#00cc66;white-space:nowrap;}
-@keyframes era-blink{0%,100%{opacity:1}50%{opacity:.4}}
+/* Mission banner */
+#mission-banner{position:fixed;bottom:58px;left:0;right:0;z-index:99;display:none;align-items:center;padding:8px 12px;gap:8px;font-size:12px}
+#mission-banner .mb-emoji{font-size:20px}
+#mission-banner .mb-text{flex:1;font-size:11px}
+#mission-banner .mb-timer{font-size:11px;opacity:0.8;white-space:nowrap}
+#mission-banner .mb-close{background:none;border:none;color:inherit;font-size:16px;cursor:pointer;opacity:0.7;padding:0 4px}
 
-/* CONTENT */
-#content{position:fixed;top:50px;left:0;right:0;bottom:58px;overflow:hidden;}
-.tab-page{display:none;position:absolute;inset:0;}
-.tab-page.show{display:block;}
-#tab-chat{display:none;flex-direction:column;}
-#tab-chat.show{display:flex;}
-#tab-chronicle{display:none;flex-direction:column;}
-#tab-chronicle.show{display:flex;}
-#tab-kings{display:none;flex-direction:column;}
-#tab-kings.show{display:flex;}
+/* MAP tab */
+#tab-map{background:#0a0a12}
+#map-canvas{display:block;width:100%;height:100%}
 
-/* MAP */
-#tab-map{background:#060912;}
-#map-canvas{width:100%;height:100%;display:block;}
+/* KINGS tab */
+#tab-kings{padding:10px;padding-bottom:20px}
+.king-card{background:#0f0f1a;border-radius:10px;margin-bottom:12px;padding:12px;border-left:4px solid #555;cursor:pointer;position:relative}
+.king-card-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+.king-emoji-tile{font-size:36px;width:46px;height:46px;display:flex;align-items:center;justify-content:center;background:#1a1a2a;border-radius:8px;flex-shrink:0}
+.king-info{flex:1;min-width:0}
+.king-name{font-family:'Cinzel',serif;font-size:15px;font-weight:600}
+.king-title{font-size:11px;color:#888;margin-top:1px}
+.king-mood-row{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:11px;color:#aaa}
+.king-stats{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;font-size:12px}
+.king-stat{background:#1a1a2a;padding:3px 8px;border-radius:6px}
+.king-stat.fogged{opacity:0.6;color:#aaa}
+.king-cities{margin:6px 0;font-size:11px;color:#888}
+.king-cities span{margin-right:8px}
+.king-cities .city-dead{text-decoration:line-through;opacity:0.5}
+.king-ambition-wrap{margin:6px 0}
+.king-ambition-label{font-size:10px;color:#888;margin-bottom:3px}
+.king-ambition-bar{height:4px;background:#1a1a2a;border-radius:2px;overflow:hidden}
+.king-ambition-fill{height:100%;border-radius:2px;transition:width 0.5s}
+.king-relations{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.rel-badge{font-size:10px;padding:2px 6px;border-radius:8px;display:flex;align-items:center;gap:3px}
+.rel-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.king-trust-wrap{margin:6px 0}
+.king-trust-label{font-size:10px;color:#888;margin-bottom:3px}
+.trust-bar-outer{height:6px;background:#1a1a2a;border-radius:3px;overflow:hidden}
+.trust-bar-inner{height:100%;border-radius:3px;transition:width 0.5s}
+.king-pentagon-row{display:flex;align-items:center;gap:10px;margin:6px 0}
+.pentagon-canvas{border-radius:4px;background:#0a0a12}
+.dead-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:32px}
 
-/* KINGS */
-#tab-kings{background:var(--bg2);}
-#kings-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.kcard{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--bdr);cursor:pointer;border-left:3px solid transparent;transition:background .12s;}
-.kcard:active,.kcard.sel{background:var(--bg3);}
-.kavatar{width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;background:var(--bg3);border:1px solid var(--bdr);flex-shrink:0;margin-top:2px;}
-.kbody{flex:1;min-width:0;}
-.kname{font-size:.72rem;font-weight:600;margin-bottom:2px;}
-.ktitle{font-size:.48rem;color:var(--dim);margin-bottom:6px;}
-.kstats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;}
-.kstat{font-size:.48rem;color:var(--dim);display:flex;align-items:center;gap:2px;}
-.kstat b{color:var(--tx);font-weight:600;}
-.trust-bar-wrap{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
-.trust-label{font-size:.42rem;color:var(--dim);white-space:nowrap;}
-.trust-bar{flex:1;height:3px;background:var(--bdr);border-radius:2px;overflow:hidden;}
-.trust-fill{height:100%;border-radius:2px;transition:width .3s;}
-.kbadges{display:flex;gap:5px;flex-wrap:wrap;}
-.kbadge{font-size:.42rem;padding:2px 7px;border-radius:8px;font-family:'Orbitron',monospace;letter-spacing:.04em;}
-.b-war{color:#ff5533;background:#1a080008;border:1px solid #ff553340;}
-.b-ally{color:#ffcc00;background:#1a140008;border:1px solid #ffcc0040;}
-.b-peace{color:var(--dim);}
-.b-trait{color:#667799;background:var(--bg3);border:1px solid var(--bdr);}
-.kchev{color:var(--dim);font-size:1.1rem;align-self:center;}
+/* WHISPER tab */
+#tab-whisper{display:flex;flex-direction:column}
+#whisper-header{background:#0f0f1a;padding:10px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #1a1a2a;flex-shrink:0}
+#whisper-back{background:none;border:none;color:#888;font-size:20px;cursor:pointer;padding:0 6px 0 0}
+#whisper-king-info{flex:1}
+#whisper-king-name{font-family:'Cinzel',serif;font-size:15px;font-weight:600}
+#whisper-king-title{font-size:10px;color:#888}
+#whisper-private-badge{font-size:10px;color:#888;background:#1a1a2a;padding:2px 7px;border-radius:8px}
+#whisper-trust-badge{font-size:10px;padding:2px 7px;border-radius:8px;background:#1a2a1a}
+#whisper-mission-bar{background:#1a1a12;padding:6px 12px;font-size:11px;color:#c8a84b;border-bottom:1px solid #2a2a1a;display:none;flex-shrink:0}
+#whisper-feed{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px;display:flex;flex-direction:column;gap:8px}
+#whisper-typing{padding:4px 12px;font-size:11px;color:#888;font-style:italic;min-height:20px;flex-shrink:0}
+#whisper-input-wrap{display:flex;gap:8px;padding:8px 10px;background:#0f0f1a;border-top:1px solid #1a1a2a;flex-shrink:0}
+#whisper-input{flex:1;background:#1a1a2a;border:none;border-radius:20px;padding:9px 14px;color:#e8e0d0;font-size:14px;outline:none}
+#whisper-send{background:#c8a84b;border:none;border-radius:50%;width:38px;height:38px;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.msg-bubble{max-width:80%;padding:8px 12px;border-radius:16px;font-size:13px;line-height:1.4}
+.msg-agent{align-self:flex-start;background:#1a1a2a;border-bottom-left-radius:4px}
+.msg-user{align-self:flex-end;background:#2a1a2a;border-bottom-right-radius:4px}
+.msg-event{align-self:center;font-size:11px;color:#888;font-style:italic;text-align:center;background:none;padding:4px}
+.msg-name{font-size:10px;font-weight:500;margin-bottom:3px}
 
-/* CHAT */
-#chat-header{flex-shrink:0;padding:11px 14px;background:var(--bg3);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;}
-#chat-back{background:none;border:none;color:var(--dim);font-size:1.4rem;cursor:pointer;line-height:1;padding:0;}
-#chat-king-info{flex:1;min-width:0;}
-#chat-king-name{font-size:.7rem;font-weight:600;}
-#chat-king-sub{font-size:.44rem;color:var(--dim);margin-top:2px;display:flex;align-items:center;gap:6px;}
-.trust-inline{font-size:.4rem;padding:1px 6px;border-radius:8px;border:1px solid;font-family:'Orbitron',monospace;letter-spacing:.04em;}
-#chat-lock{font-size:.4rem;color:#006633;font-family:'Orbitron',monospace;margin-left:auto;}
+/* INTEL tab */
+#tab-intel{padding:10px;padding-bottom:20px}
+.intel-section{margin-bottom:16px}
+.intel-title{font-size:11px;letter-spacing:2px;color:#888;text-transform:uppercase;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #1a1a2a}
+.intercept-entry{background:#0f0f1a;border:1px solid #1a2a0a;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-family:monospace;font-size:11px;color:#c8a84b}
+.intercept-header{color:#666;font-size:10px;margin-bottom:3px}
+.intercept-text{color:#d4a843;font-style:italic}
+.intercept-empty{color:#444;font-size:12px;font-style:italic;text-align:center;padding:20px}
+.rel-matrix{width:100%;border-collapse:collapse;font-size:11px}
+.rel-matrix th,.rel-matrix td{padding:5px;text-align:center;border:1px solid #1a1a2a}
+.rel-matrix th{color:#888;background:#0a0a12;font-weight:400}
+.rel-matrix .self-cell{background:#0f0f1a}
+.rel-cell-ally{background:#1a2a1a;color:#2ecc71}
+.rel-cell-friendly{background:#1a1a2a;color:#3498db}
+.rel-cell-neutral{background:#0f0f1a;color:#888}
+.rel-cell-rival{background:#2a1a1a;color:#e67e22}
+.rel-cell-enemy{background:#2a0a0a;color:#e74c3c}
 
-#messages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;display:flex;flex-direction:column;gap:7px;}
-.bwrap{display:flex;flex-direction:column;gap:3px;}
-.bname{font-size:.52rem;font-weight:600;padding:0 4px;}
-.bubble{font-size:.68rem;line-height:1.6;padding:9px 12px;border-radius:4px 14px 14px 14px;background:var(--bg3);border:1px solid var(--bdr);}
-.me .bubble{background:linear-gradient(135deg,#06180e,#050e18);border-color:#00ff8820;border-radius:14px 4px 14px 14px;}
-.me .bname{text-align:right;color:#00cc66;}
-.evline{text-align:center;font-size:.54rem;padding:4px 8px;border-radius:6px;margin:2px 0;}
-.ev-world{color:var(--dim);}
-.ev-war{color:#ff6644;background:#1a090008;border:1px solid #ff664420;}
-.ev-nuke{color:#ff2244;background:#1a000810;border:1px solid #ff224430;}
-.ev-peace{color:#00cc66;background:#001a0c08;}
-.ev-destroy{color:#ff4444;}
-.ev-alliance{color:#ffcc00;background:#1a140008;}
-.ev-event{color:#8899bb;font-style:italic;}
-.ev-year{color:#ffcc00;font-family:'Cinzel',serif;font-size:.56rem;}
-.dots-wrap{display:flex;flex-direction:column;gap:3px;}
-.dots{display:flex;gap:5px;padding:9px 12px;background:var(--bg3);border:1px solid var(--bdr);border-radius:4px 14px 14px 14px;width:fit-content;}
-.dot{width:5px;height:5px;border-radius:50%;animation:dp .7s ease infinite;}
-.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
-@keyframes dp{0%,60%,100%{opacity:.2;transform:scale(.8)}30%{opacity:1;transform:scale(1.1)}}
-.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;opacity:.3;text-align:center;padding:30px;}
-.empty-state span:first-child{font-size:2.5rem;}
-.empty-state span:last-child{font-size:.62rem;color:var(--dim);line-height:1.7;}
+/* CHRONICLE tab */
+#tab-chronicle{padding:16px;padding-bottom:30px}
+.chronicle-empty{text-align:center;color:#555;padding:40px 20px;font-style:italic}
+.chronicle-entry{background:#0f0a06;border:1px solid #2a1a06;border-radius:8px;padding:14px;margin-bottom:14px}
+.chronicle-year{font-family:'Cinzel',serif;font-size:13px;color:#c8a84b;text-align:center;margin-bottom:8px;letter-spacing:2px}
+.chronicle-text{font-size:13px;line-height:1.7;color:#c8b87a;font-style:italic}
 
-#input-row{flex-shrink:0;display:flex;gap:8px;padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--bdr);background:var(--bg2);}
-#msg-box{flex:1;background:var(--bg3);border:1px solid var(--bdr);color:var(--tx);padding:10px 14px;border-radius:22px;font-family:inherit;font-size:16px;outline:none;resize:none;line-height:1.4;max-height:100px;-webkit-appearance:none;}
-#msg-box:focus{border-color:#00ff8840;}
-#msg-box:disabled{opacity:.3;}
-#send{width:44px;height:44px;border-radius:50%;border:none;background:#00cc6633;color:#00ff88;font-size:1.1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
-#send:disabled{opacity:.3;}
-#send:active{transform:scale(.9);}
+/* Toast */
+#toast-container{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+.toast{background:#1a1a2a;border-radius:20px;padding:8px 16px;font-size:12px;color:#e8e0d0;box-shadow:0 4px 20px rgba(0,0,0,0.5);animation:toastIn 0.3s ease;max-width:280px;text-align:center}
+.toast.war{border-left:3px solid #e74c3c;color:#ff6b6b}
+.toast.nuke{border-left:3px solid #ff4400;color:#ff8844}
+.toast.alliance{border-left:3px solid #2ecc71;color:#7dff9a}
+.toast.peace{border-left:3px solid #3498db;color:#7ac8ff}
+.toast.event{border-left:3px solid #f39c12;color:#f5c842}
+.toast.year{border-left:3px solid #c8a84b;color:#c8a84b}
+.toast.mission{border-left:3px solid #9b59b6;color:#c39bd3}
+@keyframes toastIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 
-/* CHRONICLE */
-#tab-chronicle{background:var(--bg2);}
-#chronicle-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px;display:flex;flex-direction:column;gap:14px;}
-.c-entry{padding:14px;border-radius:10px;background:var(--bg3);border:1px solid var(--bdr);}
-.c-year{font-family:'Cinzel',serif;font-size:.62rem;color:#ffcc00;margin-bottom:8px;letter-spacing:.08em;}
-.c-text{font-family:'Cinzel',serif;font-size:.64rem;line-height:1.8;color:#9aaabb;font-style:italic;}
-.c-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;opacity:.3;text-align:center;padding:30px;font-family:'Cinzel',serif;}
+/* Nuke overlay */
+#nuke-overlay{position:fixed;inset:0;z-index:300;pointer-events:none;display:none}
+#nuke-canvas{position:absolute;inset:0;width:100%;height:100%}
+#nuke-flash{position:absolute;inset:0;background:#fff;opacity:0;transition:opacity 0.1s}
 
-/* NAV */
-#nav{position:fixed;bottom:0;left:0;right:0;z-index:50;
-  height:58px;padding-bottom:env(safe-area-inset-bottom,0px);
-  display:flex;background:rgba(6,8,16,.97);border-top:1px solid var(--bdr);}
-.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  background:none;border:none;color:var(--dim);cursor:pointer;padding:6px 0;position:relative;}
-.nb.on{color:var(--grn);}
-.nb-icon{font-size:1.2rem;line-height:1;}
-.nb-label{font-size:.38rem;font-family:'Orbitron',monospace;letter-spacing:.07em;}
-.nb-badge{display:none;position:absolute;top:7px;right:calc(50% - 17px);
-  min-width:16px;height:16px;background:#ff4444;border-radius:8px;
-  font-size:.38rem;color:#fff;font-weight:700;align-items:center;justify-content:center;}
-.nb-badge.show{display:flex;}
-
-/* TOAST */
-#toast-wrap{position:fixed;top:58px;left:0;right:0;z-index:200;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px;pointer-events:none;}
-.toast{background:rgba(10,12,24,.95);border:1px solid var(--bdr);border-radius:10px;padding:9px 14px;
-  font-size:.6rem;max-width:340px;text-align:center;line-height:1.5;
-  animation:toast-in .3s ease;pointer-events:none;}
-@keyframes toast-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
-.toast-war{border-color:#ff664440;color:#ff6644;}
-.toast-nuke{border-color:#ff224450;color:#ff2244;}
-.toast-event{border-color:#4488ff40;color:#8899bb;}
-.toast-year{border-color:#ffcc0040;color:#ffcc00;font-family:'Cinzel',serif;}
-.toast-alliance{border-color:#ffcc0040;color:#ffcc00;}
-.toast-peace{border-color:#00cc6640;color:#00cc66;}
-
-/* NUKE FLASH */
-#flash{display:none;position:fixed;inset:0;z-index:300;pointer-events:none;
-  background:radial-gradient(ellipse at center,rgba(255,34,68,.5),transparent 70%);}
-
-/* NAME MODAL */
-#name-modal{display:none;position:fixed;inset:0;z-index:400;background:rgba(6,8,16,.95);
-  align-items:center;justify-content:center;padding:24px;}
-.nm-box{background:#0b0d18;border:1px solid #1c1f30;border-radius:16px;padding:28px 22px;width:100%;max-width:340px;text-align:center;}
-.nm-title{font-family:'Cinzel',serif;font-size:.9rem;color:#ffcc00;margin-bottom:6px;letter-spacing:.06em;}
-.nm-sub{font-family:'Cinzel',serif;font-size:.55rem;color:var(--dim);margin-bottom:20px;line-height:1.7;}
-#name-input{width:100%;background:#10121e;border:1px solid #1c1f30;color:var(--tx);padding:12px 14px;border-radius:10px;font-family:inherit;font-size:16px;outline:none;text-align:center;margin-bottom:14px;-webkit-appearance:none;}
-#name-input:focus{border-color:#ffcc0060;}
-.nm-btn{width:100%;padding:12px;border-radius:10px;border:none;cursor:pointer;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.08em;}
-.nm-btn-enter{background:linear-gradient(135deg,#ffcc0033,#cc990022);color:#ffcc00;border:1px solid #ffcc0040;}
+/* Name modal */
+#name-modal{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center}
+#name-modal-box{background:#0f0f1a;border:1px solid #c8a84b;border-radius:16px;padding:30px 24px;width:280px;text-align:center}
+#name-modal-title{font-family:'Cinzel',serif;font-size:20px;color:#c8a84b;margin-bottom:6px}
+#name-modal-sub{font-size:12px;color:#888;margin-bottom:20px}
+#name-modal-input{width:100%;background:#1a1a2a;border:1px solid #2a2a3a;border-radius:10px;padding:10px 14px;color:#e8e0d0;font-size:15px;outline:none;text-align:center;margin-bottom:14px}
+#name-modal-btn{background:#c8a84b;border:none;border-radius:10px;padding:10px 30px;color:#0a0a12;font-family:'Cinzel',serif;font-size:14px;font-weight:600;cursor:pointer;width:100%}
 </style>
 </head>
 <body>
 
-<header id="hdr">
-  <div class="logo">BLISSNEXUS</div>
-  <div id="year-badge">Year 1 · 🌸 Spring</div>
+<div id="header">
+  <div id="logo">⚔️ BlissNexus</div>
+  <div id="tension-wrap">
+    <div id="tension-bar-outer"><div id="tension-bar-inner"></div></div>
+    <div id="year-badge">Yr 1 · Spring</div>
+  </div>
+  <div style="flex:1"></div>
   <div id="era-badge">🕊 PEACE</div>
-</header>
+</div>
 
 <div id="content">
-  <div id="tab-map" class="tab-page show"><canvas id="map-canvas"></canvas></div>
-
-  <div id="tab-kings" class="tab-page">
-    <div id="kings-scroll"><div id="king-list"></div></div>
+  <div id="tab-map" class="tab-page active">
+    <canvas id="map-canvas"></canvas>
   </div>
-
-  <div id="tab-chat" class="tab-page">
-    <div id="chat-header">
-      <button id="chat-back">‹</button>
-      <div id="chat-king-info">
-        <div id="chat-king-name" style="color:var(--dim)">No king selected</div>
-        <div id="chat-king-sub">Choose a kingdom first</div>
+  <div id="tab-kings" class="tab-page"></div>
+  <div id="tab-whisper" class="tab-page">
+    <div id="whisper-header">
+      <button id="whisper-back">←</button>
+      <div id="whisper-king-info">
+        <div id="whisper-king-name">Select a King</div>
+        <div id="whisper-king-title"></div>
       </div>
-      <div id="chat-lock">🔒 PRIVATE</div>
+      <div id="whisper-trust-badge">Trust: —</div>
+      <div id="whisper-private-badge">🔒 PRIVATE</div>
     </div>
-    <div id="messages">
-      <div class="empty-state" id="empty-msg"><span>👑</span><span>Select a king from KINGS tab<br>to open a private channel.<br>Only they will hear you.</span></div>
-    </div>
-    <div id="input-row">
-      <textarea id="msg-box" placeholder="Whisper to the king…" disabled rows="1"></textarea>
-      <button id="send" disabled>↑</button>
+    <div id="whisper-mission-bar"></div>
+    <div id="whisper-feed"></div>
+    <div id="whisper-typing"></div>
+    <div id="whisper-input-wrap">
+      <input id="whisper-input" type="text" placeholder="Speak to the king..." autocomplete="off">
+      <button id="whisper-send">➤</button>
     </div>
   </div>
-
-  <div id="tab-chronicle" class="tab-page">
-    <div id="chronicle-scroll">
-      <div class="c-empty" id="chronicle-empty"><span style="font-size:2rem">📜</span><span>The chronicle will be written<br>at the end of each year.<br>Return after Year 2.</span></div>
+  <div id="tab-intel" class="tab-page">
+    <div class="intel-section">
+      <div class="intel-title">👁 Intercepted Communications</div>
+      <div id="intercept-list"><div class="intercept-empty">No intercepts yet. Check back soon.</div></div>
     </div>
+    <div class="intel-section">
+      <div class="intel-title">🗺 Relations Matrix</div>
+      <div id="relations-matrix"></div>
+    </div>
+  </div>
+  <div id="tab-chronicle" class="tab-page">
+    <div id="chronicle-list"><div class="chronicle-empty">📜 The chronicle will be written at year's end.</div></div>
   </div>
 </div>
 
+<div id="mission-banner">
+  <span class="mb-emoji"></span>
+  <span class="mb-text"></span>
+  <span class="mb-timer"></span>
+  <button class="mb-close">×</button>
+</div>
+
 <nav id="nav">
-  <button class="nb on" id="nb-map"      onclick="goTab('map')">     <span class="nb-icon">🗺️</span><span class="nb-label">MAP</span></button>
-  <button class="nb"    id="nb-kings"    onclick="goTab('kings')">   <span class="nb-icon">👑</span><span class="nb-label">KINGS</span></button>
-  <button class="nb"    id="nb-chat"     onclick="goTab('chat')">    <span class="nb-icon">💬</span><span class="nb-label">WHISPER</span><span class="nb-badge" id="badge-chat"></span></button>
-  <button class="nb"    id="nb-chronicle"onclick="goTab('chronicle')"><span class="nb-icon">📜</span><span class="nb-label">CHRONICLE</span><span class="nb-badge" id="badge-chr"></span></button>
+  <button class="nav-btn active" data-tab="map" onclick="switchTab('map',this)">
+    <span class="nav-icon">🗺</span>MAP
+  </button>
+  <button class="nav-btn" data-tab="kings" onclick="switchTab('kings',this)">
+    <span class="nav-icon">👑</span>KINGS
+  </button>
+  <button class="nav-btn" data-tab="whisper" onclick="switchTab('whisper',this)">
+    <span class="nav-icon">💬</span>WHISPER
+  </button>
+  <button class="nav-btn" data-tab="intel" onclick="switchTab('intel',this)" id="intel-nav-btn">
+    <span class="nav-icon">🕵️</span>INTEL
+    <span class="nav-badge" id="intel-badge">0</span>
+  </button>
+  <button class="nav-btn" data-tab="chronicle" onclick="switchTab('chronicle',this)">
+    <span class="nav-icon">📜</span>CHRONICLE
+  </button>
 </nav>
 
-<div id="toast-wrap"></div>
-<div id="flash"></div>
+<div id="toast-container"></div>
+
+<div id="nuke-overlay">
+  <canvas id="nuke-canvas"></canvas>
+  <div id="nuke-flash"></div>
+</div>
 
 <div id="name-modal">
-  <div class="nm-box">
-    <div style="font-size:2rem;margin-bottom:10px">👑</div>
-    <div class="nm-title">THE FIVE KINGDOMS</div>
-    <div class="nm-sub">Five kings rule the world.<br>You hold the ear of each one.<br>What name shall they know you by?</div>
-    <input id="name-input" type="text" placeholder="Enter your name…" maxlength="24">
-    <button class="nm-btn nm-btn-enter" onclick="submitName()">ENTER THE WORLD</button>
+  <div id="name-modal-box">
+    <div id="name-modal-title">⚔️ BlissNexus</div>
+    <div id="name-modal-sub">Enter the realm as a diplomat. Gain the trust of kings. Shape history.</div>
+    <input id="name-modal-input" type="text" placeholder="Your name..." maxlength="20">
+    <button id="name-modal-btn" onclick="submitName()">Enter the Realm</button>
   </div>
 </div>
 
 <script>
-var WS_URL = location.hostname==='localhost'?'ws://localhost:3001':'wss://blissnexus-production.up.railway.app';
+'use strict';
+
+// ── State ──────────────────────────────────────────────────────────────────
+var AGENTS = [];
+var AGENTS_MAP = {};
+var WORLD = null;
+var SESSION_ID = null;
+var PLAYER_NAME = null;
+var CURRENT_KING = null;
+var WHISPER_HISTORY = {};
+var INTERCEPTS = [];
+var INTEL_BADGE_COUNT = 0;
+var ACTIVE_MISSION = null;
+var MISSION_TIMER = null;
+var WS = null;
+var WS_RECONNECT = null;
+
+var SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter'];
+
+// Territory positions (cx/cy as fraction of canvas size)
 var TERR = {
-  sage:  {cx:.50,cy:.40,r:.17,color:'#00cc88',bg:'#071a10',label:'CALIPHATE'},
-  rex:   {cx:.20,cy:.72,r:.16,color:'#ff8800',bg:'#1a0d00',label:'EMPIRE'},
-  vera:  {cx:.16,cy:.24,r:.15,color:'#aa44ff',bg:'#0e0818',label:'COLLECTIVE'},
-  plato: {cx:.82,cy:.24,r:.15,color:'#4488ff',bg:'#081018',label:'REPUBLIC'},
-  diddy: {cx:.80,cy:.72,r:.16,color:'#ff4488',bg:'#180810',label:'TECHNOCRACY'},
+  sage:  { cx: 0.20, cy: 0.28, r: 0.14, color: '#c8a84b' },
+  rex:   { cx: 0.78, cy: 0.22, r: 0.15, color: '#e74c3c' },
+  vera:  { cx: 0.55, cy: 0.55, r: 0.13, color: '#3498db' },
+  plato: { cx: 0.22, cy: 0.70, r: 0.13, color: '#9b59b6' },
+  diddy: { cx: 0.75, cy: 0.72, r: 0.14, color: '#2ecc71' }
 };
 
-var AGENTS={}, WORLD={nations:{},nukesInFlight:[]}, activeKing=null, ws=null, wsTimer=null;
-var nukesAnim=[], frame=0, angles={}, currentTab='map';
-var CW=0, CH=0;
-var canvas=document.getElementById('map-canvas');
-var ctx=canvas.getContext('2d');
+// King walkers
+var WALKERS = {};
 
-// ── TABS ──────────────────────────────────────────────────
-function goTab(tab) {
-  document.querySelectorAll('.tab-page').forEach(function(p){p.classList.remove('show');});
-  document.getElementById('tab-'+tab).classList.add('show');
-  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
-  document.getElementById('nb-'+tab).classList.add('on');
-  currentTab=tab;
-  if(tab==='chat') clearBadge('chat');
-  if(tab==='chronicle') clearBadge('chr');
-}
-function setBadge(id,n) {
-  var el=document.getElementById('badge-'+id); if(!el)return;
-  if(n>0){el.textContent=n>9?'9+':n;el.classList.add('show');}
-  else el.classList.remove('show');
-}
-function clearBadge(id){setBadge(id,0);}
-var chatBadge=0, chrBadge=0;
+// ── Init ───────────────────────────────────────────────────────────────────
+(function() {
+  var stored = localStorage.getItem('bn_sess');
+  SESSION_ID = stored || ('s_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+  if (!stored) localStorage.setItem('bn_sess', SESSION_ID);
+  PLAYER_NAME = localStorage.getItem('bn_name');
+  if (PLAYER_NAME) {
+    document.getElementById('name-modal').style.display = 'none';
+    connect();
+  }
+})();
 
-// ── SESSION ───────────────────────────────────────────────
-function getSess(){var id=localStorage.getItem('bn_sess');if(!id){id=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('bn_sess',id);}return id;}
-
-// ── CANVAS ────────────────────────────────────────────────
-function resizeCanvas(){var el=document.getElementById('tab-map');CW=canvas.width=el.offsetWidth||window.innerWidth;CH=canvas.height=el.offsetHeight||(window.innerHeight-108);}
-function px(n){return n*CW;} function py(n){return n*CH;} function pr(n){return n*Math.min(CW,CH);}
-
-function drawFrame(){
-  frame++;
-  if(!CW||!CH){requestAnimationFrame(drawFrame);return;}
-  ctx.fillStyle='#060912';ctx.fillRect(0,0,CW,CH);
-  ctx.strokeStyle='#0a0f1c';ctx.lineWidth=1;
-  for(var gx=0;gx<CW;gx+=30){ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,CH);ctx.stroke();}
-  for(var gy=0;gy<CH;gy+=30){ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(CW,gy);ctx.stroke();}
-
-  Object.keys(TERR).forEach(function(id){
-    var t=TERR[id],n=WORLD.nations[id]||{},alive=n.alive!==false;
-    var cx2=px(t.cx),cy2=py(t.cy),r2=pr(t.r),atWar=(n.wars||[]).length>0;
-    ctx.save();ctx.beginPath();ctx.arc(cx2,cy2,r2+2,0,Math.PI*2);ctx.clip();
-    ctx.fillStyle=alive?t.bg:'#0a0a10';ctx.fillRect(cx2-r2-6,cy2-r2-6,r2*2+12,r2*2+12);
-    if(alive){var seed=id.length*7;for(var i=0;i<160;i++){var a2=Math.sin(i*1.4+seed)*Math.PI*2+i*0.38,d2=pr(t.r)*(0.1+Math.abs(Math.sin(i*0.65+seed))*0.75);ctx.fillStyle=t.color+'14';ctx.fillRect(Math.round((cx2+Math.cos(a2)*d2)/4)*4,Math.round((cy2+Math.sin(a2)*d2*.8)/4)*4,3,3);}}
-    ctx.restore();
-    if(id===activeKing){ctx.beginPath();ctx.arc(cx2,cy2,r2+10,0,Math.PI*2);ctx.strokeStyle=t.color+'28';ctx.lineWidth=14;ctx.stroke();}
-    var alpha=atWar?(0.4+Math.sin(frame*.18)*.28):1;
-    ctx.beginPath();ctx.arc(cx2,cy2,r2,0,Math.PI*2);
-    ctx.strokeStyle=!alive?'#1a1a28':atWar?('rgba(255,80,20,'+alpha+')'):(id===activeKing?t.color:t.color+'55');
-    ctx.lineWidth=id===activeKing?2.5:1.5;ctx.stroke();
-    var fs=Math.max(9,CW/65);
-    ctx.font='bold '+fs+'px Orbitron,monospace';ctx.textAlign='center';
-    ctx.fillStyle=alive?t.color:'#333';ctx.shadowColor=alive?t.color:'transparent';ctx.shadowBlur=5;
-    ctx.fillText(t.label,cx2,cy2+r2+fs+4);ctx.shadowBlur=0;
-    if(alive&&n.troops!==undefined){
-      ctx.font=Math.max(8,CW/90)+'px Inter,sans-serif';ctx.fillStyle='#556688';
-      ctx.fillText('🪖'+n.troops+'  ☢️'+n.nukes+'  💰'+n.gold,cx2,cy2+r2+fs+18);
-      // Morale bar
-      var bw=r2*1.2, bh=3, bx=cx2-bw/2, by=cy2+r2+fs+26;
-      ctx.fillStyle='#1a1f2e';ctx.fillRect(bx,by,bw,bh);
-      var mc=n.morale>60?'#00cc66':n.morale>30?'#ffcc00':'#ff4444';
-      ctx.fillStyle=mc;ctx.fillRect(bx,by,(n.morale/100)*bw,bh);
-    }
-    if(!alive){ctx.font='bold '+Math.max(10,CW/55)+'px Inter';ctx.fillStyle='#ff224440';ctx.fillText('DESTROYED',cx2,cy2+5);}
-  });
-
-  var drawn={};
-  Object.keys(WORLD.nations||{}).forEach(function(id){
-    var n=WORLD.nations[id];
-    (n.wars||[]).forEach(function(eid){
-      var k=[id,eid].sort().join('|');if(drawn[k+'w'])return;drawn[k+'w']=1;
-      var a2=TERR[id],b=TERR[eid];if(!a2||!b)return;
-      ctx.beginPath();ctx.moveTo(px(a2.cx),py(a2.cy));ctx.lineTo(px(b.cx),py(b.cy));
-      ctx.strokeStyle='rgba(255,70,0,'+(0.2+Math.sin(frame*.14)*.12)+')';ctx.lineWidth=2;ctx.setLineDash([8,5]);ctx.stroke();ctx.setLineDash([]);
-    });
-    (n.allies||[]).forEach(function(aid){
-      var k=[id,aid].sort().join('|');if(drawn[k+'a'])return;drawn[k+'a']=1;
-      var a2=TERR[id],b=TERR[aid];if(!a2||!b)return;
-      ctx.beginPath();ctx.moveTo(px(a2.cx),py(a2.cy));ctx.lineTo(px(b.cx),py(b.cy));
-      ctx.strokeStyle='#ffcc0030';ctx.lineWidth=1;ctx.stroke();
-    });
-  });
-
-  nukesAnim.forEach(function(nuke){
-    var prog=Math.min(1,(Date.now()-nuke.start)/(nuke.landAt-nuke.start));
-    var a2=TERR[nuke.from],b=TERR[nuke.to];if(!a2||!b)return;
-    var ax=px(a2.cx),ay=py(a2.cy),bx=px(b.cx),by2=py(b.cy);
-    var mx=ax+(bx-ax)*prog,my=ay+(by2-ay)*prog-Math.sin(prog*Math.PI)*CH*.22;
-    ctx.shadowColor='#ff2244';ctx.shadowBlur=12;
-    ctx.fillStyle='#ff6688';ctx.beginPath();ctx.arc(mx,my,4,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(mx,my,2,0,Math.PI*2);ctx.fill();
-    ctx.shadowBlur=0;
-    if(prog>=1&&!nuke.done){nuke.done=true;doFlash();}
-  });
-  nukesAnim=nukesAnim.filter(function(n){return!n.done||Date.now()-n.landAt<1000;});
-
-  Object.keys(TERR).forEach(function(id){
-    var t=TERR[id],alive=(WORLD.nations[id]||{}).alive!==false;
-    angles[id]=(angles[id]||0)+.007;
-    var wr=pr(t.r)*.4,kx=px(t.cx)+Math.cos(angles[id])*wr,ky=py(t.cy)+Math.sin(angles[id]*.65)*wr*.5;
-    drawKing(kx,ky,t.color,!alive);
-  });
-  requestAnimationFrame(drawFrame);
+function submitName() {
+  var val = document.getElementById('name-modal-input').value.trim();
+  if (!val) return;
+  PLAYER_NAME = val;
+  localStorage.setItem('bn_name', val);
+  document.getElementById('name-modal').style.display = 'none';
+  connect();
 }
 
-function drawKing(kx,ky,color,dead){
-  if(dead){ctx.font='14px serif';ctx.textAlign='center';ctx.fillText('💀',kx,ky+5);return;}
-  var S=Math.max(1.5,CW/380),bob=Math.sin(frame*.08)*1.4,walk=Math.sin(frame*.11);
-  ctx.fillStyle='rgba(0,0,0,.2)';ctx.beginPath();ctx.ellipse(kx,ky+9*S+bob,6*S,2.5*S,0,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#555';ctx.fillRect(kx-4*S,ky+3*S+bob,3*S,5*S+walk*1.5);ctx.fillRect(kx+1*S,ky+3*S+bob,3*S,5*S-walk*1.5);
-  ctx.fillStyle=color;ctx.fillRect(kx-6*S,ky-5*S+bob,12*S,9*S);
-  ctx.fillStyle=color+'cc';ctx.fillRect(kx-10*S,ky-4*S+bob+walk,4*S,6*S);ctx.fillRect(kx+6*S,ky-4*S+bob-walk,4*S,6*S);
-  ctx.fillStyle='#e8c090';ctx.fillRect(kx-4*S,ky-14*S+bob,8*S,9*S);
-  ctx.fillStyle='#222';ctx.fillRect(kx-2*S,ky-11*S+bob,1.5*S,1.5*S);ctx.fillRect(kx+0.5*S,ky-11*S+bob,1.5*S,1.5*S);
-  ctx.fillStyle='#ffcc00';ctx.fillRect(kx-4*S,ky-17*S+bob,8*S,3*S);ctx.fillRect(kx-5*S,ky-20*S+bob,2.5*S,3*S);ctx.fillRect(kx-0.5*S,ky-21*S+bob,2.5*S,4*S);ctx.fillRect(kx+2.5*S,ky-20*S+bob,2.5*S,3*S);
-}
+document.getElementById('name-modal-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') submitName();
+});
 
-function doFlash(){var el=document.getElementById('flash');el.style.display='block';setTimeout(function(){el.style.display='none';},700);}
+// ── WebSocket ──────────────────────────────────────────────────────────────
+function connect() {
+  var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  var url = proto + '//' + location.host;
+  WS = new WebSocket(url);
 
-// ── MAP CLICK ─────────────────────────────────────────────
-canvas.addEventListener('click',function(e){var r=canvas.getBoundingClientRect();tapMap((e.clientX-r.left)*(CW/r.width),(e.clientY-r.top)*(CH/r.height));});
-canvas.addEventListener('touchend',function(e){e.preventDefault();var t=e.changedTouches[0],r=canvas.getBoundingClientRect();tapMap((t.clientX-r.left)*(CW/r.width),(t.clientY-r.top)*(CH/r.height));},{passive:false});
-function tapMap(mx,my){
-  var best=null,bestD=9999;
-  Object.keys(TERR).forEach(function(id){var t=TERR[id],d=Math.sqrt(Math.pow(mx-px(t.cx),2)+Math.pow(my-py(t.cy),2));if(d<pr(t.r)+28&&d<bestD){bestD=d;best=id;}});
-  if(best&&(WORLD.nations[best]||{}).alive!==false){openKing(best);goTab('chat');}
-}
+  WS.onopen = function() {
+    if (WS_RECONNECT) { clearTimeout(WS_RECONNECT); WS_RECONNECT = null; }
+    WS.send(JSON.stringify({ type: 'join', sessionId: SESSION_ID }));
+  };
 
-// ── KINGS RENDER ──────────────────────────────────────────
-function renderKings(){
-  var list=document.getElementById('king-list');if(!list)return;list.innerHTML='';
-  Object.values(AGENTS).forEach(function(a){
-    var n=WORLD.nations[a.id]||{},t=TERR[a.id]||{},alive=n.alive!==false;
-    var wars=(n.wars||[]).length,allies=(n.allies||[]).length;
-    var trust=n.userTrust||50;
-    var trustColor=trust>=70?'#00cc66':trust>=40?'#ffcc00':'#ff4444';
-    var trustLabel=trust>=70?'Trusted':trust>=50?'Cautious':trust>=25?'Suspicious':'Hostile';
-    var card=document.createElement('div');
-    card.className='kcard';card.style.borderLeftColor=t.color||'transparent';
-    card.style.borderLeftWidth='3px';
-    var badges='';
-    if(!alive)badges='<span class="kbadge" style="color:#444">DESTROYED</span>';
-    else if(wars)badges+='<span class="kbadge b-war">⚔ WAR</span>';
-    else badges+='<span class="kbadge b-peace">🕊 Peace</span>';
-    if(allies&&alive)badges+='<span class="kbadge b-ally">🤝 '+allies+' ally</span>';
-    var traits=(a.traits||[]).slice(0,2).map(function(tr){return '<span class="kbadge b-trait">'+tr+'</span>';}).join('');
-    card.innerHTML='<div class="kavatar" style="border-color:'+t.color+'44">'+a.emoji+'</div>'
-      +'<div class="kbody">'
-        +'<div class="kname" style="color:'+t.color+'">'+a.name+'</div>'
-        +'<div class="ktitle">'+a.title+'</div>'
-        +'<div class="kstats">'
-          +'<div class="kstat">🪖<b>'+( n.troops||'—')+'</b></div>'
-          +'<div class="kstat">☢️<b>'+(n.nukes||'—')+'</b></div>'
-          +'<div class="kstat">💰<b>'+(n.gold||'—')+'</b></div>'
-          +'<div class="kstat">🌾<b>'+(n.grain||'—')+'</b></div>'
-          +'<div class="kstat">⚡<b>T'+(n.tech||'—')+'</b></div>'
-        +'</div>'
-        +'<div class="trust-bar-wrap">'
-          +'<div class="trust-label">'+trustLabel+'</div>'
-          +'<div class="trust-bar"><div class="trust-fill" style="width:'+trust+'%;background:'+trustColor+'"></div></div>'
-          +'<div class="trust-label">'+trust+'</div>'
-        +'</div>'
-        +'<div class="kbadges">'+badges+' '+traits+'</div>'
-      +'</div>'
-      +'<div class="kchev">›</div>';
-    if(alive)card.addEventListener('click',function(){openKing(a.id);goTab('chat');});
-    list.appendChild(card);
-  });
-}
+  WS.onmessage = function(e) {
+    var msg;
+    try { msg = JSON.parse(e.data); } catch(ex) { return; }
+    handleMessage(msg);
+  };
 
-// ── OPEN KING ─────────────────────────────────────────────
-function openKing(id){
-  activeKing=id;
-  var a=AGENTS[id],t=TERR[id]||{},n=WORLD.nations[id]||{};
-  var trust=n.userTrust||50;
-  var trustColor=trust>=70?'#00cc66':trust>=40?'#ffcc00':'#ff4444';
-  var trustLabel=trust>=70?'Trusted advisor':trust>=50?'Cautious acquaintance':trust>=25?'Suspected manipulator':'Known deceiver';
-  document.getElementById('chat-king-name').textContent=a.emoji+' '+a.name;
-  document.getElementById('chat-king-name').style.color=t.color;
-  document.getElementById('chat-king-sub').innerHTML=a.title+' &nbsp;<span class="trust-inline" style="color:'+trustColor+';border-color:'+trustColor+'50">'+trustLabel+'</span>';
-  document.getElementById('msg-box').disabled=false;
-  document.getElementById('msg-box').placeholder='Whisper to '+a.name+'…';
-  document.getElementById('send').disabled=false;
-  document.getElementById('send').style.background=t.color+'33';
-  document.getElementById('send').style.color=t.color;
-  var em=document.getElementById('empty-msg');if(em)em.remove();
-}
+  WS.onclose = function() {
+    WS_RECONNECT = setTimeout(connect, 3000);
+  };
 
-function updateChatTrust(){
-  if(!activeKing)return;
-  var a=AGENTS[activeKing],t=TERR[activeKing]||{},n=WORLD.nations[activeKing]||{};
-  var trust=n.userTrust||50;
-  var trustColor=trust>=70?'#00cc66':trust>=40?'#ffcc00':'#ff4444';
-  var trustLabel=trust>=70?'Trusted advisor':trust>=50?'Cautious acquaintance':trust>=25?'Suspected manipulator':'Known deceiver';
-  var sub=document.getElementById('chat-king-sub');
-  if(sub)sub.innerHTML=a.title+' &nbsp;<span class="trust-inline" style="color:'+trustColor+';border-color:'+trustColor+'50">'+trustLabel+'</span>';
-}
-
-// ── MESSAGES ──────────────────────────────────────────────
-function addMsg(role,opts){
-  var feed=document.getElementById('messages');if(!feed)return;
-  var d=document.createElement('div');
-  var isMe=role==='me';var col=opts.color||(TERR[opts.id]||{}).color||'#888';
-  d.className='bwrap'+(isMe?' me':'');
-  d.innerHTML='<div class="bname" style="color:'+(isMe?'#00cc66':col)+'">'+(opts.emoji||'')+' '+(opts.name||'')+'</div><div class="bubble">'+esc(opts.text)+'</div>';
-  feed.appendChild(d);feed.scrollTop=feed.scrollHeight;
-  if(!isMe&&currentTab!=='chat'){chatBadge++;setBadge('chat',chatBadge);}
-}
-function addEvLine(text,type){
-  var feed=document.getElementById('messages');if(!feed)return;
-  var cls={war:'ev-war',nuke:'ev-nuke',peace:'ev-peace',destroy:'ev-destroy',alliance:'ev-alliance',event:'ev-event',year:'ev-year'}[type]||'ev-world';
-  var d=document.createElement('div');d.className='evline '+cls;d.textContent=text;
-  feed.appendChild(d);feed.scrollTop=feed.scrollHeight;
-}
-function showTyping(id){
-  removeTyping(id);var a=AGENTS[id];if(!a)return;var col=(TERR[id]||{}).color||'#888';
-  var feed=document.getElementById('messages');if(!feed)return;
-  var d=document.createElement('div');d.className='dots-wrap';d.id='typ-'+id;
-  d.innerHTML='<div class="bname" style="color:'+col+'">'+a.emoji+' '+a.name+'</div><div class="dots"><div class="dot" style="background:'+col+'"></div><div class="dot" style="background:'+col+'"></div><div class="dot" style="background:'+col+'"></div></div>';
-  feed.appendChild(d);feed.scrollTop=feed.scrollHeight;
-}
-function removeTyping(id){var e=document.getElementById('typ-'+id);if(e)e.remove();}
-function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-// ── TOAST ─────────────────────────────────────────────────
-function showToast(text,type){
-  var wrap=document.getElementById('toast-wrap');
-  var d=document.createElement('div');
-  d.className='toast toast-'+(type||'event');d.textContent=text;
-  wrap.appendChild(d);
-  setTimeout(function(){if(d.parentNode)d.parentNode.removeChild(d);},4500);
-  if(wrap.children.length>3)wrap.removeChild(wrap.children[0]);
-}
-
-// ── ERA ───────────────────────────────────────────────────
-function updateEra(){
-  var ns=Object.values(WORLD.nations||{}),wars=ns.reduce(function(s,n){return s+(n.wars||[]).length;},0),alive=ns.filter(function(n){return n.alive!==false;}).length;
-  var el=document.getElementById('era-badge');if(!el)return;
-  if(alive<=1){el.textContent='💀 ENDED';el.style.cssText='color:#552233;border-color:#33111a;';}
-  else if(wars>=4){el.textContent='🔥 WORLD WAR';el.style.cssText='color:#ff6600;border-color:#ff660040;animation:era-blink 1s infinite;';}
-  else if(wars>0){el.textContent='⚠ TENSIONS';el.style.cssText='color:#ffcc00;border-color:#ffcc0040;';}
-  else{el.textContent='🕊 PEACE';el.style.cssText='color:#00cc66;border-color:#00cc6640;';}
-}
-
-// ── CHRONICLE ─────────────────────────────────────────────
-function addChronicleEntry(entry){
-  var scroll=document.getElementById('chronicle-scroll');
-  var empty=document.getElementById('chronicle-empty');if(empty)empty.remove();
-  var d=document.createElement('div');d.className='c-entry';
-  d.innerHTML='<div class="c-year">— Year '+entry.year+' —</div><div class="c-text">'+esc(entry.text)+'</div>';
-  scroll.prepend(d);
-  if(currentTab!=='chronicle'){chrBadge++;setBadge('chr',chrBadge);}
-  showToast('📜 The chronicle of Year '+entry.year+' has been written.','year');
-}
-
-// ── SEND ──────────────────────────────────────────────────
-function doSend(){
-  var box=document.getElementById('msg-box'),text=box.value.trim(),name=localStorage.getItem('bn_name')||'Stranger';
-  if(!text||!activeKing||!ws||ws.readyState!==1)return;
-  addMsg('me',{name:'You',text:text});
-  ws.send(JSON.stringify({type:'whisper',to:activeKing,name:name,text:text}));
-  box.value='';box.style.height='';showTyping(activeKing);
-}
-document.getElementById('send').onclick=doSend;
-document.getElementById('chat-back').onclick=function(){goTab('kings');};
-document.getElementById('msg-box').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doSend();}});
-document.getElementById('msg-box').addEventListener('input',function(){this.style.height='';this.style.height=Math.min(this.scrollHeight,100)+'px';});
-
-// ── WEBSOCKET ─────────────────────────────────────────────
-function connect(){
-  if(ws)try{ws.close();}catch(e){}
-  ws=new WebSocket(WS_URL);
-  ws.onopen=function(){clearTimeout(wsTimer);ws.send(JSON.stringify({type:'join',sessionId:getSess()}));};
-  ws.onclose=function(){wsTimer=setTimeout(connect,3000);};
-  ws.onerror=function(){wsTimer=setTimeout(connect,3000);};
-  ws.onmessage=function(e){
-    var msg;try{msg=JSON.parse(e.data);}catch(err){return;}
-    switch(msg.type){
-      case 'init':
-        AGENTS={};msg.agents.forEach(function(a){AGENTS[a.id]=a;});
-        WORLD=msg.world||WORLD;
-        renderKings();updateEra();
-        document.getElementById('messages').innerHTML='';
-        if(msg.isNew){
-          addEvLine('🌍 A new world is born. Five kingdoms stand at peace… for now.','world');
-          addEvLine('You hold the ear of every king. Your words carry weight.','world');
-        } else {
-          (msg.log||[]).slice(-20).forEach(function(e){
-            var t=e.type==='nuke'?'nuke':e.type==='war'?'war':e.type==='peace'?'peace':e.type==='destroyed'?'destroy':e.type==='alliance'?'alliance':e.type==='event'?'event':e.type==='year'?'year':'world';
-            addEvLine(e.text,t);
-          });
-        }
-        (msg.chronicle||[]).forEach(function(entry){
-          var scroll=document.getElementById('chronicle-scroll');
-          var empty=document.getElementById('chronicle-empty');if(empty)empty.remove();
-          var d=document.createElement('div');d.className='c-entry';
-          d.innerHTML='<div class="c-year">— Year '+entry.year+' —</div><div class="c-text">'+esc(entry.text)+'</div>';
-          scroll.appendChild(d);
-        });
-        break;
-      case 'worldUpdate':
-        WORLD=msg.world;renderKings();updateEra();updateChatTrust();break;
-      case 'worldEvent':{
-        var t2=msg.event.type==='nuke'?'nuke':msg.event.type==='war'?'war':msg.event.type==='peace'?'peace':msg.event.type==='destroyed'?'destroy':msg.event.type==='alliance'?'alliance':msg.event.type==='event'?'event':msg.event.type==='year'?'year':'world';
-        addEvLine(msg.event.text,t2);updateEra();
-        if(t2==='war'||t2==='nuke'||t2==='destroy')showToast(msg.event.text,t2==='nuke'?'nuke':t2==='war'?'war':t2==='destroy'?'nuke':'peace');
-        break;}
-      case 'message':
-        removeTyping(msg.agentId);
-        addMsg('agent',{id:msg.agentId,name:msg.name,emoji:msg.emoji,color:msg.color,text:msg.text});
-        break;
-      case 'typing':
-        if(msg.private&&msg.agentId===activeKing)showTyping(msg.agentId);
-        else if(!msg.private)showTyping(msg.agentId);
-        break;
-      case 'whisperReply':
-        removeTyping(msg.from);
-        addMsg('agent',{id:msg.from,name:msg.name,emoji:msg.emoji,color:(TERR[msg.from]||{}).color,text:msg.text});
-        updateChatTrust();break;
-      case 'nukeIncoming':
-        WORLD=msg.world;nukesAnim.push({from:msg.from,to:msg.to,landAt:msg.landAt,start:Date.now()});
-        renderKings();updateEra();
-        showToast('☢️ NUCLEAR STRIKE LAUNCHED!','nuke');break;
-      case 'yearUpdate':
-        document.getElementById('year-badge').textContent='Year '+(msg.year||1)+' · '+(msg.season||'');
-        addEvLine('📅 Year '+msg.year+' — '+(msg.season||''),'year');
-        break;
-      case 'chronicle':
-        addChronicleEntry(msg.entry);break;
-      case 'toast':
-        showToast(msg.text,msg.severity||'event');break;
-    }
+  WS.onerror = function() {
+    WS.close();
   };
 }
 
-// ── NAME MODAL ────────────────────────────────────────────
-function submitName(){var n=(document.getElementById('name-input').value||'').trim()||'Stranger';localStorage.setItem('bn_name',n);document.getElementById('name-modal').style.display='none';}
-document.getElementById('name-input').addEventListener('keydown',function(e){if(e.key==='Enter')submitName();});
+function wsSend(obj) {
+  if (WS && WS.readyState === 1) WS.send(JSON.stringify(obj));
+}
 
-// ── BOOT ──────────────────────────────────────────────────
-window.addEventListener('load',function(){
-  var stored=localStorage.getItem('bn_name');
-  if(!stored||stored==='Stranger'){localStorage.removeItem('bn_name');var m=document.getElementById('name-modal');m.style.display='flex';setTimeout(function(){document.getElementById('name-input').focus();},100);}
-  Object.keys(TERR).forEach(function(id){angles[id]=Math.random()*Math.PI*2;});
-  resizeCanvas();window.addEventListener('resize',resizeCanvas);
-  drawFrame();connect();
+// ── Message Handler ────────────────────────────────────────────────────────
+function handleMessage(msg) {
+  if (msg.type === 'init') {
+    if (msg.agents) {
+      AGENTS = msg.agents;
+      AGENTS.forEach(function(a) { AGENTS_MAP[a.id] = a; });
+    }
+    if (msg.world) {
+      WORLD = msg.world;
+      renderKings();
+      updateHeaderStats();
+      updateRelationsMatrix();
+    }
+    if (msg.chronicle) renderChronicle(msg.chronicle);
+    if (msg.mission) setMission(msg.mission);
+    initWalkers();
+    renderMap();
+  } else if (msg.type === 'message') {
+    var ag = AGENTS_MAP[msg.agentId];
+    if (!ag) return;
+    if (CURRENT_KING === msg.agentId) {
+      appendChatMsg({ role: 'agent', agentId: msg.agentId, name: msg.name, emoji: msg.emoji, color: msg.color, text: msg.text });
+    }
+  } else if (msg.type === 'whisperReply') {
+    document.getElementById('whisper-typing').textContent = '';
+    appendChatMsg({ role: 'agent', agentId: msg.agentId, name: msg.name, emoji: msg.emoji, color: msg.color, text: msg.text });
+    if (WORLD && WORLD.nations && WORLD.nations[msg.agentId]) {
+      updateWhisperTrustBadge(msg.agentId);
+    }
+  } else if (msg.type === 'typing') {
+    document.getElementById('whisper-typing').textContent = '✦ ' + (AGENTS_MAP[msg.agentId] ? AGENTS_MAP[msg.agentId].name : 'King') + ' is composing...';
+    setTimeout(function() { document.getElementById('whisper-typing').textContent = ''; }, 8000);
+  } else if (msg.type === 'worldUpdate') {
+    WORLD = msg.world;
+    renderKings();
+    updateHeaderStats();
+    updateRelationsMatrix();
+    if (CURRENT_KING) updateWhisperTrustBadge(CURRENT_KING);
+    updateMissionBar();
+  } else if (msg.type === 'worldEvent') {
+    var kind = msg.kind || 'event';
+    showToast(msg.text, kind);
+  } else if (msg.type === 'intercept') {
+    INTERCEPTS.unshift(msg.entry);
+    if (INTERCEPTS.length > 50) INTERCEPTS.length = 50;
+    renderIntercepts();
+    INTEL_BADGE_COUNT++;
+    var badge = document.getElementById('intel-badge');
+    badge.textContent = INTEL_BADGE_COUNT;
+    badge.style.display = 'block';
+    showToast('👁 Intercept: ' + msg.entry.fromName + ' → ' + msg.entry.toName, 'event');
+  } else if (msg.type === 'crisis') {
+    showToast('⚠️ CRISIS: ' + msg.crisis.text, 'war');
+  } else if (msg.type === 'chronicle') {
+    if (msg.entry) {
+      var list = document.getElementById('chronicle-list');
+      var existing = list.querySelector('.chronicle-empty');
+      if (existing) existing.remove();
+      var el = buildChronicleEntry(msg.entry);
+      list.insertBefore(el, list.firstChild);
+    }
+  } else if (msg.type === 'yearUpdate') {
+    var yd = document.getElementById('year-badge');
+    yd.textContent = 'Yr ' + msg.year + ' · ' + (SEASONS[msg.seasonIndex] || '');
+    showToast('📅 Year ' + msg.year + ' — ' + (SEASONS[msg.seasonIndex] || ''), 'year');
+  } else if (msg.type === 'nukeIncoming') {
+    animateNuke(msg);
+    showToast('☢️ NUKE INCOMING: ' + msg.fromName + ' → ' + msg.toName + '!', 'nuke');
+  } else if (msg.type === 'toast') {
+    showToast(msg.text, msg.kind || 'event');
+  } else if (msg.type === 'missionCompleted') {
+    ACTIVE_MISSION = msg.mission;
+    flashMissionBanner('#1a3a1a', 'Mission complete! +' + msg.mission.reward.trust + ' trust, +' + msg.mission.reward.gold + ' gold');
+    showToast('✅ MISSION COMPLETE! Reward earned.', 'mission');
+    setTimeout(dismissMission, 4000);
+  } else if (msg.type === 'missionExpired') {
+    ACTIVE_MISSION = msg.mission;
+    flashMissionBanner('#3a1a1a', 'Mission failed. Trust lost.');
+    setTimeout(dismissMission, 4000);
+  } else if (msg.type === 'worldReset') {
+    WHISPER_HISTORY = {};
+    INTERCEPTS = [];
+    INTEL_BADGE_COUNT = 0;
+    document.getElementById('intel-badge').style.display = 'none';
+    document.getElementById('whisper-feed').innerHTML = '';
+    renderIntercepts();
+    showToast('🔄 The world has been reset.', 'event');
+  }
+}
+
+// ── Header Stats ───────────────────────────────────────────────────────────
+function updateHeaderStats() {
+  if (!WORLD) return;
+  var t = WORLD.tension || 0;
+  var bar = document.getElementById('tension-bar-inner');
+  bar.style.width = t + '%';
+  var color = t < 40 ? '#2ecc71' : t < 70 ? '#f39c12' : '#e74c3c';
+  bar.style.background = color;
+
+  var yr = document.getElementById('year-badge');
+  yr.textContent = 'Yr ' + WORLD.year + ' · ' + (SEASONS[WORLD.seasonIndex] || '');
+
+  // Era badge
+  var warCount = 0, aliveCount = 0;
+  Object.keys(WORLD.nations || {}).forEach(function(id) {
+    var n = WORLD.nations[id];
+    if (n.alive) aliveCount++;
+    if (n.wars && n.wars.length > 0) warCount++;
+  });
+  var era = document.getElementById('era-badge');
+  if (aliveCount <= 1) { era.textContent = '💀 ENDED'; era.style.color = '#e74c3c'; era.style.background = '#2a0a0a'; }
+  else if (warCount >= 3) { era.textContent = '🔥 WORLD WAR'; era.style.color = '#ff4400'; era.style.background = '#2a1a0a'; }
+  else if (warCount >= 1 || t > 60) { era.textContent = '⚠ TENSIONS'; era.style.color = '#f39c12'; era.style.background = '#2a2a0a'; }
+  else { era.textContent = '🕊 PEACE'; era.style.color = '#2ecc71'; era.style.background = '#1a2a1a'; }
+}
+
+// ── Tab Switching ──────────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-page').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.nav-btn').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('tab-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'map') { renderMap(); }
+  if (name === 'intel') {
+    INTEL_BADGE_COUNT = 0;
+    document.getElementById('intel-badge').style.display = 'none';
+  }
+}
+
+function goToWhisper(agentId) {
+  CURRENT_KING = agentId;
+  var ag = AGENTS_MAP[agentId];
+  if (!ag) return;
+  document.getElementById('whisper-king-name').textContent = ag.emoji + ' ' + ag.name;
+  document.getElementById('whisper-king-name').style.color = ag.color;
+  document.getElementById('whisper-king-title').textContent = ag.title;
+
+  // Restore history
+  document.getElementById('whisper-feed').innerHTML = '';
+  var hist = WHISPER_HISTORY[agentId] || [];
+  hist.forEach(function(m) { appendChatMsg(m, true); });
+
+  updateWhisperTrustBadge(agentId);
+  updateMissionBar();
+
+  var tabs = document.querySelectorAll('.nav-btn');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  document.querySelector('[data-tab="whisper"]').classList.add('active');
+  document.querySelectorAll('.tab-page').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('tab-whisper').classList.add('active');
+
+  var feed = document.getElementById('whisper-feed');
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function updateWhisperTrustBadge(agentId) {
+  if (!WORLD || !WORLD.nations || !WORLD.nations[agentId]) return;
+  var trust = WORLD.nations[agentId].userTrust || 0;
+  var badge = document.getElementById('whisper-trust-badge');
+  var label, color;
+  if (trust >= 70) { label = '💚 Trusted'; color = '#2ecc71'; }
+  else if (trust >= 45) { label = '💛 Cautious'; color = '#f39c12'; }
+  else if (trust >= 20) { label = '🟠 Suspicious'; color = '#e67e22'; }
+  else { label = '🔴 Hostile'; color = '#e74c3c'; }
+  badge.textContent = label;
+  badge.style.color = color;
+}
+
+function updateMissionBar() {
+  var bar = document.getElementById('whisper-mission-bar');
+  if (!ACTIVE_MISSION || ACTIVE_MISSION.completed || ACTIVE_MISSION.expired) { bar.style.display = 'none'; return; }
+  if (CURRENT_KING === ACTIVE_MISSION.issuerId || CURRENT_KING === ACTIVE_MISSION.targetId) {
+    bar.style.display = 'block';
+    bar.textContent = '👑 MISSION: ' + ACTIVE_MISSION.desc;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+// ── Chat ───────────────────────────────────────────────────────────────────
+function appendChatMsg(m, noHistory) {
+  var feed = document.getElementById('whisper-feed');
+  var el = document.createElement('div');
+
+  if (m.role === 'agent') {
+    el.className = 'msg-bubble msg-agent';
+    el.innerHTML = '<div class="msg-name" style="color:' + (m.color || '#888') + '">' + (m.emoji || '') + ' ' + (m.name || '') + '</div>' + escHtml(m.text);
+  } else if (m.role === 'user') {
+    el.className = 'msg-bubble msg-user';
+    el.textContent = m.text;
+  } else {
+    el.className = 'msg-bubble msg-event';
+    el.textContent = m.text;
+  }
+
+  feed.appendChild(el);
+  feed.scrollTop = feed.scrollHeight;
+
+  if (!noHistory && CURRENT_KING) {
+    if (!WHISPER_HISTORY[CURRENT_KING]) WHISPER_HISTORY[CURRENT_KING] = [];
+    WHISPER_HISTORY[CURRENT_KING].push(m);
+    if (WHISPER_HISTORY[CURRENT_KING].length > 40) WHISPER_HISTORY[CURRENT_KING].shift();
+  }
+}
+
+document.getElementById('whisper-send').addEventListener('click', sendWhisper);
+document.getElementById('whisper-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') sendWhisper();
+});
+
+function sendWhisper() {
+  var input = document.getElementById('whisper-input');
+  var text = input.value.trim();
+  if (!text || !CURRENT_KING) return;
+  input.value = '';
+  appendChatMsg({ role: 'user', text: text });
+  wsSend({ type: 'whisper', to: CURRENT_KING, text: text, name: PLAYER_NAME });
+}
+
+document.getElementById('whisper-back').addEventListener('click', function() {
+  switchTab('kings', document.querySelector('[data-tab="kings"]'));
+});
+
+// ── KINGS Tab ──────────────────────────────────────────────────────────────
+function renderKings() {
+  if (!AGENTS.length || !WORLD) return;
+  var container = document.getElementById('tab-kings');
+  container.innerHTML = '';
+  AGENTS.forEach(function(ag) {
+    var n = WORLD.nations[ag.id];
+    if (!n) return;
+    var card = buildKingCard(ag, n);
+    container.appendChild(card);
+  });
+}
+
+function buildKingCard(ag, n) {
+  var card = document.createElement('div');
+  card.className = 'king-card';
+  card.style.borderLeftColor = ag.color;
+  card.onclick = function() { goToWhisper(ag.id); };
+
+  var trust = n.userTrust || 0;
+  var fogged = n.isFogged;
+
+  function stat(v, fogged) {
+    if (fogged) return '<span class="king-stat fogged">🌫~' + v + '</span>';
+    return '<span class="king-stat">' + v + '</span>';
+  }
+
+  // Ambition progress estimate
+  var ambProgress = estimateAmbition(ag, n);
+
+  // Cities
+  var citiesHtml = (n.cities || []).map(function(c) {
+    if (c.destroyed) return '<span class="city-dead">💀 ' + c.name + '</span>';
+    return '<span>' + c.name + '</span>';
+  }).join('');
+
+  // Relations
+  var relHtml = AGENTS.filter(function(a) { return a.id !== ag.id; }).map(function(other) {
+    var rel = n.relations && n.relations[other.id];
+    if (!rel) return '';
+    var dotColor = relLabelColor(rel.label);
+    return '<span class="rel-badge" style="background:#1a1a2a"><span class="rel-dot" style="background:' + dotColor + '"></span>' + other.emoji + ' ' + rel.label + '</span>';
+  }).join('');
+
+  // Trust bar
+  var trustColor = trust >= 70 ? '#2ecc71' : trust >= 45 ? '#f39c12' : trust >= 20 ? '#e67e22' : '#e74c3c';
+  var trustLabel = trust >= 70 ? 'Trusted' : trust >= 45 ? 'Cautious' : trust >= 20 ? 'Suspicious' : 'Hostile';
+
+  card.innerHTML =
+    '<div class="king-card-top">' +
+      '<div class="king-emoji-tile">' + ag.emoji + '</div>' +
+      '<div class="king-info">' +
+        '<div class="king-name" style="color:' + ag.color + '">' + ag.name + '</div>' +
+        '<div class="king-title">' + ag.title + '</div>' +
+        '<div class="king-mood-row">' + n.moodEmoji + ' ' + n.mood + ' — ' + n.moodReason + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="king-ambition-wrap">' +
+      '<div class="king-ambition-label">🎯 ' + ag.ambitionLabel + '</div>' +
+      '<div class="king-ambition-bar"><div class="king-ambition-fill" style="width:' + ambProgress + '%;background:' + ag.color + '"></div></div>' +
+    '</div>' +
+    '<div class="king-stats">' +
+      stat('🪖 ' + n.troops, fogged) +
+      stat('☢️ ' + n.nukes, fogged) +
+      stat('💰 ' + n.gold, fogged) +
+      stat('🌾 ' + n.grain, fogged) +
+      '<span class="king-stat">⚡T' + n.tech + '</span>' +
+    '</div>' +
+    '<div class="king-cities">' + citiesHtml + '</div>' +
+    '<div class="king-pentagon-row"><canvas class="pentagon-canvas" width="60" height="60"></canvas><div style="font-size:10px;color:#666">Personality</div></div>' +
+    '<div class="king-relations">' + relHtml + '</div>' +
+    '<div class="king-trust-wrap">' +
+      '<div class="king-trust-label">Player Trust</div>' +
+      '<div class="trust-bar-outer"><div class="trust-bar-inner" style="width:' + trust + '%;background:' + trustColor + '"></div></div>' +
+      '<div style="font-size:10px;color:' + trustColor + ';margin-top:2px">' + trustLabel + ' (' + trust + ')</div>' +
+    '</div>';
+
+  if (!n.alive) {
+    var ov = document.createElement('div');
+    ov.className = 'dead-overlay';
+    ov.textContent = '💀';
+    card.appendChild(ov);
+  }
+
+  // Draw pentagon after DOM insert
+  setTimeout(function() {
+    var canvas = card.querySelector('.pentagon-canvas');
+    if (canvas) {
+      var showReal = trust >= 60;
+      var vals = ag.personality;
+      if (!showReal) {
+        vals = {
+          aggression: vals.aggression + (Math.random() * 30 - 15),
+          greed: vals.greed + (Math.random() * 30 - 15),
+          pride: vals.pride + (Math.random() * 30 - 15),
+          paranoia: vals.paranoia + (Math.random() * 30 - 15),
+          loyalty: vals.loyalty + (Math.random() * 30 - 15)
+        };
+      }
+      drawPentagon(canvas, vals, ag.color);
+    }
+  }, 0);
+
+  return card;
+}
+
+function estimateAmbition(ag, n) {
+  if (ag.id === 'vera') return Math.min(100, (n.tech / 5) * 100);
+  if (ag.id === 'rex') {
+    var living = Object.keys(WORLD.nations).filter(function(id) { return WORLD.nations[id].alive; });
+    return Math.max(0, (5 - living.length) / 4 * 100);
+  }
+  if (ag.id === 'plato') {
+    var allies = n.allies ? n.allies.length : 0;
+    return Math.min(100, allies * 25);
+  }
+  if (ag.id === 'sage') return Math.min(100, (n.gold / 2000) * 100);
+  if (ag.id === 'diddy') {
+    var betrayals = n.memory ? n.memory.filter(function(m) { return m.indexOf('Betrayed') !== -1; }).length : 0;
+    return Math.min(100, betrayals * 20 + 10);
+  }
+  return 30;
+}
+
+function relLabelColor(label) {
+  if (label === 'ally') return '#2ecc71';
+  if (label === 'friendly') return '#3498db';
+  if (label === 'neutral') return '#888';
+  if (label === 'rival') return '#e67e22';
+  if (label === 'enemy') return '#e74c3c';
+  return '#888';
+}
+
+// ── Pentagon ───────────────────────────────────────────────────────────────
+function drawPentagon(canvas, values, color) {
+  var ctx = canvas.getContext('2d');
+  var w = canvas.width, h = canvas.height;
+  var cx = w / 2, cy = h / 2;
+  var r = Math.min(w, h) / 2 - 5;
+  ctx.clearRect(0, 0, w, h);
+
+  var axes = ['aggression', 'greed', 'pride', 'paranoia', 'loyalty'];
+  var n = axes.length;
+  var angleStep = (Math.PI * 2) / n;
+  var startAngle = -Math.PI / 2;
+
+  // Draw background spokes
+  ctx.strokeStyle = '#1a1a2a';
+  ctx.lineWidth = 1;
+  for (var i = 0; i < n; i++) {
+    var a = startAngle + i * angleStep;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+    ctx.stroke();
+  }
+
+  // Draw pentagon fill
+  ctx.beginPath();
+  for (var i = 0; i < n; i++) {
+    var a = startAngle + i * angleStep;
+    var val = Math.max(0, Math.min(100, values[axes[i]] || 0));
+    var pr = (val / 100) * r;
+    var px = cx + Math.cos(a) * pr;
+    var py = cy + Math.sin(a) * pr;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = (color || '#c8a84b') + '44';
+  ctx.fill();
+  ctx.strokeStyle = color || '#c8a84b';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+// ── Relations Matrix ───────────────────────────────────────────────────────
+function updateRelationsMatrix() {
+  if (!WORLD || !AGENTS.length) return;
+  var container = document.getElementById('relations-matrix');
+  var html = '<table class="rel-matrix"><thead><tr><th></th>';
+  AGENTS.forEach(function(a) { html += '<th title="' + a.name + '">' + a.emoji + '</th>'; });
+  html += '</tr></thead><tbody>';
+  AGENTS.forEach(function(fromAg) {
+    html += '<tr><td style="color:#888">' + fromAg.emoji + '</td>';
+    AGENTS.forEach(function(toAg) {
+      if (fromAg.id === toAg.id) {
+        html += '<td class="self-cell">—</td>';
+        return;
+      }
+      var n = WORLD.nations[fromAg.id];
+      var rel = n && n.relations && n.relations[toAg.id];
+      if (!rel) { html += '<td>?</td>'; return; }
+      var cls = 'rel-cell-' + rel.label;
+      html += '<td class="' + cls + '">' + rel.trust + '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ── Intercepts ─────────────────────────────────────────────────────────────
+function renderIntercepts() {
+  var list = document.getElementById('intercept-list');
+  if (!INTERCEPTS.length) {
+    list.innerHTML = '<div class="intercept-empty">No intercepts yet. Check back soon.</div>';
+    return;
+  }
+  list.innerHTML = INTERCEPTS.slice(0, 15).map(function(e) {
+    return '<div class="intercept-entry">' +
+      '<div class="intercept-header">👁 INTERCEPTED: ' + e.fromEmoji + ' ' + e.fromName + ' → ' + e.toEmoji + ' ' + e.toName + '</div>' +
+      '<div class="intercept-text">"' + escHtml(e.text) + '"</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── Chronicle ──────────────────────────────────────────────────────────────
+function renderChronicle(entries) {
+  var list = document.getElementById('chronicle-list');
+  if (!entries || !entries.length) return;
+  list.innerHTML = '';
+  entries.forEach(function(e) {
+    list.appendChild(buildChronicleEntry(e));
+  });
+}
+
+function buildChronicleEntry(e) {
+  var el = document.createElement('div');
+  el.className = 'chronicle-entry';
+  el.innerHTML = '<div class="chronicle-year">— Year ' + e.year + ' —</div><div class="chronicle-text">' + escHtml(e.text) + '</div>';
+  return el;
+}
+
+// ── Mission Banner ─────────────────────────────────────────────────────────
+function setMission(mission) {
+  ACTIVE_MISSION = mission;
+  if (!mission || mission.completed || mission.expired) {
+    document.getElementById('mission-banner').style.display = 'none';
+    return;
+  }
+  var banner = document.getElementById('mission-banner');
+  banner.style.display = 'flex';
+  banner.style.background = mission.issuerColor + '22';
+  banner.style.color = mission.issuerColor;
+  banner.style.borderTop = '1px solid ' + mission.issuerColor + '44';
+  banner.querySelector('.mb-emoji').textContent = mission.issuerEmoji;
+  banner.querySelector('.mb-text').textContent = 'MISSION: ' + mission.desc;
+
+  if (MISSION_TIMER) clearInterval(MISSION_TIMER);
+  MISSION_TIMER = setInterval(function() {
+    if (!ACTIVE_MISSION || ACTIVE_MISSION.completed || ACTIVE_MISSION.expired) {
+      clearInterval(MISSION_TIMER);
+      document.getElementById('mission-banner').style.display = 'none';
+      return;
+    }
+    var remaining = Math.max(0, Math.floor((ACTIVE_MISSION.deadline - Date.now()) / 1000));
+    var mins = Math.floor(remaining / 60);
+    var secs = remaining % 60;
+    banner.querySelector('.mb-timer').textContent = '⏱ ' + mins + 'm ' + (secs < 10 ? '0' : '') + secs + 's';
+    if (remaining <= 0) {
+      clearInterval(MISSION_TIMER);
+    }
+  }, 1000);
+}
+
+function flashMissionBanner(bgColor, text) {
+  var banner = document.getElementById('mission-banner');
+  banner.style.display = 'flex';
+  var orig = banner.style.background;
+  banner.style.background = bgColor;
+  banner.querySelector('.mb-text').textContent = text;
+  setTimeout(function() { banner.style.background = orig; }, 2000);
+}
+
+function dismissMission() {
+  document.getElementById('mission-banner').style.display = 'none';
+  if (MISSION_TIMER) clearInterval(MISSION_TIMER);
+}
+
+document.querySelector('.mb-close').addEventListener('click', dismissMission);
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function showToast(text, kind) {
+  var container = document.getElementById('toast-container');
+  var el = document.createElement('div');
+  el.className = 'toast ' + (kind || 'event');
+  el.textContent = text;
+  container.appendChild(el);
+  setTimeout(function() {
+    el.style.opacity = '0';
+    el.style.transition = 'opacity 0.5s';
+    setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 500);
+  }, 3500);
+}
+
+// ── MAP ────────────────────────────────────────────────────────────────────
+var MAP_ANIM = null;
+
+function initWalkers() {
+  Object.keys(TERR).forEach(function(id) {
+    var t = TERR[id];
+    WALKERS[id] = {
+      x: t.cx, y: t.cy,
+      dx: (Math.random() - 0.5) * 0.004,
+      dy: (Math.random() - 0.5) * 0.004,
+      step: 0
+    };
+  });
+}
+
+function renderMap() {
+  var canvas = document.getElementById('map-canvas');
+  var container = document.getElementById('tab-map');
+  canvas.width = container.offsetWidth;
+  canvas.height = container.offsetHeight;
+
+  if (MAP_ANIM) cancelAnimationFrame(MAP_ANIM);
+
+  function draw() {
+    if (!document.getElementById('tab-map').classList.contains('active')) {
+      MAP_ANIM = requestAnimationFrame(draw);
+      return;
+    }
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#0a0a12';
+    ctx.fillRect(0, 0, W, H);
+
+    // Tension vignette
+    if (WORLD && WORLD.tension > 70) {
+      var intensity = ((WORLD.tension - 70) / 30) * 0.4;
+      var pulse = (Math.sin(Date.now() / 600) + 1) / 2;
+      var grad = ctx.createRadialGradient(W/2, H/2, H*0.2, W/2, H/2, H*0.8);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, 'rgba(180,20,20,' + (intensity * pulse) + ')');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    if (!WORLD) { MAP_ANIM = requestAnimationFrame(draw); return; }
+
+    // Draw relation lines first
+    var ids = Object.keys(TERR);
+    for (var i = 0; i < ids.length; i++) {
+      for (var j = i + 1; j < ids.length; j++) {
+        var idA = ids[i], idB = ids[j];
+        var nA = WORLD.nations[idA], nB = WORLD.nations[idB];
+        if (!nA || !nB || !nA.alive || !nB.alive) continue;
+        var rel = nA.relations && nA.relations[idB];
+        if (!rel) continue;
+        var tA = TERR[idA], tB = TERR[idB];
+        var lineColor = rel.label === 'ally' ? '#c8a84b66' :
+                        rel.label === 'enemy' ? '#e74c3c66' : '#33333366';
+        ctx.save();
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = rel.label === 'ally' ? 2 : 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(tA.cx * W, tA.cy * H);
+        ctx.lineTo(tB.cx * W, tB.cy * H);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // Draw territories
+    Object.keys(TERR).forEach(function(id) {
+      var t = TERR[id];
+      var n = WORLD.nations[id];
+      if (!n) return;
+      var cx = t.cx * W, cy = t.cy * H, r = t.r * Math.min(W, H);
+      var alive = n.alive;
+
+      // Territory circle
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      var col = alive ? t.color : '#444';
+      ctx.fillStyle = col + '22';
+      ctx.fill();
+      ctx.strokeStyle = col + (alive ? 'aa' : '44');
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Cities (3 small squares at offsets)
+      var cities = n.cities || [];
+      var cityOffsets = [
+        { dx: 0, dy: -r * 0.45 },
+        { dx: r * 0.38, dy: r * 0.3 },
+        { dx: -r * 0.38, dy: r * 0.3 }
+      ];
+      cities.forEach(function(city, idx) {
+        var off = cityOffsets[idx] || { dx: 0, dy: 0 };
+        var cx2 = cx + off.dx, cy2 = cy + off.dy;
+        if (city.destroyed) {
+          ctx.font = '12px serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('☠', cx2, cy2);
+        } else {
+          ctx.fillStyle = col;
+          ctx.fillRect(cx2 - 4, cy2 - 4, 8, 8);
+        }
+      });
+
+      // War indicator
+      if (n.wars && n.wars.length > 0) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r + 5, 0, Math.PI * 2);
+        var pulse2 = (Math.sin(Date.now() / 400) + 1) / 2;
+        ctx.strokeStyle = 'rgba(231,76,60,' + (0.4 + pulse2 * 0.6) + ')';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+
+      // Walker (king sprite)
+      var w = WALKERS[id];
+      if (w) {
+        w.step++;
+        if (w.step % 120 === 0) {
+          w.dx = (Math.random() - 0.5) * 0.004;
+          w.dy = (Math.random() - 0.5) * 0.004;
+        }
+        w.x += w.dx;
+        w.y += w.dy;
+        // Clamp to territory
+        var dist = Math.sqrt(Math.pow((w.x - t.cx) * W, 2) + Math.pow((w.y - t.cy) * H, 2));
+        if (dist > r * 0.6) {
+          w.x = t.cx + (w.x - t.cx) * 0.9;
+          w.y = t.cy + (w.y - t.cy) * 0.9;
+        }
+        var wx = w.x * W, wy = w.y * H;
+        ctx.font = '18px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        if (!alive) ctx.globalAlpha = 0.3;
+        ctx.fillText(AGENTS_MAP[id] ? AGENTS_MAP[id].emoji : '👤', wx, wy);
+        ctx.globalAlpha = 1;
+      }
+
+      // Name label
+      ctx.fillStyle = alive ? col : '#444';
+      ctx.font = 'bold 11px Roboto, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(AGENTS_MAP[id] ? AGENTS_MAP[id].name : id, cx, cy + r + 5);
+
+      // Mood emoji below name
+      if (n.mood && alive) {
+        ctx.font = '12px serif';
+        ctx.fillText(n.moodEmoji || '', cx, cy + r + 19);
+      }
+    });
+
+    MAP_ANIM = requestAnimationFrame(draw);
+  }
+
+  draw();
+}
+
+// Map tap
+document.getElementById('map-canvas').addEventListener('click', function(e) {
+  var canvas = this;
+  var rect = canvas.getBoundingClientRect();
+  var mx = (e.clientX - rect.left) / canvas.width;
+  var my = (e.clientY - rect.top) / canvas.height;
+  var W = canvas.width, H = canvas.height;
+
+  var best = null, bestDist = Infinity;
+  Object.keys(TERR).forEach(function(id) {
+    var t = TERR[id];
+    var dx = (mx - t.cx) * W, dy = (my - t.cy) * H;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    var r = t.r * Math.min(W, H);
+    if (dist < r && dist < bestDist) { bestDist = dist; best = id; }
+  });
+
+  if (best) goToWhisper(best);
+});
+
+// ── Nuke Animation ─────────────────────────────────────────────────────────
+function animateNuke(msg) {
+  var overlay = document.getElementById('nuke-overlay');
+  var canvas = document.getElementById('nuke-canvas');
+  var flash = document.getElementById('nuke-flash');
+  overlay.style.display = 'block';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  var fromT = TERR[msg.from], toT = TERR[msg.to];
+  if (!fromT || !toT) { overlay.style.display = 'none'; return; }
+
+  var W = canvas.width, H = canvas.height;
+  var x0 = fromT.cx * W, y0 = fromT.cy * H;
+  var x1 = toT.cx * W, y1 = toT.cy * H;
+  var start = Date.now();
+  var dur = 7000;
+
+  function animFrame() {
+    var t = (Date.now() - start) / dur;
+    if (t >= 1) {
+      // Impact flash
+      flash.style.opacity = '0.9';
+      setTimeout(function() { flash.style.opacity = '0'; overlay.style.display = 'none'; }, 400);
+      return;
+    }
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+    var px = x0 + (x1 - x0) * t;
+    var arc = -Math.sin(t * Math.PI) * 80;
+    var py = y0 + (y1 - y0) * t + arc;
+    ctx.beginPath();
+    ctx.arc(px, py, 8, 0, Math.PI * 2);
+    ctx.fillStyle = '#ff4400';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(px, py, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffaa00';
+    ctx.fill();
+    // Trail
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.quadraticCurveTo(px, py - 40, px, py);
+    ctx.strokeStyle = 'rgba(255,100,0,0.3)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    requestAnimationFrame(animFrame);
+  }
+  requestAnimationFrame(animFrame);
+}
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Resize handler
+window.addEventListener('resize', function() {
+  if (document.getElementById('tab-map').classList.contains('active')) renderMap();
 });
 </script>
 </body>
