@@ -763,34 +763,117 @@ function formatNum(n) {
   return String(n || 0);
 }
 
-function drawTerritoryBlob(ctx, cx, cy, r, color, id, frame) {
+// Pre-computed coastline offsets per nation (deterministic from seed)
+var COASTLINES = {};
+function getCoastline(id, r) {
+  if (COASTLINES[id]) return COASTLINES[id];
   var seed = 0;
-  for (var c = 0; c < id.length; c++) seed += id.charCodeAt(c);
-  var pts = 14;
+  for (var c = 0; c < id.length; c++) seed += id.charCodeAt(c) * (c+1);
+  var pts = 48; // high resolution coastline
+  var pts2 = [];
+  for (var i = 0; i < pts; i++) {
+    var ang = (i / pts) * Math.PI * 2;
+    // Multiple harmonics for organic coastline (Middle Earth style)
+    var v  = 1.0;
+    v += Math.sin(ang*1.7 + seed*0.031) * 0.22;
+    v += Math.sin(ang*2.9 + seed*0.017) * 0.14;
+    v += Math.sin(ang*4.3 + seed*0.041) * 0.09;
+    v += Math.sin(ang*7.1 + seed*0.023) * 0.05;
+    v += Math.sin(ang*11 + seed*0.057) * 0.03;
+    v += Math.sin(ang*17 + seed*0.011) * 0.02; // fine coastal detail
+    v = Math.max(0.55, Math.min(1.42, v));
+    pts2.push(v);
+  }
+  COASTLINES[id] = pts2;
+  return pts2;
+}
+
+function drawTerritoryBlob(ctx, cx, cy, r, color, id, frame) {
+  var offsets = getCoastline(id, r);
+  var pts = offsets.length;
+  var breathe = 1 + Math.sin(frame * 0.006) * 0.004; // very subtle
+
+  // Draw land fill
+  ctx.save();
   ctx.beginPath();
   for (var i = 0; i <= pts; i++) {
-    var ang = (i / pts) * Math.PI * 2 - Math.PI / 2;
-    var n1 = Math.sin(ang * 2.3 + seed * 0.7) * 0.18;
-    var n2 = Math.sin(ang * 5.1 + seed * 0.3) * 0.08;
-    var breathe = 1 + Math.sin(frame * 0.008 + seed) * 0.012;
-    var pr = r * (1 + n1 + n2) * breathe;
+    var ang = (i / pts) * Math.PI * 2 - Math.PI/2;
+    var pr = r * offsets[i % pts] * breathe;
     var px = cx + Math.cos(ang) * pr;
-    var py = cy + Math.sin(ang) * pr * 0.75;
+    var py = cy + Math.sin(ang) * pr * 0.82;
     if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
   }
   ctx.closePath();
-  var grad = ctx.createRadialGradient(cx - r*0.1, cy - r*0.1, 0, cx, cy, r * 1.2);
-  grad.addColorStop(0, color + '50');
-  grad.addColorStop(0.5, color + '28');
-  grad.addColorStop(1, color + '08');
+
+  // Multi-layer fill: dark base + lighter center (elevation feel)
+  var grad = ctx.createRadialGradient(cx - r*0.15, cy - r*0.15, r*0.1, cx, cy, r*1.3);
+  grad.addColorStop(0,   color + '48');
+  grad.addColorStop(0.4, color + '30');
+  grad.addColorStop(0.8, color + '18');
+  grad.addColorStop(1,   color + '06');
   ctx.fillStyle = grad;
   ctx.fill();
+
+  // Coastline stroke — hand-drawn feel: two passes
   ctx.shadowColor = color;
-  ctx.shadowBlur = 12;
-  ctx.strokeStyle = color + 'cc';
-  ctx.lineWidth = 1.5;
+  ctx.shadowBlur = 10;
+  ctx.strokeStyle = color + 'aa';
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
   ctx.stroke();
   ctx.shadowBlur = 0;
+
+  // Inner thin highlight
+  ctx.strokeStyle = color + '33';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+
+  // Mountain peaks inside territory (3-5 small triangles)
+  var seed2 = 0;
+  for (var c2 = 0; c2 < id.length; c2++) seed2 += id.charCodeAt(c2);
+  ctx.fillStyle = color + '55';
+  ctx.strokeStyle = color + '88';
+  ctx.lineWidth = 0.8;
+  var nmts = 3 + (seed2 % 3);
+  for (var mi = 0; mi < nmts; mi++) {
+    var mang = (seed2 * 0.37 + mi * 2.1) % (Math.PI*2);
+    var mdist = r * (0.25 + (seed2 * 0.13 + mi * 0.47) % 0.35);
+    var mx = cx + Math.cos(mang) * mdist;
+    var my = cy + Math.sin(mang) * mdist * 0.82;
+    var mh = r * (0.08 + (mi * 0.04));
+    var mw = mh * 0.7;
+    ctx.beginPath();
+    ctx.moveTo(mx, my - mh);
+    ctx.lineTo(mx - mw, my + mh*0.4);
+    ctx.lineTo(mx + mw, my + mh*0.4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // Snow cap
+    ctx.fillStyle = '#ffffff22';
+    ctx.beginPath();
+    ctx.moveTo(mx, my - mh);
+    ctx.lineTo(mx - mw*0.4, my - mh*0.4);
+    ctx.lineTo(mx + mw*0.4, my - mh*0.4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = color + '55';
+  }
+
+  // Forest dots (small circles)
+  ctx.fillStyle = color + '40';
+  var nfor = 4 + (seed2 % 4);
+  for (var fi2 = 0; fi2 < nfor; fi2++) {
+    var fang2 = (seed2 * 0.19 + fi2 * 1.57) % (Math.PI*2);
+    var fdist2 = r * (0.15 + (seed2 * 0.07 + fi2 * 0.33) % 0.40);
+    var fx2 = cx + Math.cos(fang2) * fdist2;
+    var fy2 = cy + Math.sin(fang2) * fdist2 * 0.82;
+    ctx.beginPath();
+    ctx.arc(fx2, fy2, r * 0.055, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  ctx.restore();
 }
 
 function drawRelationLine(ctx, x1, y1, x2, y2, label, frame) {
@@ -816,52 +899,238 @@ function drawRelationLine(ctx, x1, y1, x2, y2, label, frame) {
 }
 
 function drawKingSprite(ctx, kx, ky, color, alive, step) {
-  if (!alive) ctx.globalAlpha = 0.25;
-  var S = 2.2;
-  var bob = Math.sin(step * 0.1) * 1.5 * S;
-  var walk = Math.sin(step * 0.13) * 2 * S;
-  ctx.globalAlpha = alive ? 0.2 : 0.07;
+  ctx.save();
+  if (!alive) ctx.globalAlpha = 0.22;
+  var S = 2.8;
+  var bob = Math.sin(step * 0.09) * 1.8;
+  var legSwing = Math.sin(step * 0.12);
+  var armSwing = Math.sin(step * 0.12 + Math.PI);
+
+  // Ground shadow
+  ctx.globalAlpha = alive ? 0.18 : 0.06;
   ctx.fillStyle = '#000';
   ctx.beginPath();
-  ctx.ellipse(kx, ky + 11*S + bob, 7*S, 2.5*S, 0, 0, Math.PI*2);
+  ctx.ellipse(kx, ky + 14*S + bob, 8*S, 2*S, 0, 0, Math.PI*2);
   ctx.fill();
-  ctx.globalAlpha = alive ? 1 : 0.25;
-  ctx.fillStyle = '#223344';
-  ctx.fillRect(kx - 4*S, ky + 4*S + bob, 3*S, 6*S + walk);
-  ctx.fillRect(kx + 1*S, ky + 4*S + bob, 3*S, 6*S - walk);
+  ctx.globalAlpha = alive ? 1 : 0.22;
+
+  // Flowing cape (bezier, behind body)
+  var capeFlap = Math.sin(step * 0.07) * 3;
+  ctx.beginPath();
+  ctx.moveTo(kx - 5*S, ky - 2*S + bob);
+  ctx.bezierCurveTo(
+    kx - 12*S, ky + 4*S + bob + capeFlap,
+    kx - 10*S, ky + 14*S + bob,
+    kx - 3*S,  ky + 13*S + bob
+  );
+  ctx.lineTo(kx + 3*S, ky + 13*S + bob);
+  ctx.bezierCurveTo(
+    kx + 10*S, ky + 14*S + bob,
+    kx + 12*S, ky + 4*S + bob - capeFlap,
+    kx + 5*S,  ky - 2*S + bob
+  );
+  ctx.closePath();
+  // Cape is darker shade of color
+  ctx.fillStyle = color + '99';
+  ctx.fill();
+  ctx.strokeStyle = color + '55';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+
+  // Legs (tapered, with walking animation)
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = '#1a1a2a';
+  // Left leg
+  var lly = ky + 5*S + bob;
+  ctx.fillStyle = '#2a2a3a';
+  ctx.beginPath();
+  ctx.moveTo(kx - 5*S, lly);
+  ctx.lineTo(kx - 1*S, lly);
+  ctx.lineTo(kx - 1*S + legSwing*3, lly + 9*S);
+  ctx.lineTo(kx - 5*S + legSwing*3, lly + 9*S);
+  ctx.closePath();
+  ctx.fill();
+  // Boot
   ctx.fillStyle = '#111';
-  ctx.fillRect(kx - 5*S, ky + 8*S + bob + walk, 4*S, 2.5*S);
-  ctx.fillRect(kx + 1*S, ky + 8*S + bob - walk, 4*S, 2.5*S);
-  ctx.fillStyle = color;
-  ctx.fillRect(kx - 6*S, ky - 4*S + bob, 12*S, 9*S);
-  ctx.fillStyle = '#00000066';
-  ctx.fillRect(kx - 6*S, ky - 4*S + bob, 12*S, 1.5*S);
-  ctx.fillRect(kx - 6*S, ky + 3.5*S + bob, 12*S, 1.5*S);
-  ctx.fillStyle = color;
-  ctx.fillRect(kx - 10*S, ky - 3*S + bob + walk*0.5, 4*S, 7*S);
-  ctx.fillRect(kx + 6*S,  ky - 3*S + bob - walk*0.5, 4*S, 7*S);
+  ctx.beginPath();
+  ctx.moveTo(kx - 6*S + legSwing*3, lly + 9*S);
+  ctx.lineTo(kx + 0*S + legSwing*3, lly + 9*S);
+  ctx.lineTo(kx + 1*S + legSwing*3, lly + 11*S);
+  ctx.lineTo(kx - 7*S + legSwing*3, lly + 11*S);
+  ctx.closePath();
+  ctx.fill();
+  // Right leg
+  ctx.fillStyle = '#2a2a3a';
+  ctx.beginPath();
+  ctx.moveTo(kx + 1*S, lly);
+  ctx.lineTo(kx + 5*S, lly);
+  ctx.lineTo(kx + 5*S - legSwing*3, lly + 9*S);
+  ctx.lineTo(kx + 1*S - legSwing*3, lly + 9*S);
+  ctx.closePath();
+  ctx.fill();
+  // Boot right
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.moveTo(kx + 0*S - legSwing*3, lly + 9*S);
+  ctx.lineTo(kx + 6*S - legSwing*3, lly + 9*S);
+  ctx.lineTo(kx + 7*S - legSwing*3, lly + 11*S);
+  ctx.lineTo(kx - 1*S - legSwing*3, lly + 11*S);
+  ctx.closePath();
+  ctx.fill();
+
+  // Tabard / body (tunic shape, slightly tapered)
+  ctx.beginPath();
+  ctx.moveTo(kx - 6*S, ky - 4*S + bob);
+  ctx.lineTo(kx + 6*S, ky - 4*S + bob);
+  ctx.lineTo(kx + 5*S, ky + 6*S + bob);
+  ctx.lineTo(kx - 5*S, ky + 6*S + bob);
+  ctx.closePath();
+  ctx.fillStyle = color + 'ee';
+  ctx.fill();
+  // Belt
+  ctx.fillStyle = '#1a1010';
+  ctx.fillRect(kx - 5.5*S, ky + 3*S + bob, 11*S, 1.8*S);
+  // Belt buckle
+  ctx.fillStyle = '#FFD700';
+  ctx.fillRect(kx - 1.5*S, ky + 3.2*S + bob, 3*S, 1.4*S);
+
+  // Sword on left hip
+  ctx.save();
+  ctx.translate(kx - 5*S, ky + 5*S + bob);
+  ctx.rotate(0.3);
+  ctx.fillStyle = '#aaaacc';
+  ctx.fillRect(-1, 0, 2, 14*S); // blade
+  ctx.fillStyle = '#8B6914';
+  ctx.fillRect(-3, -3, 6, 4);   // guard
+  ctx.fillStyle = '#5a3a00';
+  ctx.fillRect(-1.5, -10, 3, 8); // handle
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath(); ctx.arc(0, -10, 2, 0, Math.PI*2); ctx.fill(); // pommel
+  ctx.restore();
+
+  // Arms
+  // Left arm (swings forward)
+  ctx.fillStyle = color + 'cc';
+  ctx.beginPath();
+  ctx.moveTo(kx - 6*S, ky - 3*S + bob);
+  ctx.lineTo(kx - 9*S, ky - 3*S + bob + armSwing*4);
+  ctx.lineTo(kx - 9*S, ky + 3*S + bob + armSwing*4);
+  ctx.lineTo(kx - 6*S, ky + 2*S + bob);
+  ctx.closePath();
+  ctx.fill();
+  // Hand L
   ctx.fillStyle = '#e8c090';
-  ctx.fillRect(kx - 11*S, ky + 2*S + bob + walk*0.5, 3*S, 3*S);
-  ctx.fillRect(kx + 8*S,  ky + 2*S + bob - walk*0.5, 3*S, 3*S);
+  ctx.beginPath();
+  ctx.arc(kx - 9.5*S, ky + 3*S + bob + armSwing*4, 2.2*S, 0, Math.PI*2);
+  ctx.fill();
+
+  // Right arm
+  ctx.fillStyle = color + 'cc';
+  ctx.beginPath();
+  ctx.moveTo(kx + 6*S, ky - 3*S + bob);
+  ctx.lineTo(kx + 9*S, ky - 3*S + bob - armSwing*4);
+  ctx.lineTo(kx + 9*S, ky + 3*S + bob - armSwing*4);
+  ctx.lineTo(kx + 6*S, ky + 2*S + bob);
+  ctx.closePath();
+  ctx.fill();
+  // Hand R
+  ctx.fillStyle = '#e8c090';
+  ctx.beginPath();
+  ctx.arc(kx + 9.5*S, ky + 3*S + bob - armSwing*4, 2.2*S, 0, Math.PI*2);
+  ctx.fill();
+
+  // Neck
   ctx.fillStyle = '#e8c090';
   ctx.fillRect(kx - 2*S, ky - 6*S + bob, 4*S, 3*S);
+
+  // Head (oval, not rectangle)
   ctx.fillStyle = '#e8c090';
-  ctx.fillRect(kx - 5*S, ky - 16*S + bob, 10*S, 11*S);
+  ctx.beginPath();
+  ctx.ellipse(kx, ky - 11*S + bob, 5.5*S, 6.5*S, 0, 0, Math.PI*2);
+  ctx.fill();
+  // Face shading
   ctx.fillStyle = '#cc9966';
-  ctx.fillRect(kx - 5*S, ky - 16*S + bob, 10*S, 1*S);
-  ctx.fillStyle = '#222';
-  ctx.fillRect(kx - 3*S, ky - 12*S + bob, 2*S, 2*S);
-  ctx.fillRect(kx + 1*S, ky - 12*S + bob, 2*S, 2*S);
-  ctx.fillStyle = '#884422';
-  ctx.fillRect(kx - 2*S, ky - 8*S + bob, 4*S, 1*S);
+  ctx.beginPath();
+  ctx.ellipse(kx, ky - 9*S + bob, 5*S, 2*S, 0, 0, Math.PI*2);
+  ctx.globalAlpha = 0.25;
+  ctx.fill();
+  ctx.globalAlpha = alive ? 1 : 0.22;
+  // Eyes
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.ellipse(kx - 2.2*S, ky - 11.5*S + bob, 1.2*S, 0.9*S, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(kx + 2.2*S, ky - 11.5*S + bob, 1.2*S, 0.9*S, 0, 0, Math.PI*2);
+  ctx.fill();
+  // Eye shine
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(kx - 1.8*S, ky - 11.8*S + bob, 0.4*S, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(kx + 2.6*S, ky - 11.8*S + bob, 0.4*S, 0, Math.PI*2);
+  ctx.fill();
+  // Nose
+  ctx.fillStyle = '#cc9966';
+  ctx.beginPath();
+  ctx.arc(kx, ky - 10*S + bob, 0.8*S, 0, Math.PI*2);
+  ctx.fill();
+  // Mouth (slight smile)
+  ctx.strokeStyle = '#884422';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.arc(kx, ky - 8.5*S + bob, 2*S, 0.15, Math.PI - 0.15);
+  ctx.stroke();
+
+  // Crown band
   ctx.fillStyle = '#FFD700';
-  ctx.fillRect(kx - 6*S, ky - 20*S + bob, 12*S, 4*S);
-  ctx.fillRect(kx - 5*S, ky - 25*S + bob, 3*S, 5*S);
-  ctx.fillRect(kx - 1.5*S, ky - 27*S + bob, 3*S, 7*S);
-  ctx.fillRect(kx + 2*S, ky - 25*S + bob, 3*S, 5*S);
-  ctx.fillStyle = '#ff4444';
-  ctx.fillRect(kx - 1*S, ky - 26*S + bob, 2*S, 2*S);
-  ctx.globalAlpha = 1;
+  ctx.beginPath();
+  ctx.moveTo(kx - 5.5*S, ky - 15.5*S + bob);
+  ctx.lineTo(kx + 5.5*S, ky - 15.5*S + bob);
+  ctx.lineTo(kx + 5*S,   ky - 17.5*S + bob);
+  ctx.lineTo(kx - 5*S,   ky - 17.5*S + bob);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#aa8800';
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+  // Crown spires (3 points)
+  ctx.fillStyle = '#FFD700';
+  // Left spike
+  ctx.beginPath();
+  ctx.moveTo(kx - 4.5*S, ky - 17.5*S + bob);
+  ctx.lineTo(kx - 2.5*S, ky - 17.5*S + bob);
+  ctx.lineTo(kx - 3.5*S, ky - 21*S + bob);
+  ctx.closePath();
+  ctx.fill();
+  // Center spike (tallest)
+  ctx.beginPath();
+  ctx.moveTo(kx - 1.8*S, ky - 17.5*S + bob);
+  ctx.lineTo(kx + 1.8*S, ky - 17.5*S + bob);
+  ctx.lineTo(kx,          ky - 23*S + bob);
+  ctx.closePath();
+  ctx.fill();
+  // Right spike
+  ctx.beginPath();
+  ctx.moveTo(kx + 2.5*S, ky - 17.5*S + bob);
+  ctx.lineTo(kx + 4.5*S, ky - 17.5*S + bob);
+  ctx.lineTo(kx + 3.5*S, ky - 21*S + bob);
+  ctx.closePath();
+  ctx.fill();
+  // Crown jewels
+  ctx.fillStyle = '#ff3344';
+  ctx.beginPath(); ctx.arc(kx - 3.5*S, ky - 20.5*S + bob, 1*S, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#4444ff';
+  ctx.beginPath(); ctx.arc(kx, ky - 22.5*S + bob, 1.1*S, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#44ff88';
+  ctx.beginPath(); ctx.arc(kx + 3.5*S, ky - 20.5*S + bob, 1*S, 0, Math.PI*2); ctx.fill();
+  // Gem sparkles
+  ctx.fillStyle = '#ffffffcc';
+  ctx.beginPath(); ctx.arc(kx - 3.1*S, ky - 21*S + bob, 0.3*S, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(kx + 0.4*S, ky - 23*S + bob, 0.3*S, 0, Math.PI*2); ctx.fill();
+
+  ctx.restore();
 }
 
 function drawTerritoryStats(ctx, cx, cy, r, n, color, name, W, H) {
@@ -1000,18 +1269,20 @@ function renderMap() {
         if (spd2 < 0.0006) { w.dx *= 1.3; w.dy *= 1.3; }
       }
       w.x += w.dx; w.y += w.dy;
-      // Boundary: all in fraction space
-      var fx = w.x - t.cx, fy = w.y - t.cy;
-      var fdist = Math.sqrt(fx*fx + fy*fy);
-      var flimit = r * 0.48;
-      if (fdist > flimit) {
-        // Reflect velocity off boundary normal
-        var nx = fx/fdist, ny = fy/fdist;
-        var dot = w.dx*nx + w.dy*ny;
-        if (dot > 0) { w.dx -= 2*dot*nx; w.dy -= 2*dot*ny; }
-        // Push back just inside boundary
-        w.x = t.cx + nx * flimit * 0.94;
-        w.y = t.cy + ny * flimit * 0.94;
+      // Boundary check in pixel space (r is fraction of min(W,H))
+      var fpx = (w.x - t.cx) * W, fpy = (w.y - t.cy) * H;
+      var fpd = Math.sqrt(fpx*fpx + fpy*fpy);
+      var fplim = r * 0.46; // r already = t.r * min(W,H) in pixels
+      if (fpd > fplim) {
+        var nx = fpx/fpd, ny = fpy/fpd;
+        // Convert velocity to pixels, reflect, convert back
+        var vx = w.dx*W, vy = w.dy*H;
+        var dot = vx*nx + vy*ny;
+        if (dot > 0) { vx -= 2*dot*nx; vy -= 2*dot*ny; }
+        w.dx = vx/W; w.dy = vy/H;
+        // Push back inside boundary
+        w.x = t.cx + nx*(fplim*0.90)/W;
+        w.y = t.cy + ny*(fplim*0.90)/H;
       }
       drawKingSprite(ctx, w.x*W, w.y*H, t.color, n.alive, w.step);
     });
