@@ -17,7 +17,7 @@ html,body{height:100%;overflow:hidden;background:#0a0a12;color:#e8e0d0;font-fami
 #year-badge{font-size:11px;color:#888;white-space:nowrap}
 #era-badge{font-size:10px;padding:2px 7px;border-radius:10px;background:#1a2a1a;color:#2ecc71;font-weight:500;white-space:nowrap}
 #content{position:fixed;top:50px;left:0;right:0;bottom:58px;overflow:hidden}
-.tab-page{display:none;position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.tab-page{display:none;position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:scroll;-webkit-overflow-scrolling:touch;height:100%}
 .tab-page.active{display:block}
 #nav{position:fixed;bottom:0;left:0;right:0;height:58px;background:#0f0f1a;border-top:1px solid #2a2a3a;display:flex;z-index:100}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:#555;cursor:pointer;font-size:9px;font-weight:500;letter-spacing:0.5px;transition:color 0.2s}
@@ -37,7 +37,7 @@ html,body{height:100%;overflow:hidden;background:#0a0a12;color:#e8e0d0;font-fami
 #map-canvas{display:block;width:100%;height:100%}
 
 /* KINGS tab */
-#tab-kings{padding:10px;padding-bottom:20px}
+#tab-kings{padding:10px;padding-bottom:80px}
 .king-card{background:#0f0f1a;border-radius:10px;margin-bottom:12px;padding:12px;border-left:4px solid #555;cursor:pointer;position:relative}
 .king-card-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
 .king-emoji-tile{font-size:36px;width:46px;height:46px;display:flex;align-items:center;justify-content:center;background:#1a1a2a;border-radius:8px;flex-shrink:0}
@@ -88,7 +88,7 @@ html,body{height:100%;overflow:hidden;background:#0a0a12;color:#e8e0d0;font-fami
 .msg-name{font-size:10px;font-weight:500;margin-bottom:3px}
 
 /* INTEL tab */
-#tab-intel{padding:10px;padding-bottom:20px}
+#tab-intel{padding:10px;padding-bottom:80px}
 .intel-section{margin-bottom:16px}
 .intel-title{font-size:11px;letter-spacing:2px;color:#888;text-transform:uppercase;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #1a1a2a}
 .intercept-entry{background:#0f0f1a;border:1px solid #1a2a0a;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-family:monospace;font-size:11px;color:#c8a84b}
@@ -106,7 +106,7 @@ html,body{height:100%;overflow:hidden;background:#0a0a12;color:#e8e0d0;font-fami
 .rel-cell-enemy{background:#2a0a0a;color:#e74c3c}
 
 /* CHRONICLE tab */
-#tab-chronicle{padding:16px;padding-bottom:30px}
+#tab-chronicle{padding:16px;padding-bottom:80px}
 .chronicle-empty{text-align:center;color:#555;padding:40px 20px;font-style:italic}
 .chronicle-entry{background:#0f0a06;border:1px solid #2a1a06;border-radius:8px;padding:14px;margin-bottom:14px}
 .chronicle-year{font-family:'Cinzel',serif;font-size:13px;color:#c8a84b;text-align:center;margin-bottom:8px;letter-spacing:2px}
@@ -123,6 +123,18 @@ html,body{height:100%;overflow:hidden;background:#0a0a12;color:#e8e0d0;font-fami
 .toast.year{border-left:3px solid #c8a84b;color:#c8a84b}
 .toast.mission{border-left:3px solid #9b59b6;color:#c39bd3}
 @keyframes toastIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+
+
+#reset-btn{position:absolute;top:8px;right:8px;background:#1a1a2a;border:1px solid #2a2a3a;color:#888;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;z-index:10}
+#reset-btn:active{background:#2a2a3a}
+#reset-confirm{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;align-items:center;justify-content:center}
+#reset-confirm.show{display:flex}
+#reset-confirm-box{background:#0f0f1a;border:1px solid #e74c3c;border-radius:14px;padding:24px;text-align:center;max-width:280px}
+#reset-confirm-title{font-family:'Cinzel',serif;font-size:16px;color:#e74c3c;margin-bottom:8px}
+#reset-confirm-sub{font-size:12px;color:#888;margin-bottom:20px;line-height:1.5}
+.reset-btn-row{display:flex;gap:10px}
+.reset-btn-cancel{flex:1;background:#1a1a2a;border:1px solid #2a2a3a;color:#888;border-radius:8px;padding:10px;font-size:13px;cursor:pointer}
+.reset-btn-confirm{flex:1;background:#e74c3c22;border:1px solid #e74c3c66;color:#e74c3c;border-radius:8px;padding:10px;font-size:13px;cursor:pointer;font-family:'Cinzel',serif}
 
 /* Nuke overlay */
 #nuke-overlay{position:fixed;inset:0;z-index:300;pointer-events:none;display:none}
@@ -153,6 +165,7 @@ html,body{height:100%;overflow:hidden;background:#0a0a12;color:#e8e0d0;font-fami
 <div id="content">
   <div id="tab-map" class="tab-page active">
     <canvas id="map-canvas"></canvas>
+    <button id="reset-btn" onclick="showResetConfirm()">🔄 New World</button>
   </div>
   <div id="tab-kings" class="tab-page"></div>
   <div id="tab-whisper" class="tab-page">
@@ -219,6 +232,17 @@ html,body{height:100%;overflow:hidden;background:#0a0a12;color:#e8e0d0;font-fami
 <div id="nuke-overlay">
   <canvas id="nuke-canvas"></canvas>
   <div id="nuke-flash"></div>
+</div>
+
+<div id="reset-confirm">
+  <div id="reset-confirm-box">
+    <div id="reset-confirm-title">☠ RESET THE WORLD?</div>
+    <div id="reset-confirm-sub">All nations, history, and chronicles will be destroyed. A new world will rise from the ashes.</div>
+    <div class="reset-btn-row">
+      <button class="reset-btn-cancel" onclick="hideResetConfirm()">Cancel</button>
+      <button class="reset-btn-confirm" onclick="doReset()">Destroy It</button>
+    </div>
+  </div>
 </div>
 
 <div id="name-modal">
@@ -1075,6 +1099,32 @@ function animateNuke(msg) {
 // ── Utils ──────────────────────────────────────────────────────────────────
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────────
+function showResetConfirm() {
+  document.getElementById('reset-confirm').classList.add('show');
+}
+function hideResetConfirm() {
+  document.getElementById('reset-confirm').classList.remove('show');
+}
+function doReset() {
+  hideResetConfirm();
+  wsSend({ type: 'reset' });
+  WHISPER_HISTORY = {};
+  INTERCEPTS = [];
+  INTEL_BADGE_COUNT = 0;
+  document.getElementById('intel-badge').style.display = 'none';
+  document.getElementById('whisper-feed').innerHTML = '';
+  document.getElementById('intercept-list').innerHTML = '<div class="intercept-empty">No intercepts yet. Check back soon.</div>';
+  document.getElementById('chronicle-list').innerHTML = '<div class="chronicle-empty">📜 The chronicle will be written at year end.</div>';
+  ACTIVE_MISSION = null;
+  document.getElementById('mission-banner').style.display = 'none';
+  showToast('🔄 New world created.', 'event');
+  // Also clear localStorage session so it gets a fresh world
+  localStorage.removeItem('bn_sess');
+  SESSION_ID = 's_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+  localStorage.setItem('bn_sess', SESSION_ID);
 }
 
 // Resize handler
