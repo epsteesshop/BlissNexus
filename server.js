@@ -12,15 +12,18 @@ const wss = new WebSocketServer({ server });
 
 app.use(express.static(__dirname));
 app.get('/health', (req, res) => {
-  var alive = 0, wars = 0;
-  if (world) {
-    Object.keys(world.nations || {}).forEach(function(id) {
-      var n = world.nations[id];
-      if (n.alive) alive++;
-      if (n.wars && n.wars.length) wars++;
-    });
-  }
-  res.json({ ok: true, year: world ? world.year : 0, tension: world ? world.tension : 0, alive, wars });
+  try {
+    var w = typeof world !== 'undefined' ? world : null;
+    var alive = 0, wars = 0;
+    if (w) {
+      Object.keys(w.nations || {}).forEach(function(id) {
+        var n = w.nations[id];
+        if (n.alive) alive++;
+        if (n.wars && n.wars.length) wars++;
+      });
+    }
+    res.json({ ok: true, year: w ? w.year : 0, tension: w ? w.tension : 0, alive: alive, wars: wars });
+  } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
