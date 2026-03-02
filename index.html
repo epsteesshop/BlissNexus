@@ -1470,40 +1470,54 @@ function drawKingSprite(ctx, kx, ky, color, alive, step) {
 }
 
 function drawTerritoryStats(ctx, cx, cy, r, n, color, name, W, H) {
-  var baseY = cy + r * 0.9 + 22;
-  var S = Math.min(W, H);
-  ctx.font = 'bold ' + Math.max(11, S/55) + 'px Cinzel, serif';
+  ctx.save();
   ctx.textAlign = 'center';
+  ctx.shadowColor = '#000000cc';
+  ctx.shadowBlur = 5;
+  var fontSize = Math.max(10, Math.min(13, r * 0.14));
+  ctx.font = 'bold ' + fontSize + 'px Cinzel, serif';
   ctx.fillStyle = color;
-  ctx.shadowColor = '#000'; ctx.shadowBlur = 6;
-  ctx.fillText(name, cx, baseY);
+  ctx.fillText(name, cx, cy - r * 0.12);
+  var statSize = Math.max(9, Math.min(10, r * 0.11));
+  ctx.font = statSize + 'px Roboto, sans-serif';
+  ctx.fillStyle = 'rgba(220,210,190,0.85)';
+  ctx.fillText(formatNum(n.troops) + 'T  ' + (n.nukes||0) + 'N  ' + formatNum(n.gold) + 'G', cx, cy + r * 0.08);
+  var bw = r * 0.85, bh = 2.5, bx = cx - bw/2, by = cy + r * 0.17;
   ctx.shadowBlur = 0;
-  ctx.font = Math.max(10, S/72) + 'px Roboto, sans-serif';
-  ctx.fillStyle = '#aaa';
-  ctx.fillText('🪖' + formatNum(n.troops) + '  ☢' + (n.nukes||0) + '  💰' + formatNum(n.gold), cx, baseY + 16);
-  var bw = r * 1.1, bh = 3, bx = cx - bw/2, by = baseY + 23;
-  ctx.fillStyle = '#1a1a2a'; ctx.fillRect(bx, by, bw, bh);
+  ctx.fillStyle = '#111120'; ctx.fillRect(bx, by, bw, bh);
   var mc = (n.morale||50) > 60 ? '#2ecc71' : (n.morale||50) > 30 ? '#f39c12' : '#e74c3c';
   ctx.fillStyle = mc; ctx.fillRect(bx, by, bw * ((n.morale||50)/100), bh);
-  ctx.font = Math.max(12, S/60) + 'px serif';
-  ctx.fillText(n.moodEmoji || '', cx + r*0.8, cy - r*0.4);
+  ctx.shadowBlur = 3;
+  ctx.font = Math.max(11, r*0.12) + 'px serif';
+  ctx.fillText(n.moodEmoji || '', cx + r * 0.62, cy - r * 0.55);
+  ctx.restore();
 }
-
 function drawCities(ctx, cx, cy, r, cities, color) {
-  var offsets = [{dx:0.3,dy:-0.35},{dx:-0.4,dy:0.2},{dx:0.1,dy:0.45}];
-  (cities || []).forEach(function(city, i) {
-    var off = offsets[i] || {dx:0,dy:0};
-    var px = cx + off.dx*r, py = cy + off.dy*r, sz = 5;
+  var angles = [0.55, 3.8, 2.2];
+  var dist = r * 0.42;
+  cities.forEach(function(city, i) {
+    var ang = angles[i] !== undefined ? angles[i] : i * 2.1;
+    var px = cx + Math.cos(ang) * dist;
+    var py = cy + Math.sin(ang) * dist * 0.82;
+    ctx.save();
     if (city.destroyed) {
-      ctx.font = '10px serif'; ctx.textAlign = 'center';
-      ctx.fillText('💀', px, py+4);
+      ctx.font = '11px serif'; ctx.textAlign = 'center';
+      ctx.globalAlpha = 0.7;
+      ctx.fillText('X', px, py+4);
     } else {
-      ctx.fillStyle = color; ctx.fillRect(px-sz/2, py-sz/2, sz, sz);
-      ctx.fillStyle = '#fff'; ctx.fillRect(px-sz/2+1, py-sz/2+1, sz-2, sz-2);
-      ctx.fillStyle = color; ctx.fillRect(px-sz/2+2, py-sz/2+2, sz-4, sz-4);
-      ctx.font = '8px Roboto,sans-serif'; ctx.textAlign = 'center';
-      ctx.fillStyle = '#777'; ctx.fillText(city.name, px, py-7);
+      ctx.shadowColor = '#000'; ctx.shadowBlur = 3;
+      ctx.fillStyle = '#ffffffcc';
+      ctx.beginPath(); ctx.arc(px, py, 3.5, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = color + 'dd';
+      ctx.beginPath(); ctx.arc(px, py, 2, 0, Math.PI*2); ctx.fill();
+      if (r > 58) {
+        ctx.shadowBlur = 4;
+        ctx.font = '8px Roboto,sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(170,150,110,0.85)';
+        ctx.fillText(city.name, px, py - 6);
+      }
     }
+    ctx.restore();
   });
 }
 
@@ -1698,17 +1712,25 @@ function showResetConfirm() { document.getElementById('reset-confirm').classList
 function hideResetConfirm() { document.getElementById('reset-confirm').classList.remove('show'); }
 function doReset() {
   hideResetConfirm();
-  wsSend({ type: 'reset' });
-  WHISPER_HISTORY = {}; INTERCEPTS = []; INTEL_BADGE_COUNT = 0;
-  document.getElementById('whisper-feed').innerHTML = '';
-  document.getElementById('intercept-list').innerHTML = '<div class="intercept-empty">No intercepts yet.</div>';
-  document.getElementById('chronicle-list').innerHTML = '<div class="chronicle-empty">The chronicle will be written at year\'s end.</div>';
-  ACTIVE_MISSION = null;
-  document.getElementById('mission-banner').style.display = 'none';
-  showToast('🔄 New world created.', 'event');
   localStorage.removeItem('bn_sess');
   SESSION_ID = 's_' + Date.now() + '_' + Math.random().toString(36).slice(2);
   localStorage.setItem('bn_sess', SESSION_ID);
+  wsSend({ type: 'reset' });
+  WHISPER_HISTORY = {}; INTERCEPTS = []; INTEL_BADGE_COUNT = 0;
+  EVENTS_LOG = []; NEWS_TICKER = []; DISCOVERED_SECRETS = {};
+  ACTIVE_MISSION = null; SPEECH_BUBBLES = [];
+  document.getElementById('whisper-feed').innerHTML = '';
+  document.getElementById('intercept-list').innerHTML = '<div class="intercept-empty">No intercepts yet.</div>';
+  document.getElementById('chronicle-list').innerHTML = '<div class="chronicle-empty">The chronicle will be written.</div>';
+  document.getElementById('mission-banner').style.display = 'none';
+  renderEventsLog();
+  renderSecrets();
+  showToast('New world rising...', 'event');
+  setTimeout(function() {
+    if (WS && WS.readyState === 1) {
+      wsSend({ type: 'join', sessionId: SESSION_ID, playerName: PLAYER_NAME });
+    } else { connect(); }
+  }, 900);
 }
 
 window.addEventListener('resize', function() {
