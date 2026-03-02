@@ -47,7 +47,7 @@ html, body { height: 100%; overflow: hidden; background: #060912; color: #e8e0d0
 #whisper-input:focus { border-color: #2a2a4a; }
 #whisper-send { background: #c8a84b; border: none; border-radius: 50%; width: 34px; height: 34px; font-size: 16px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 #whisper-send:hover { background: #d4b85c; }
-#right-subtabs { height: 260px; flex-shrink: 0; border-top: 1px solid #1a1a2a; display: flex; flex-direction: column; }
+#right-subtabs { height: 190px; flex-shrink: 0; border-top: 1px solid #1a1a2a; display: flex; flex-direction: column; }
 #right-subtab-nav { display: flex; flex-shrink: 0; }
 .rst-btn { flex: 1; background: none; border: none; border-bottom: 2px solid transparent; color: #444; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 7px; cursor: pointer; transition: color 0.2s; }
 .rst-btn.active { color: #c8a84b; border-bottom-color: #c8a84b; }
@@ -1089,7 +1089,7 @@ function initWalkers() {
   Object.keys(TERR).forEach(function(id) {
     var t = TERR[id];
     var ang = Math.random() * Math.PI * 2;
-    var spd = 0.0012 + Math.random() * 0.0010;
+    var spd = 0.00035 + Math.random() * 0.00025;
     WALKERS[id] = { x: t.cx + (Math.random()-0.5)*0.04, y: t.cy + (Math.random()-0.5)*0.04, dx: Math.cos(ang)*spd, dy: Math.sin(ang)*spd, step: Math.floor(Math.random()*100) };
   });
 }
@@ -1601,8 +1601,8 @@ function renderMap() {
         w.dx += nudge; w.dy += nudge2;
         // Clamp speed
         var spd2 = Math.sqrt(w.dx*w.dx + w.dy*w.dy);
-        if (spd2 > 0.002) { w.dx *= 0.002/spd2; w.dy *= 0.002/spd2; }
-        if (spd2 < 0.0006) { w.dx *= 1.3; w.dy *= 1.3; }
+        if (spd2 > 0.00065) { w.dx *= 0.00065/spd2; w.dy *= 0.00065/spd2; }
+        if (spd2 < 0.00018) { w.dx *= 1.3; w.dy *= 1.3; }
       }
       w.x += w.dx; w.y += w.dy;
       // Boundary check in pixel space (r is fraction of min(W,H))
