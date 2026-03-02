@@ -141,6 +141,57 @@ html, body { height: 100%; overflow: hidden; background: #060912; color: #e8e0d0
 #nuke-overlay { position: fixed; inset: 0; z-index: 400; pointer-events: none; display: none; }
 #nuke-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 #nuke-flash { position: absolute; inset: 0; background: #fff; opacity: 0; transition: opacity 0.1s; }
+/* Influence bar */
+#influence-bar { display:flex; align-items:center; gap:8px; padding:6px 12px; background:#06060f; border-bottom:1px solid #1a1a2a; flex-shrink:0; }
+#inf-level-badge { font-size:9px; padding:2px 7px; border-radius:8px; background:#1a1a0a; color:#c8a84b; white-space:nowrap; font-weight:600; }
+#inf-progress-outer { flex:1; height:4px; background:#1a1a2a; border-radius:2px; overflow:hidden; }
+#inf-progress-inner { height:100%; background:#c8a84b; border-radius:2px; transition:width 0.6s; }
+#inf-pts { font-size:9px; color:#555; white-space:nowrap; }
+/* Secrets tab */
+.secret-king-card { background:#0d0d1a; border-radius:8px; margin-bottom:10px; padding:10px; border-left:3px solid #444; }
+.sk-header { font-family:'Cinzel',serif; font-size:12px; margin-bottom:6px; }
+.sk-leverage { font-size:9px; color:#555; margin-bottom:6px; }
+.sk-lev-bar { height:3px; background:#1a1a2a; border-radius:2px; overflow:hidden; margin-top:2px; margin-bottom:4px; }
+.sk-lev-fill { height:100%; background:#c8a84b; border-radius:2px; }
+.sk-secret { font-size:11px; padding:5px 7px; border-radius:5px; margin-bottom:4px; }
+.sk-secret.discovered { background:#0a1a0a; color:#7ec87e; border:1px solid #1a3a1a; }
+.sk-secret.locked { background:#0a0a0a; color:#333; border:1px solid #111; font-style:italic; }
+.sk-use-btn { margin-left:6px; font-size:9px; padding:1px 6px; border-radius:4px; background:#c8a84b22; border:1px solid #c8a84b55; color:#c8a84b; cursor:pointer; }
+.sk-use-btn:hover { background:#c8a84b44; }
+/* Events tab */
+#events-filter { display:flex; gap:4px; flex-wrap:wrap; padding:8px 8px 4px; flex-shrink:0; border-bottom:1px solid #111120; }
+.ef-btn { font-size:9px; padding:3px 7px; border-radius:8px; background:#111120; border:1px solid #1a1a2a; color:#555; cursor:pointer; white-space:nowrap; }
+.ef-btn.active { background:#1a1a2a; color:#c8a84b; border-color:#c8a84b55; }
+#events-list { flex:1; overflow-y:auto; padding:6px 8px; }
+#events-list::-webkit-scrollbar { width:3px; }
+#events-list::-webkit-scrollbar-thumb { background:#1e1e2e; }
+.event-entry { display:flex; gap:6px; align-items:flex-start; padding:5px 0; border-bottom:1px solid #0d0d16; font-size:11px; }
+.event-entry.event-critical { background:#1a0505; border-radius:5px; padding:5px 7px; border:1px solid #e74c3c33; margin-bottom:4px; }
+.event-time { font-size:9px; color:#444; white-space:nowrap; min-width:32px; margin-top:1px; }
+.event-icon { min-width:16px; text-align:center; }
+.event-text { color:#a89880; line-height:1.35; }
+.event-entry.event-war .event-text { color:#e07070; }
+.event-entry.event-nuke .event-text { color:#ff9944; }
+.event-entry.event-diplomacy .event-text { color:#70b0e0; }
+.event-entry.event-natural .event-text { color:#70c070; }
+.event-entry.event-crisis .event-text { color:#f0c060; }
+.event-entry.event-prophecy .event-text { color:#c8a84b; font-style:italic; }
+.event-entry.event-critical .event-text { color:#ff8888; font-weight:500; }
+/* Map tooltip */
+#map-tooltip { display:none; position:fixed; background:#0f0f1a; border:1px solid #2a2a3a; border-radius:8px; padding:10px 12px; pointer-events:none; z-index:250; max-width:220px; font-size:12px; color:#e8d5a0; box-shadow:0 4px 20px rgba(0,0,0,0.8); }
+/* Breaking news */
+#breaking-news { position:fixed; top:48px; left:0; right:0; z-index:280; background:linear-gradient(90deg,#1a0000,#2a0808,#1a0000); border-bottom:2px solid #e74c3c; padding:10px 20px; transform:translateY(-110%); opacity:0; transition:none; }
+/* Prophecy overlay */
+#prophecy-overlay { position:fixed; inset:0; z-index:350; background:rgba(0,0,0,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; }
+/* King card mood border animation */
+.king-card.mood-angry { border-left-color:#e74c3c !important; }
+.king-card.mood-anxious { border-left-color:#f39c12 !important; }
+.king-card.mood-triumphant { border-left-color:#2ecc71 !important; }
+.king-card.mood-suspicious { border-left-color:#9b59b6 !important; }
+.king-card.mood-fearful { border-left-color:#3498db !important; }
+.king-card.mood-emboldened { border-left-color:#e67e22 !important; }
+.king-card.has-leverage { box-shadow:0 0 0 1px #c8a84b44; }
+@keyframes prophecyFadeIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
 </style>
 </head>
 <body>
@@ -168,6 +219,12 @@ html, body { height: 100%; overflow: hidden; background: #060912; color: #e8e0d0
   </div>
   <div id="sidebar-right">
     <div id="whisper-section">
+      <div id="influence-bar">
+        <span style="font-size:11px;color:#c8a84b">👑</span>
+        <span id="inf-level-badge">Lv.1 Stranger</span>
+        <div id="inf-progress-outer"><div id="inf-progress-inner" style="width:0%"></div></div>
+        <span id="inf-pts">0 pts</span>
+      </div>
       <div id="whisper-header">
         <div id="whisper-king-info">
           <div id="whisper-king-name" style="color:#444">Select a king on the map</div>
@@ -186,9 +243,11 @@ html, body { height: 100%; overflow: hidden; background: #060912; color: #e8e0d0
     </div>
     <div id="right-subtabs">
       <div id="right-subtab-nav">
-        <button class="rst-btn active" onclick="switchSubtab('chronicle',this)">📜 Chronicle</button>
-        <button class="rst-btn" onclick="switchSubtab('intel',this)">🕵️ Intel</button>
-        <button class="rst-btn" onclick="switchSubtab('matrix',this)">🗺 Relations</button>
+        <button class="rst-btn active" onclick="switchSubtab('chronicle',this)">📜</button>
+        <button class="rst-btn" onclick="switchSubtab('intel',this)">🕵️</button>
+        <button class="rst-btn" onclick="switchSubtab('matrix',this)">🗺</button>
+        <button class="rst-btn" onclick="switchSubtab('secrets',this)">🔐</button>
+        <button class="rst-btn" onclick="switchSubtab('events',this)">📡</button>
       </div>
       <div id="right-subtab-body">
         <div class="rst-page active" id="rst-chronicle">
@@ -199,6 +258,20 @@ html, body { height: 100%; overflow: hidden; background: #060912; color: #e8e0d0
         </div>
         <div class="rst-page" id="rst-matrix">
           <div id="relations-matrix"></div>
+        </div>
+        <div class="rst-page" id="rst-secrets">
+          <div id="secrets-grid"></div>
+        </div>
+        <div class="rst-page" id="rst-events" style="display:none;flex-direction:column;padding:0;">
+          <div id="events-filter">
+            <button class="ef-btn active" data-filter="all" onclick="filterEvents('all',this)">All</button>
+            <button class="ef-btn" data-filter="war" onclick="filterEvents('war',this)">⚔ War</button>
+            <button class="ef-btn" data-filter="diplomacy" onclick="filterEvents('diplomacy',this)">🤝 Dipl</button>
+            <button class="ef-btn" data-filter="natural" onclick="filterEvents('natural',this)">🌿 Nat</button>
+            <button class="ef-btn" data-filter="crisis" onclick="filterEvents('crisis',this)">⚠ Crisis</button>
+            <button class="ef-btn" data-filter="prophecy" onclick="filterEvents('prophecy',this)">🔮 Proph</button>
+          </div>
+          <div id="events-list"></div>
         </div>
       </div>
     </div>
@@ -213,6 +286,17 @@ html, body { height: 100%; overflow: hidden; background: #060912; color: #e8e0d0
 </div>
 
 <div id="toast-container"></div>
+<div id="map-tooltip"></div>
+<div id="breaking-news">
+  <div style="font-size:9px;color:#e74c3c;letter-spacing:3px;margin-bottom:3px;font-weight:600">⚡ BREAKING NEWS</div>
+  <div class="bn-headline" style="font-family:Cinzel,serif;font-size:15px;color:#e8d5a0"></div>
+  <div class="bn-sub" style="font-size:10px;color:#777;margin-top:2px"></div>
+</div>
+<div id="prophecy-overlay">
+  <div style="font-family:Cinzel,serif;font-size:12px;color:#666;letter-spacing:4px;margin-bottom:18px">⚜ THE ORACLE SPEAKS ⚜</div>
+  <div id="prophecy-text" style="font-family:Cinzel,serif;font-size:20px;color:#c8a84b;text-align:center;max-width:520px;line-height:1.7;text-shadow:0 0 24px #c8a84b66;padding:0 30px"></div>
+  <div id="prophecy-sub" style="margin-top:16px;font-size:11px;color:#555">Click anywhere to dismiss</div>
+</div>
 
 <div id="nuke-overlay">
   <canvas id="nuke-canvas"></canvas>
@@ -260,6 +344,15 @@ var STARS = [];
 var MAP_ANIM = null;
 
 var SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter'];
+var SPEECH_BUBBLES = [];
+var NEWS_TICKER = [];
+var TICKER_OFFSET = 0;
+var EVENTS_LOG = [];
+var EVENTS_FILTER = 'all';
+var PLAYER_INFLUENCE = { points: 0, level: 1, levelTitle: 'Stranger', nextLevel: 50 };
+var LEVEL_TITLES = ['','Stranger','Operative','Spymaster','Kingmaker','Shadow Ruler'];
+var LEVEL_THRESHOLDS = [0, 0, 50, 150, 300, 600];
+var ACTIVE_PROPHECY = null;
 
 var TERR = {
   sage:  { cx: 0.20, cy: 0.28, r: 0.14, color: '#c8a84b' },
@@ -341,6 +434,7 @@ function handleMessage(msg) {
     if (msg.mission) setMission(msg.mission);
     initWalkers();
   } else if (msg.type === 'message') {
+    addSpeechBubble(msg.agentId, msg.text);
     if (CURRENT_KING === msg.agentId) {
       appendChatMsg({ role: 'agent', agentId: msg.agentId, name: msg.name, emoji: msg.emoji, color: msg.color, text: msg.text });
     }
@@ -361,6 +455,7 @@ function handleMessage(msg) {
     updateMissionBar();
   } else if (msg.type === 'worldEvent') {
     showToast(msg.text, msg.kind || 'event');
+    addEventEntry(msg.text, msg.kind || 'event');
   } else if (msg.type === 'intercept') {
     INTERCEPTS.unshift(msg.entry);
     if (INTERCEPTS.length > 50) INTERCEPTS.length = 50;
@@ -369,6 +464,7 @@ function handleMessage(msg) {
     showToast('👁 Intercept: ' + msg.entry.fromName + ' → ' + msg.entry.toName, 'event');
   } else if (msg.type === 'crisis') {
     showToast('⚠️ CRISIS: ' + msg.crisis.text, 'war');
+    addEventEntry('⚠️ ' + msg.crisis.text, 'crisis');
   } else if (msg.type === 'chronicle') {
     if (msg.entry) {
       var list = document.getElementById('chronicle-list');
@@ -397,9 +493,25 @@ function handleMessage(msg) {
     WHISPER_HISTORY = {};
     INTERCEPTS = [];
     INTEL_BADGE_COUNT = 0;
+    EVENTS_LOG = [];
+    NEWS_TICKER = [];
+    DISCOVERED_SECRETS = {};
     document.getElementById('whisper-feed').innerHTML = '';
     renderIntercepts();
     showToast('🔄 The world has been reset.', 'event');
+  } else if (msg.type === 'influenceUpdate') {
+    updateInfluenceBar(msg);
+  } else if (msg.type === 'secretDiscovered') {
+    onSecretDiscovered(msg.kingId, msg.secret);
+  } else if (msg.type === 'prophecy') {
+    ACTIVE_PROPHECY = msg;
+    showProphecyOverlay(msg.text);
+    addEventEntry('🔮 ' + msg.text, 'prophecy');
+  } else if (msg.type === 'breakingNews') {
+    showBreakingNews(msg.headline, msg.subtext);
+    addEventEntry('⚡ ' + msg.headline, 'critical');
+  } else if (msg.type === 'rumorSpread') {
+    addEventEntry('👁 Rumor spread: ' + msg.fromName + ' → ' + msg.toName, 'diplomacy');
   }
 }
 
@@ -425,10 +537,12 @@ function updateHeaderStats() {
 }
 
 function switchSubtab(name, btn) {
-  document.querySelectorAll('.rst-page').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.rst-page').forEach(function(el) { el.classList.remove('active'); el.style.display='none'; });
   document.querySelectorAll('.rst-btn').forEach(function(el) { el.classList.remove('active'); });
-  document.getElementById('rst-' + name).classList.add('active');
+  var pg = document.getElementById('rst-' + name);
+  if (pg) { pg.style.display = (name === 'events') ? 'flex' : 'block'; pg.classList.add('active'); }
   if (btn) btn.classList.add('active');
+  if (name === 'secrets') renderSecrets();
 }
 
 function goToWhisper(agentId) {
@@ -522,7 +636,7 @@ function renderKings() {
 
 function buildKingCard(ag, n) {
   var card = document.createElement('div');
-  card.className = 'king-card';
+  card.className = 'king-card mood-' + (n.mood || 'calm') + ((DISCOVERED_SECRETS[ag.id] && DISCOVERED_SECRETS[ag.id].length) ? ' has-leverage' : '');
   card.style.borderLeftColor = ag.color;
   card.onclick = function() { goToWhisper(ag.id); };
   var trust = n.userTrust || 0;
@@ -736,6 +850,228 @@ function dismissMission() {
 }
 
 document.querySelector('.mb-close').addEventListener('click', dismissMission);
+
+// ── SPEECH BUBBLES ──────────────────────────────────────────────────────────
+function addSpeechBubble(agentId, text) {
+  var t = TERR[agentId];
+  if (!t) return;
+  SPEECH_BUBBLES.push({
+    x: t.cx, y: t.cy,
+    text: text.slice(0, 48) + (text.length > 48 ? '\u2026' : ''),
+    color: t.color, born: Date.now(), duration: 5000
+  });
+  if (SPEECH_BUBBLES.length > 6) SPEECH_BUBBLES.shift();
+}
+
+function drawSpeechBubbles(ctx, W, H) {
+  var now = Date.now();
+  SPEECH_BUBBLES = SPEECH_BUBBLES.filter(function(b) { return now - b.born < b.duration; });
+  SPEECH_BUBBLES.forEach(function(b) {
+    var t = TERR[null] || {};
+    var terr = null;
+    Object.keys(TERR).forEach(function(id){ if (TERR[id].color === b.color) terr = TERR[id]; });
+    var r = terr ? terr.r * Math.min(W,H) : 60;
+    var age = (now - b.born) / b.duration;
+    var alpha = age < 0.12 ? age/0.12 : age > 0.72 ? 1-(age-0.72)/0.28 : 1;
+    var bx = b.x * W;
+    var by = (b.y * H) - r * 0.8 - age * 14;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = '11px Roboto,sans-serif';
+    var tw = ctx.measureText(b.text).width;
+    var bw = Math.min(tw + 18, W * 0.28), bh = 26, br = 7;
+    var rx = bx - bw/2, ry = by - bh;
+    ctx.fillStyle = '#0e0e1cee';
+    ctx.strokeStyle = b.color + 'cc';
+    ctx.lineWidth = 1.5;
+    if (ctx.roundRect) {
+      ctx.beginPath(); ctx.roundRect(rx, ry, bw, bh, br); ctx.fill(); ctx.stroke();
+    } else {
+      ctx.fillRect(rx, ry, bw, bh); ctx.strokeRect(rx, ry, bw, bh);
+    }
+    ctx.beginPath();
+    ctx.moveTo(bx-5, ry+bh); ctx.lineTo(bx, ry+bh+7); ctx.lineTo(bx+5, ry+bh);
+    ctx.fillStyle = '#0e0e1cee'; ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(bx-5, ry+bh); ctx.lineTo(bx, ry+bh+7);
+    ctx.strokeStyle = b.color+'cc'; ctx.stroke();
+    ctx.fillStyle = b.color;
+    ctx.textAlign = 'center';
+    ctx.fillText(b.text, bx, ry+bh-8);
+    ctx.textAlign = 'left';
+    ctx.restore();
+  });
+}
+
+// ── NEWS TICKER ──────────────────────────────────────────────────────────────
+function drawNewsTicker(ctx, W, H) {
+  if (!NEWS_TICKER.length) return;
+  var th = 20;
+  var y = H - th;
+  ctx.save();
+  ctx.fillStyle = 'rgba(6,9,18,0.88)';
+  ctx.fillRect(0, y, W, th);
+  ctx.fillStyle = '#e74c3c';
+  ctx.fillRect(0, y, 52, th);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 10px Roboto,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('LIVE', 26, y+13);
+  ctx.textAlign = 'left';
+  ctx.font = '10px Roboto,sans-serif';
+  ctx.fillStyle = '#e8d5a0';
+  var fullText = NEWS_TICKER.slice(-8).join('   \u25c6   ');
+  var fw = ctx.measureText(fullText).width;
+  TICKER_OFFSET = (TICKER_OFFSET + 0.7) % (fw + W);
+  ctx.fillText(fullText, 58 + W - TICKER_OFFSET, y+13);
+  ctx.restore();
+}
+
+// ── EVENTS LOG ───────────────────────────────────────────────────────────────
+var EVENT_ICONS = { war:'⚔️', nuke:'☢️', diplomacy:'🤝', natural:'🌿', crisis:'⚠️', prophecy:'🔮', critical:'⚡', year:'📅', mission:'🎯', event:'📢' };
+function addEventEntry(text, kind) {
+  var entry = { text:text, kind: kind||'event', ts: Date.now() };
+  EVENTS_LOG.unshift(entry);
+  if (EVENTS_LOG.length > 200) EVENTS_LOG.length = 200;
+  renderEventsLog();
+  NEWS_TICKER.push(text);
+  if (NEWS_TICKER.length > 20) NEWS_TICKER.shift();
+}
+function renderEventsLog() {
+  var list = document.getElementById('events-list');
+  if (!list) return;
+  var f = EVENTS_FILTER;
+  var filtered = EVENTS_LOG.filter(function(e) {
+    if (f === 'all') return true;
+    return e.kind === f;
+  });
+  var html = '';
+  filtered.forEach(function(e) {
+    var age = Math.round((Date.now() - e.ts) / 60000);
+    var ageStr = age < 1 ? 'now' : age + 'm';
+    var icon = EVENT_ICONS[e.kind] || '📢';
+    html += '<div class="event-entry event-' + e.kind + '"><span class="event-time">' + ageStr + '</span><span class="event-icon">' + icon + '</span><span class="event-text">' + e.text + '</span></div>';
+  });
+  list.innerHTML = html || '<div style="padding:14px;color:#333;font-size:11px;text-align:center;">No events yet.</div>';
+}
+function filterEvents(f, btn) {
+  EVENTS_FILTER = f;
+  document.querySelectorAll('.ef-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderEventsLog();
+}
+
+// ── INFLUENCE BAR ────────────────────────────────────────────────────────────
+function updateInfluenceBar(data) {
+  if (!data) return;
+  PLAYER_INFLUENCE = data;
+  var lvl = data.level || 1;
+  var title = LEVEL_TITLES[lvl] || 'Diplomat';
+  var pts = data.points || 0;
+  var next = LEVEL_THRESHOLDS[lvl+1] || pts+1;
+  var prev = LEVEL_THRESHOLDS[lvl] || 0;
+  var pct = Math.min(100, Math.round((pts - prev) / Math.max(1, next - prev) * 100));
+  var badge = document.getElementById('inf-level-badge');
+  var bar = document.getElementById('inf-progress-inner');
+  var ptsEl = document.getElementById('inf-pts');
+  if (badge) badge.textContent = 'Lv.' + lvl + ' ' + title;
+  if (bar) bar.style.width = pct + '%';
+  if (ptsEl) ptsEl.textContent = pts + ' pts';
+  if (data.unlockedAbility) {
+    showToast('🔓 Unlocked: ' + data.unlockedAbility, 'mission');
+  }
+}
+
+// ── SECRETS TAB ──────────────────────────────────────────────────────────────
+var DISCOVERED_SECRETS = {};  // { agentId: [secret strings] }
+function onSecretDiscovered(agentId, secret) {
+  if (!DISCOVERED_SECRETS[agentId]) DISCOVERED_SECRETS[agentId] = [];
+  if (DISCOVERED_SECRETS[agentId].indexOf(secret) < 0) {
+    DISCOVERED_SECRETS[agentId].push(secret);
+    showToast('🔐 Secret discovered about ' + (AGENTS_MAP[agentId] ? AGENTS_MAP[agentId].name : agentId) + '!', 'mission');
+    addEventEntry('🔐 Secret discovered: ' + (AGENTS_MAP[agentId] ? AGENTS_MAP[agentId].name : agentId), 'crisis');
+  }
+}
+function renderSecrets() {
+  var grid = document.getElementById('secrets-grid');
+  if (!grid || !AGENTS.length) return;
+  var html = '';
+  AGENTS.forEach(function(ag) {
+    var t = TERR[ag.id];
+    var color = t ? t.color : '#888';
+    var disc = DISCOVERED_SECRETS[ag.id] || [];
+    var leverage = Math.round((disc.length / 3) * 100);
+    html += '<div class="secret-king-card" style="border-left-color:' + color + '">';
+    html += '<div class="sk-header" style="color:' + color + '">' + ag.emoji + ' ' + ag.name + '</div>';
+    html += '<div class="sk-leverage">Leverage: ' + leverage + '%<div class="sk-lev-bar"><div class="sk-lev-fill" style="width:' + leverage + '%"></div></div></div>';
+    for (var i = 0; i < 3; i++) {
+      if (disc[i]) {
+        html += '<div class="sk-secret discovered">' + disc[i];
+        html += ' <button class="sk-use-btn" onclick="useSecret(\'' + ag.id + '\',' + i + ')">USE</button>';
+        html += '</div>';
+      } else {
+        html += '<div class="sk-secret locked">??? Classified — gain trust to reveal</div>';
+      }
+    }
+    html += '</div>';
+  });
+  grid.innerHTML = html;
+}
+function useSecret(ownerId, idx) {
+  var secret = (DISCOVERED_SECRETS[ownerId] || [])[idx];
+  if (!secret || !CURRENT_KING) { showToast('Select a king to whisper to first.', 'event'); return; }
+  var ownerName = AGENTS_MAP[ownerId] ? AGENTS_MAP[ownerId].name : ownerId;
+  var msg = 'I know that ' + secret + '. This gives me leverage over ' + ownerName + '.';
+  sendWhisper(msg);
+}
+
+// ── PROPHECY OVERLAY ─────────────────────────────────────────────────────────
+function showProphecyOverlay(text) {
+  var ov = document.getElementById('prophecy-overlay');
+  var pt = document.getElementById('prophecy-text');
+  if (!ov || !pt) return;
+  pt.textContent = text;
+  ov.style.display = 'flex';
+  ov.style.animation = 'prophecyFadeIn 0.6s ease';
+  ov.onclick = function() { ov.style.display='none'; };
+  setTimeout(function() { ov.style.display = 'none'; }, 9000);
+}
+
+// ── BREAKING NEWS BANNER ──────────────────────────────────────────────────────
+function showBreakingNews(headline, subtext) {
+  var bn = document.getElementById('breaking-news');
+  if (!bn) return;
+  bn.querySelector('.bn-headline').textContent = headline;
+  bn.querySelector('.bn-sub').textContent = subtext || '';
+  bn.style.transition = 'none';
+  bn.style.transform = 'translateY(0)';
+  bn.style.opacity = '1';
+  setTimeout(function() {
+    bn.style.transition = 'transform 0.9s ease, opacity 0.9s ease';
+    bn.style.transform = 'translateY(-110%)';
+    bn.style.opacity = '0';
+  }, 7000);
+}
+
+// ── MAP HOVER TOOLTIP ─────────────────────────────────────────────────────────
+function showMapTooltip(id, cx, cy) {
+  var tt = document.getElementById('map-tooltip');
+  if (!tt) return;
+  if (!id || !WORLD || !WORLD.nations || !WORLD.nations[id]) { tt.style.display='none'; return; }
+  var n = WORLD.nations[id], ag = AGENTS_MAP[id], t = TERR[id];
+  if (!ag) { tt.style.display='none'; return; }
+  var trustLabel = n.userTrust >= 70 ? 'Trusted' : n.userTrust >= 45 ? 'Wary' : n.userTrust >= 20 ? 'Suspicious' : 'Hostile';
+  var cities = (n.cities||[]).map(function(c){ return (c.destroyed ? '\u2620' : '\u2022') + ' ' + c.name; }).join('<br>');
+  tt.innerHTML = '<div style="font-family:Cinzel,serif;color:' + t.color + ';font-size:13px;font-weight:600;margin-bottom:3px">' + ag.emoji + ' ' + ag.name + '</div>'
+    + '<div style="font-size:9px;color:#555;margin-bottom:7px">' + ag.title + '</div>'
+    + '<div style="font-size:11px;margin-bottom:4px">🪖 ' + n.troops + '  ☢ ' + n.nukes + '  💰 ' + n.gold + '  🌾 ' + n.grain + '</div>'
+    + '<div style="font-size:11px;margin-bottom:4px">😊 Morale ' + n.morale + '%  ' + (n.moodEmoji||'') + ' <em>' + (n.mood||'') + '</em></div>'
+    + '<div style="font-size:10px;color:#666;margin-bottom:5px">Trust: ' + n.userTrust + ' — ' + trustLabel + '</div>'
+    + '<div style="font-size:10px;color:#555;line-height:1.6">' + cities + '</div>';
+  tt.style.display = 'block';
+  tt.style.left = (cx + 14) + 'px';
+  tt.style.top = Math.max(60, cy - 20) + 'px';
+}
 
 function showToast(text, kind) {
   var container = document.getElementById('toast-container');
@@ -1287,12 +1623,31 @@ function renderMap() {
       drawKingSprite(ctx, w.x*W, w.y*H, t.color, n.alive, w.step);
     });
 
+    drawSpeechBubbles(ctx, W, H);
+    drawNewsTicker(ctx, W, H);
     MAP_ANIM = requestAnimationFrame(draw);
   }
 
   draw();
 }
 
+document.getElementById('map-canvas').addEventListener('mousemove', function(e) {
+  var rect = this.getBoundingClientRect();
+  var W = this.width, H = this.height;
+  var found = null;
+  Object.keys(TERR).forEach(function(id) {
+    var t = TERR[id];
+    var dx = (e.clientX - rect.left) * (W/rect.width) - t.cx*W;
+    var dy = (e.clientY - rect.top) * (H/rect.height) - t.cy*H;
+    var r = t.r * Math.min(W,H);
+    if (Math.sqrt(dx*dx+dy*dy) < r*1.1) found = id;
+  });
+  showMapTooltip(found, e.clientX, e.clientY);
+});
+document.getElementById('map-canvas').addEventListener('mouseleave', function() {
+  var tt = document.getElementById('map-tooltip');
+  if (tt) tt.style.display='none';
+});
 document.getElementById('map-canvas').addEventListener('click', function(e) {
   var canvas = this;
   var rect = canvas.getBoundingClientRect();
