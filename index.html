@@ -752,7 +752,9 @@ function showToast(text, kind) {
 function initWalkers() {
   Object.keys(TERR).forEach(function(id) {
     var t = TERR[id];
-    WALKERS[id] = { x: t.cx, y: t.cy, dx: (Math.random()-0.5)*0.003, dy: (Math.random()-0.5)*0.003, step: Math.floor(Math.random()*100) };
+    var ang = Math.random() * Math.PI * 2;
+    var spd = 0.0012 + Math.random() * 0.0010;
+    WALKERS[id] = { x: t.cx + (Math.random()-0.5)*0.04, y: t.cy + (Math.random()-0.5)*0.04, dx: Math.cos(ang)*spd, dy: Math.sin(ang)*spd, step: Math.floor(Math.random()*100) };
   });
 }
 
@@ -987,11 +989,30 @@ function renderMap() {
       var w = WALKERS[id];
       if (!w) return;
       w.step++;
-      if (w.step % 120 === 0) { w.dx = (Math.random()-0.5)*0.003; w.dy = (Math.random()-0.5)*0.003; }
+      // Smooth wander: nudge direction slightly every ~80 frames
+      if (w.step % 80 === 0) {
+        var nudge = (Math.random()-0.5) * 0.0008;
+        var nudge2 = (Math.random()-0.5) * 0.0008;
+        w.dx += nudge; w.dy += nudge2;
+        // Clamp speed
+        var spd2 = Math.sqrt(w.dx*w.dx + w.dy*w.dy);
+        if (spd2 > 0.002) { w.dx *= 0.002/spd2; w.dy *= 0.002/spd2; }
+        if (spd2 < 0.0006) { w.dx *= 1.3; w.dy *= 1.3; }
+      }
       w.x += w.dx; w.y += w.dy;
+      // Soft boundary: reflect off edge smoothly
       var dx2 = (w.x - t.cx)*W, dy2 = (w.y - t.cy)*H;
       var dist = Math.sqrt(dx2*dx2 + dy2*dy2);
-      if (dist > r * 0.55) { w.x = t.cx + (w.x - t.cx)*0.88; w.y = t.cy + (w.y - t.cy)*0.88; }
+      var limit = r * 0.52 * Math.min(W,H);
+      if (dist > limit) {
+        // Reflect velocity component pointing outward
+        var nx = dx2/dist, ny = dy2/dist;
+        var dot = w.dx*nx + w.dy*ny;
+        if (dot > 0) { w.dx -= 2*dot*nx; w.dy -= 2*dot*ny; }
+        // Push back inside
+        w.x = t.cx + (dx2/W)*(limit/W)*0.95;
+        w.y = t.cy + (dy2/H)*(limit/H)*0.95;
+      }
       drawKingSprite(ctx, w.x*W, w.y*H, t.color, n.alive, w.step);
     });
 
