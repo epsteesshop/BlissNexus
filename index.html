@@ -1000,18 +1000,18 @@ function renderMap() {
         if (spd2 < 0.0006) { w.dx *= 1.3; w.dy *= 1.3; }
       }
       w.x += w.dx; w.y += w.dy;
-      // Soft boundary: reflect off edge smoothly
-      var dx2 = (w.x - t.cx)*W, dy2 = (w.y - t.cy)*H;
-      var dist = Math.sqrt(dx2*dx2 + dy2*dy2);
-      var limit = r * 0.52 * Math.min(W,H);
-      if (dist > limit) {
-        // Reflect velocity component pointing outward
-        var nx = dx2/dist, ny = dy2/dist;
+      // Boundary: all in fraction space
+      var fx = w.x - t.cx, fy = w.y - t.cy;
+      var fdist = Math.sqrt(fx*fx + fy*fy);
+      var flimit = r * 0.48;
+      if (fdist > flimit) {
+        // Reflect velocity off boundary normal
+        var nx = fx/fdist, ny = fy/fdist;
         var dot = w.dx*nx + w.dy*ny;
         if (dot > 0) { w.dx -= 2*dot*nx; w.dy -= 2*dot*ny; }
-        // Push back inside
-        w.x = t.cx + (dx2/W)*(limit/W)*0.95;
-        w.y = t.cy + (dy2/H)*(limit/H)*0.95;
+        // Push back just inside boundary
+        w.x = t.cx + nx * flimit * 0.94;
+        w.y = t.cy + ny * flimit * 0.94;
       }
       drawKingSprite(ctx, w.x*W, w.y*H, t.color, n.alive, w.step);
     });
