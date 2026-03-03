@@ -37,7 +37,7 @@ function CreateTask() {
 
     try {
       // Create task in backend
-      const res = await fetch(`${API_URL}/tasks`, {
+      const res = await fetch(`${API_URL}/api/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

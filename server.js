@@ -9,6 +9,7 @@ const express = require('express');
 const { apiLimiter } = require('./src/ratelimit');
 const monitor = require('./src/monitoring');
 const solana = require('./src/solana');
+const bots = require('./src/bots');
 const { requireAdmin } = require('./src/auth');
 const settlement = require('./src/settlement');
 const { WebSocketServer } = require('ws');
@@ -366,6 +367,132 @@ function completeTask(taskId, result, success = true) {
 const app = express();
 });
 
+
+// ============ BUILT-IN BOTS ============
+// Register built-in AI bots on startup
+async function initBuiltInBots() {
+  const profiles = bots.getBotProfiles();
+  console.log('[Bots] Registering', profiles.length, 'built-in bots...');
+  
+  for (const bot of profiles) {
+    // Check if already registered
+    const existing = agents.get(bot.id);
+    if (!existing) {
+      agents.set(bot.id, {
+        id: bot.id,
+        name: bot.name,
+        description: bot.description,
+        skills: bot.skills,
+        pricePerTask: bot.pricePerTask,
+        wallet: 'BUILT_IN_BOT', // No wallet needed - handled internally
+        status: 'online',
+        isBuiltIn: true,
+        createdAt: Date.now(),
+      });
+      console.log('[Bots] Registered:', bot.name);
+    }
+  }
+}
+
+// Internal webhook for built-in bots
+app.post('/internal/bot-task', async (req, res) => {
+  const { agentId, taskId, title, description } = req.body;
+  
+  if (!bots.getBotIds().includes(agentId)) {
+    return res.status(400).json({ error: 'Not a built-in bot' });
+  }
+  
+  console.log('[Bots] Processing task', taskId, 'for', agentId);
+  
+  const result = await bots.handleTask(agentId, { title, description });
+  
+  // Update task with result
+  const task = tasks.get(taskId);
+  if (task) {
+    task.status = result.error ? 'failed' : 'completed';
+    task.result = result.result || result.error;
+    task.completedAt = Date.now();
+    tasks.set(taskId, task);
+  }
+  
+  res.json(result);
+
+// Frontend-friendly task creation with auto-processing for built-in bots
+app.post('/api/tasks', async (req, res) => {
+  const { title, description, agentId, reward, requester } = req.body;
+  
+  if (!title || !agentId) {
+    return res.status(400).json({ error: 'Missing title or agentId' });
+  }
+  
+  const agent = agents.get(agentId);
+  if (!agent) {
+    return res.status(404).json({ error: 'Agent not found' });
+  }
+  
+  const taskId = 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  const task = {
+    id: taskId,
+    title,
+    description: description || '',
+    agentId,
+    agentName: agent.name,
+    reward: reward || agent.pricePerTask || 0.001,
+    requester: requester || 'anonymous',
+    status: 'pending',
+    createdAt: Date.now(),
+  };
+  
+  tasks.set(taskId, task);
+  console.log('[Tasks] Created:', taskId, 'for agent:', agentId);
+  
+  // If built-in bot, auto-process immediately
+  if (agent.isBuiltIn) {
+    task.status = 'processing';
+    tasks.set(taskId, task);
+    
+    // Process async
+    setImmediate(async () => {
+      try {
+        const result = await bots.handleTask(agentId, { title, description });
+        task.status = result.error ? 'failed' : 'completed';
+        task.result = result.result || result.error;
+        task.completedAt = Date.now();
+        tasks.set(taskId, task);
+        console.log('[Tasks] Completed:', taskId);
+      } catch (e) {
+        task.status = 'failed';
+        task.result = e.message;
+        tasks.set(taskId, task);
+      }
+    });
+  }
+  
+  res.json({ success: true, task });
+});
+
+// Get tasks for a requester
+app.get('/api/tasks', (req, res) => {
+  const { requester } = req.query;
+  let result = Array.from(tasks.values());
+  
+  if (requester) {
+    result = result.filter(t => t.requester === requester);
+  }
+  
+  // Sort by newest first
+  result.sort((a, b) => b.createdAt - a.createdAt);
+  
+  res.json({ tasks: result });
+});
+
+// Get single task
+app.get('/api/tasks/:id', (req, res) => {
+  const task = tasks.get(req.params.id);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+  res.json(task);
+});
+});
 const server = http.createServer(app);
 
 app.use(express.json());

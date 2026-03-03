@@ -14,7 +14,7 @@ function MyTasks() {
       return;
     }
 
-    fetch(`${API_URL}/tasks?requester=${publicKey.toBase58()}`)
+    fetch(`${API_URL}/api/tasks?requester=${publicKey.toBase58()}`)
       .then(res => res.json())
       .then(data => {
         setTasks(data.tasks || []);
