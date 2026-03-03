@@ -27,7 +27,7 @@ function App() {
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <BrowserRouter>
+          <BrowserRouter basename="/app">
             <div className="app">
               <Navbar />
               <main className="main-content">
