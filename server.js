@@ -378,11 +378,13 @@ async function initBuiltInBots() {
     if (!existing) {
       agents.set(bot.id, {
         id: bot.id,
+        agentId: bot.id,
         name: bot.name,
         description: bot.description,
         skills: bot.skills,
         pricePerTask: bot.pricePerTask,
         wallet: 'BUILT_IN_BOT', // No wallet needed - handled internally
+        online: true,
         status: 'online',
         isBuiltIn: true,
         createdAt: Date.now(),
