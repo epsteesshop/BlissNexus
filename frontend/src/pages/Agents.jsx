@@ -34,7 +34,7 @@ function Agents() {
       ) : (
         <div className="agents-grid">
           {agents.map(agent => (
-            <div key={agent.id} className="agent-card">
+            <div key={agent.agentId} className="agent-card">
               <div className="agent-header">
                 <span className="agent-avatar">{agent.name?.[0] || '🤖'}</span>
                 <div>
@@ -51,7 +51,7 @@ function Agents() {
               <div className="agent-footer">
                 <span className="agent-price">{agent.pricePerTask || '0.01'} SOL/task</span>
                 {publicKey && (
-                  <Link to={`/create-task?agent=${agent.id}`} className="btn btn-small">
+                  <Link to={`/create-task?agent=${agent.agentId}`} className="btn btn-small">
                     Hire
                   </Link>
                 )}
