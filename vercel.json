@@ -1,0 +1,13 @@
+{
+  "rewrites": [
+    { "source": "/dashboard", "destination": "https://blissnexus-beacon-production.up.railway.app/dashboard" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    }
+  ]
+}
