@@ -1173,7 +1173,7 @@ async function loadFromDB() {
 
 loadFromDB().then(() => {
   federation.init();
-  federation.init();
+initBuiltInBots();
 setInterval(cleanupStaleAgents, CLEANUP_INTERVAL);
 
 server.listen(PORT, () => {
