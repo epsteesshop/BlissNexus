@@ -20,6 +20,9 @@ if (USE_DB) {
   console.log('[BlissNexus] PostgreSQL persistence enabled');
 }
 
+// Federation (multi-beacon scaling)
+const federation = require('./src/federation');
+
 // ============================================================================
 // CONFIG
 // ============================================================================
@@ -201,6 +204,9 @@ function registerAgent(agentId, info, ws) {
     }
   }
   
+    
+    // Broadcast to peer beacons
+    federation.broadcastAgentUpdate(agent, 'register');
   if (ws) {
     connections.set(agentId, ws);
     ws.agentId = agentId;
@@ -376,6 +382,10 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Federation status
+app.get('/federation', (req, res) => {
+  res.json(federation.getStatus());
+});
 // Generate keypair
 app.post('/keygen', (req, res) => {
   res.json(generateKeypair());
@@ -923,6 +933,7 @@ async function loadFromDB() {
       for (const cap of (a.capabilities || [])) addAgentToCapability(a.agent_id, cap);
     }
     console.log(`[DB] Loaded ${dbAgents.length} agents from database`);
+    federation.init();
   } catch (err) { console.error('[DB] Load error:', err.message); }
 }
 
