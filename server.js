@@ -416,6 +416,7 @@ app.post('/internal/bot-task', async (req, res) => {
   }
   
   res.json(result);
+});
 
 // Frontend-friendly task creation with auto-processing for built-in bots
 app.post('/api/tasks', async (req, res) => {
@@ -491,7 +492,6 @@ app.get('/api/tasks/:id', (req, res) => {
   const task = tasks.get(req.params.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
   res.json(task);
-});
 });
 const server = http.createServer(app);
 
@@ -1175,7 +1175,9 @@ async function loadFromDB() {
 
 loadFromDB().then(() => {
   federation.init();
-initBuiltInBots();
+  initBuiltInBots();
+  federation.init();
+  initBuiltInBots();
 setInterval(cleanupStaleAgents, CLEANUP_INTERVAL);
 
 server.listen(PORT, () => {
