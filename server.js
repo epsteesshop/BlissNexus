@@ -12,6 +12,14 @@ const { v4: uuidv4 } = require('uuid');
 const nacl = require('tweetnacl');
 const { encodeBase64, decodeBase64, decodeUTF8 } = require('tweetnacl-util');
 
+// Database persistence (optional)
+let db = null;
+const USE_DB = !!process.env.DATABASE_URL;
+if (USE_DB) {
+  db = require('./src/db');
+  console.log('[BlissNexus] PostgreSQL persistence enabled');
+}
+
 // ============================================================================
 // CONFIG
 // ============================================================================
@@ -178,6 +186,14 @@ function registerAgent(agentId, info, ws) {
       createdAt: Date.now()
     };
     agents.set(agentId, agent);
+    // Persist to database
+    if (USE_DB && db) {
+      db.upsertAgent({ agentId: agent.agentId, publicKey: agent.publicKey, name: agent.name,
+        description: agent.description, capabilities: agent.capabilities, reputation: agent.reputation,
+        tasksCompleted: agent.tasksCompleted, tasksFailed: agent.tasksFailed,
+        averageLatency: agent.averageLatency, averageRating: agent.averageRating, online: true
+      }).catch(err => console.error('[DB] upsertAgent:', err.message));
+    }
     
     // Register capabilities
     for (const cap of agent.capabilities) {
@@ -202,6 +218,10 @@ function deregisterAgent(agentId) {
   }
   connections.delete(agentId);
   console.log(`[Registry] Agent offline: ${agentId}`);
+  // Sync to database
+  if (USE_DB && db) {
+    db.setAgentOnline(agentId, false).catch(err => console.error('[DB] offline:', err.message));
+  }
 }
 
 function heartbeat(agentId) {
@@ -884,6 +904,29 @@ app.get('/', (req, res) => {
 // STARTUP
 // ============================================================================
 
+
+// Load agents from database on startup
+async function loadFromDB() {
+  if (!USE_DB || !db) return;
+  try {
+    await db.initDB();
+    const dbAgents = await db.getAllAgents();
+    for (const a of dbAgents) {
+      agents.set(a.agent_id, {
+        agentId: a.agent_id, publicKey: a.public_key, name: a.name,
+        description: a.description, capabilities: a.capabilities || [],
+        reputation: a.reputation, tasksCompleted: a.tasks_completed,
+        tasksFailed: a.tasks_failed, averageLatency: a.average_latency,
+        averageRating: a.average_rating, online: false,
+        lastSeen: new Date(a.last_seen)
+      });
+      for (const cap of (a.capabilities || [])) addAgentToCapability(a.agent_id, cap);
+    }
+    console.log(`[DB] Loaded ${dbAgents.length} agents from database`);
+  } catch (err) { console.error('[DB] Load error:', err.message); }
+}
+
+loadFromDB().then(() => {
 setInterval(cleanupStaleAgents, CLEANUP_INTERVAL);
 
 server.listen(PORT, () => {
@@ -909,4 +952,5 @@ server.listen(PORT, () => {
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
   `);
+});
 });
