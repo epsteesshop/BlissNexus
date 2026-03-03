@@ -382,6 +382,7 @@ app.use((req, res, next) => {
 async function initBuiltInBots() {
   const profiles = bots.getBotProfiles();
   console.log('[Bots] Registering', profiles.length, 'built-in bots...');
+  console.log(`[Bots] GROQ_API_KEY: ${process.env.GROQ_API_KEY ? "SET" : "NOT SET"}`);
   
   for (const bot of profiles) {
     // Check if already registered
