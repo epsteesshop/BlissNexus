@@ -381,53 +381,58 @@ app.use((req, res, next) => {
 // Health check
 app.get('/monitor', (req, res) => res.json(monitor.getStatus()));
 
+// ============ SOLANA - NON-CUSTODIAL ============
+// We never touch private keys. Users sign their own transactions.
+
 app.get('/solana/status', async (req, res) => res.json(await solana.getStatus()));
-app.get('/solana/escrow', async (req, res) => {
-  const s = await solana.getStatus();
-  res.json({ wallet: s.escrowWallet, balance: s.escrowBalance });
-});
-app.post('/solana/wallet', (req, res) => res.json(solana.generateWallet()));
+
 app.get('/solana/balance/:key', async (req, res) => {
   res.json({ balance: await solana.getBalance(req.params.key) });
 });
-app.post('/solana/withdraw', async (req, res) => {
-  const { agentPubkey, toWallet, amount } = req.body;
-  // TODO: Verify agent signature
-  if (!agentPubkey || !toWallet || !amount) {
-    return res.status(400).json({ error: 'Missing agentPubkey, toWallet, or amount' });
+
+// Verify wallet ownership (user signs a challenge)
+app.post('/solana/verify', (req, res) => {
+  const { message, signature, publicKey } = req.body;
+  if (!message || !signature || !publicKey) {
+    return res.status(400).json({ error: 'Missing message, signature, or publicKey' });
   }
-  res.json(await solana.agentWithdraw(agentPubkey, toWallet, parseFloat(amount)));
+  const valid = solana.verifySignature(message, signature, publicKey);
+  res.json({ valid, publicKey });
 });
 
-app.post("/solana/pay", requireAdmin, async (req, res) => {
-  if (!solana.isEscrowReady()) return res.status(503).json({ error: "Escrow not configured - set ESCROW_WALLET_SECRET" });
-
-  const { to, amount } = req.body;
-  if (!to || !amount) return res.status(400).json({ error: 'Missing to or amount' });
-  res.json(await solana.payAgent(to, parseFloat(amount)));
+// Get escrow PDA for a task
+app.get('/solana/escrow/:taskId', (req, res) => {
+  const pda = solana.getEscrowPDA(req.params.taskId);
+  if (!pda) return res.status(503).json({ error: 'Escrow program not deployed' });
+  res.json({ escrowPDA: pda, taskId: req.params.taskId });
 });
 
-app.get('/backup', requireAdmin, async (req, res) => {
-  try {
-    const db = require('./src/db');
-    const agents = await db.pool?.query?.('SELECT * FROM agents') || { rows: [] };
-    const tasks = await db.pool?.query?.('SELECT * FROM tasks') || { rows: [] };
-    res.json({
-      timestamp: new Date().toISOString(),
-      agents: agents.rows,
-      tasks: tasks.rows
-    });
-  } catch (e) {
-    res.json({ timestamp: new Date().toISOString(), agents: [], tasks: [], error: e.message });
+// Build transaction for creating escrow (client signs)
+app.post('/solana/tx/create-escrow', async (req, res) => {
+  const { taskId, requester, worker, amount } = req.body;
+  if (!taskId || !requester || !worker || !amount) {
+    return res.status(400).json({ error: 'Missing taskId, requester, worker, or amount' });
   }
+  res.json(await solana.buildCreateEscrowTx(taskId, requester, worker, parseFloat(amount)));
 });
 
-app.get('/settlement/status', (req, res) => res.json(settlement.getStats()));
-app.get('/settlement/pending', requireAdmin, (req, res) => res.json(settlement.getPending()));
-app.post('/settlement/run', requireAdmin, async (req, res) => {
-  res.json(await settlement.runSettlement(solana));
+// Build transaction for releasing escrow (requester signs)
+app.post('/solana/tx/release', async (req, res) => {
+  const { taskId, requester, worker } = req.body;
+  if (!taskId || !requester || !worker) {
+    return res.status(400).json({ error: 'Missing taskId, requester, or worker' });
+  }
+  res.json(await solana.buildReleaseTx(taskId, requester, worker));
 });
 
+// Build transaction for refund (worker signs)
+app.post('/solana/tx/refund', async (req, res) => {
+  const { taskId, requester, worker } = req.body;
+  if (!taskId || !requester || !worker) {
+    return res.status(400).json({ error: 'Missing taskId, requester, or worker' });
+  }
+  res.json(await solana.buildRefundTx(taskId, requester, worker));
+});
 app.get('/monitor/health', (req, res) => {
   const h = monitor.healthCheck();
   res.status(h.healthy ? 200 : 503).json(h);

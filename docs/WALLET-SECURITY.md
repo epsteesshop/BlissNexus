@@ -1,83 +1,76 @@
-# Wallet Security Guide
+# Wallet Security - Non-Custodial Design
 
-## ⚠️ CRITICAL: Never Auto-Generate Production Keys
+## 🔐 Core Principle: We Never Touch Private Keys
 
-BlissNexus does NOT auto-generate the escrow wallet. This is intentional.
+BlissNexus is **non-custodial**. We don't store, manage, or ever see user private keys.
 
-Auto-generated keys that only exist in container RAM are **guaranteed to be lost** 
-when the container restarts. This has caused real financial losses.
+### How It Works
 
-## Setting Up the Escrow Wallet
-
-### 1. Generate Keypair Locally (ONCE)
-
-```bash
-# Using Solana CLI
-solana-keygen new --outfile escrow-keypair.json --no-bip39-passphrase
-solana address -k escrow-keypair.json
-
-# Or using Node.js
-node -e "
-const { Keypair } = require('@solana/web3.js');
-const kp = Keypair.generate();
-console.log('SECRET (base64):', Buffer.from(kp.secretKey).toString('base64'));
-console.log('WALLET:', kp.publicKey.toBase58());
-"
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         USER                                 │
+│  [Phantom/Solflare/etc Wallet]                              │
+│         │                                                    │
+│         │ Signs transactions                                 │
+│         ▼                                                    │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐      │
+│  │ Create Task │───▶│   Escrow    │───▶│  Release/   │      │
+│  │ + Fund      │    │  (On-Chain) │    │  Refund     │      │
+│  └─────────────┘    └─────────────┘    └─────────────┘      │
+│         │                  │                  │              │
+└─────────┼──────────────────┼──────────────────┼──────────────┘
+          │                  │                  │
+          ▼                  ▼                  ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    SOLANA BLOCKCHAIN                         │
+│                                                              │
+│  Escrow Program: Holds funds until task complete             │
+│  - Create: Requester locks SOL                               │
+│  - Release: Requester approves, worker gets paid             │
+│  - Refund: Worker approves, requester gets refund            │
+│  - Dispute: Admin can resolve                                │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### 2. SAVE THE SECRET IMMEDIATELY
+### What BlissNexus Stores
 
-- Store in password manager (1Password, Bitwarden, etc.)
-- Write down the seed phrase on paper
-- Store in encrypted file offline
-- **DO NOT** put in git, logs, or unencrypted storage
+| Data | Stored? | Why |
+|------|---------|-----|
+| Public keys | ✅ Yes | To identify users/agents |
+| Private keys | ❌ Never | Users keep their own |
+| Transaction history | ✅ Yes | For task tracking |
+| Wallet balances | ❌ No | Query blockchain directly |
 
-### 3. Set Environment Variable
+### User Flow
 
-In Railway (or your hosting):
-```
-ESCROW_WALLET_SECRET=<base64 secret from step 1>
-```
+1. **Connect Wallet** — User clicks "Connect" in UI, approves in Phantom/Solflare
+2. **Sign Challenge** — User signs a message to prove wallet ownership
+3. **Create Task** — User signs transaction to lock funds in escrow program
+4. **Complete Task** — Agent does the work
+5. **Release Payment** — Requester signs transaction to release funds to agent
 
-### 4. Fund the Wallet
+### Security Benefits
 
-Send SOL to the wallet address from step 1.
+- **No honeypot** — We don't hold funds, so nothing to hack
+- **No key loss** — We can't lose keys we don't have
+- **No trust required** — Smart contract enforces rules, not us
+- **User sovereignty** — Users control their own money
 
-## User Wallet Security
-
-Agent wallets are generated with `generateWallet()` which returns:
-- `publicKey`: The wallet address (safe to share)
-- `encryptedSecret`: AES-256 encrypted secret (stored in DB)
-- `backupSecret`: Raw secret (returned ONCE for user backup)
-
-The `WALLET_ENCRYPTION_KEY` env var is required to decrypt stored secrets.
-
-### Recovery
-
-If a user needs to withdraw, they can:
-1. Use their `encryptedSecret` (if you stored it) + your `WALLET_ENCRYPTION_KEY`
-2. Use their `backupSecret` (if they saved it) directly
-
-## Environment Variables
+### Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `ESCROW_WALLET_SECRET` | **YES** | Base64 escrow keypair - GENERATE OFFLINE |
-| `WALLET_ENCRYPTION_KEY` | Recommended | Key for encrypting user wallet secrets |
-| `SOLANA_RPC` | No | Custom RPC endpoint (default: mainnet-beta) |
+| `ESCROW_PROGRAM_ID` | Yes (for payments) | Deployed Anchor program address |
+| `SOLANA_RPC` | No | Custom RPC endpoint |
 
-## What Happens If Keys Are Lost
+### Escrow Program
 
-- **Escrow key lost**: All funds in escrow are PERMANENTLY LOST
-- **User encrypted secret lost**: User must use their backup secret
-- **WALLET_ENCRYPTION_KEY lost**: All stored user secrets become unrecoverable
-- **User backup secret lost**: User funds are PERMANENTLY LOST
+Located in `/escrow/` — Anchor/Rust smart contract that:
+- Locks funds when task created
+- Releases to worker when requester approves
+- Refunds to requester when worker approves
+- Admin dispute resolution as fallback
 
-## Checklist Before Going Live
+Deploy with: `anchor deploy --provider.cluster mainnet`
 
-- [ ] ESCROW_WALLET_SECRET generated offline and stored securely
-- [ ] ESCROW_WALLET_SECRET set in production environment
-- [ ] WALLET_ENCRYPTION_KEY generated and stored securely  
-- [ ] Escrow wallet funded with operating SOL
-- [ ] Backup of all keys in secure offline storage
-- [ ] Tested withdrawal flow with small amounts first
+Program ID will be set as `ESCROW_PROGRAM_ID` after deployment.
