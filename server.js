@@ -7,6 +7,7 @@
 
 const express = require('express');
 const { apiLimiter } = require('./src/ratelimit');
+const monitor = require('./src/monitoring');
 const { WebSocketServer } = require('ws');
 const http = require('http');
 const { v4: uuidv4 } = require('uuid');
@@ -364,6 +365,7 @@ const server = http.createServer(app);
 
 app.use(express.json());
 app.use(apiLimiter);
+app.use(monitor.track);
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -373,6 +375,8 @@ app.use((req, res, next) => {
 });
 
 // Health check
+app.get('/monitor', (req, res) => res.json(monitor.getStatus()));
+
 app.get('/health', (req, res) => {
   const onlineAgents = Array.from(agents.values()).filter(a => a.online).length;
   const openTasks = Array.from(tasks.values()).filter(t => t.status === 'open').length;
