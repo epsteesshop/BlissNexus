@@ -613,7 +613,9 @@ app.get('/agents', (req, res) => {
     reputation: Math.round(a.reputation * 100) / 100,
     tasksCompleted: a.tasksCompleted,
     averageLatency: a.averageLatency,
-    online: a.online
+    online: a.online,
+    pricePerTask: a.pricePerTask || 0.001,
+    skills: a.skills || []
   }));
   
   res.json({ agents: result, count: result.length });
