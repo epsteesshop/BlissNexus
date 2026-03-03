@@ -621,6 +621,31 @@ wss.on('connection', (ws) => {
       });
     }
     
+    // Handle beacon-to-beacon messages
+    if (type === 'beacon_hello' || type === 'agent_sync' || type === 'beacon_heartbeat') {
+      // This is a peer beacon, not an agent
+      if (type === 'beacon_hello') {
+        ws.isBeacon = true;
+        ws.beaconId = payload.beaconId;
+        console.log(`[Federation] Peer beacon connected: ${payload.beaconId} (${payload.region})`);
+        return send(ws, { type: 'beacon_ack', beaconId: federation.BEACON_ID, region: federation.BEACON_REGION });
+      }
+      if (type === 'agent_sync' && ws.isBeacon) {
+        // Update our knowledge of peer's agents
+        const peer = federation.peerBeacons.get(ws.beaconId);
+        if (peer) {
+          if (payload.action === 'register' && payload.agent) {
+            peer.agents = peer.agents || [];
+            peer.agents = peer.agents.filter(a => a.agentId !== payload.agent.agentId);
+            peer.agents.push(payload.agent);
+            peer.agentCount = peer.agents.length;
+          }
+        }
+        return;
+      }
+      return;
+    }
+
     // All other messages require registration
     if (!agentId) {
       return send(ws, { type: 'error', error: 'Not registered' });
