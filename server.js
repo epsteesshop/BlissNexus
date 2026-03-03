@@ -399,7 +399,9 @@ app.post('/solana/withdraw', async (req, res) => {
   res.json(await solana.agentWithdraw(agentPubkey, toWallet, parseFloat(amount)));
 });
 
-app.post('/solana/pay', requireAdmin, async (req, res) => {
+app.post("/solana/pay", requireAdmin, async (req, res) => {
+  if (!solana.isEscrowReady()) return res.status(503).json({ error: "Escrow not configured - set ESCROW_WALLET_SECRET" });
+
   const { to, amount } = req.body;
   if (!to || !amount) return res.status(400).json({ error: 'Missing to or amount' });
   res.json(await solana.payAgent(to, parseFloat(amount)));
