@@ -1,5 +1,5 @@
 /**
- * BlissNexus Beacon Server v2.0
+ * BlissNexus Beacon Server v2.1
  * Full Agent Coordination Network with Task Marketplace
  */
 
