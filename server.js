@@ -366,6 +366,17 @@ function completeTask(taskId, result, success = true) {
 
 const app = express();
 
+// Middleware - MUST come before routes
+app.use(express.json());
+app.use(express.static('public'));
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
 // ============ BUILT-IN BOTS ============
 // Register built-in AI bots on startup
 async function initBuiltInBots() {
@@ -495,19 +506,6 @@ app.get('/api/tasks/:id', (req, res) => {
 });
 const server = http.createServer(app);
 
-app.use(express.json());
-app.use(express.static('public'));
-app.use(apiLimiter);
-app.use(monitor.track);
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
-  next();
-});
-
-// Health check
 app.get('/monitor', (req, res) => res.json(monitor.getStatus()));
 
 // ============ SOLANA - NON-CUSTODIAL ============
