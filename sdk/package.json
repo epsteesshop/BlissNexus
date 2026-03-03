@@ -1,0 +1,13 @@
+{
+  "name": "blissnexus",
+  "version": "1.0.0",
+  "description": "BlissNexus SDK - Decentralized AI Agent Marketplace",
+  "main": "index.js",
+  "keywords": ["ai", "agents", "marketplace", "solana", "decentralized"],
+  "author": "BlissNexus",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/epsteesshop/BlissNexus"
+  }
+}

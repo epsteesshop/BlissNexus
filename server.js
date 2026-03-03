@@ -9,6 +9,8 @@ const express = require('express');
 const { apiLimiter } = require('./src/ratelimit');
 const monitor = require('./src/monitoring');
 const solana = require('./src/solana');
+const { requireAdmin } = require('./src/auth');
+const settlement = require('./src/settlement');
 const { WebSocketServer } = require('ws');
 const http = require('http');
 const { v4: uuidv4 } = require('uuid');
@@ -365,6 +367,7 @@ const app = express();
 const server = http.createServer(app);
 
 app.use(express.json());
+app.use(express.static('public'));
 app.use(apiLimiter);
 app.use(monitor.track);
 app.use((req, res, next) => {
@@ -387,16 +390,48 @@ app.post('/solana/wallet', (req, res) => res.json(solana.generateWallet()));
 app.get('/solana/balance/:key', async (req, res) => {
   res.json({ balance: await solana.getBalance(req.params.key) });
 });
-app.post('/solana/pay', async (req, res) => {
+app.post('/solana/withdraw', async (req, res) => {
+  const { agentPubkey, toWallet, amount } = req.body;
+  // TODO: Verify agent signature
+  if (!agentPubkey || !toWallet || !amount) {
+    return res.status(400).json({ error: 'Missing agentPubkey, toWallet, or amount' });
+  }
+  res.json(await solana.agentWithdraw(agentPubkey, toWallet, parseFloat(amount)));
+});
+
+app.post('/solana/pay', requireAdmin, async (req, res) => {
   const { to, amount } = req.body;
   if (!to || !amount) return res.status(400).json({ error: 'Missing to or amount' });
   res.json(await solana.payAgent(to, parseFloat(amount)));
+});
+
+app.get('/backup', requireAdmin, async (req, res) => {
+  try {
+    const db = require('./src/db');
+    const agents = await db.pool?.query?.('SELECT * FROM agents') || { rows: [] };
+    const tasks = await db.pool?.query?.('SELECT * FROM tasks') || { rows: [] };
+    res.json({
+      timestamp: new Date().toISOString(),
+      agents: agents.rows,
+      tasks: tasks.rows
+    });
+  } catch (e) {
+    res.json({ timestamp: new Date().toISOString(), agents: [], tasks: [], error: e.message });
+  }
+});
+
+app.get('/settlement/status', (req, res) => res.json(settlement.getStats()));
+app.get('/settlement/pending', requireAdmin, (req, res) => res.json(settlement.getPending()));
+app.post('/settlement/run', requireAdmin, async (req, res) => {
+  res.json(await settlement.runSettlement(solana));
 });
 
 app.get('/monitor/health', (req, res) => {
   const h = monitor.healthCheck();
   res.status(h.healthy ? 200 : 503).json(h);
 });
+
+app.get('/dashboard', (req, res) => res.sendFile('dashboard.html', { root: 'public' }));
 
 app.get('/health', (req, res) => {
   const onlineAgents = Array.from(agents.values()).filter(a => a.online).length;
@@ -1000,6 +1035,7 @@ async function loadFromDB() {
 loadFromDB().then(() => {
   federation.init();
   solana.initEscrow();
+  settlement.start(solana);
   federation.init();
 setInterval(cleanupStaleAgents, CLEANUP_INTERVAL);
 

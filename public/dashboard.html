@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BlissNexus Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: #0a0a0f; color: #fff; padding: 20px; }
+    h1 { color: #00ff88; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    .card { background: #1a1a2e; border-radius: 12px; padding: 20px; border: 1px solid #333; }
+    .card h2 { color: #888; font-size: 14px; text-transform: uppercase; margin-bottom: 10px; }
+    .stat { font-size: 32px; font-weight: bold; color: #00ff88; }
+    .sub { color: #666; font-size: 14px; margin-top: 5px; }
+    .status { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; background: #00ff88; }
+    table { width: 100%; margin-top: 10px; }
+    td { padding: 8px 0; border-bottom: 1px solid #333; color: #ccc; }
+  </style>
+</head>
+<body>
+  <h1>🚀 BlissNexus Dashboard</h1>
+  <div class="grid">
+    <div class="card">
+      <h2>System Status</h2>
+      <div id="health"><span class="status"></span>Loading...</div>
+      <div class="sub" id="uptime">Uptime: --</div>
+    </div>
+    <div class="card">
+      <h2>Agents</h2>
+      <div class="stat" id="agents">--</div>
+      <div class="sub" id="agentsTotal">Total: --</div>
+    </div>
+    <div class="card">
+      <h2>Requests</h2>
+      <div class="stat" id="requests">--</div>
+      <div class="sub" id="errorRate">Errors: --</div>
+    </div>
+    <div class="card">
+      <h2>WebSockets</h2>
+      <div class="stat" id="ws">--</div>
+      <div class="sub" id="wsPeak">Peak: --</div>
+    </div>
+    <div class="card">
+      <h2>Escrow</h2>
+      <div class="stat" id="escrow">-- SOL</div>
+      <div class="sub" id="wallet">Loading...</div>
+    </div>
+    <div class="card">
+      <h2>Tasks</h2>
+      <div class="stat" id="tasks">--</div>
+      <div class="sub" id="tasksFailed">Failed: --</div>
+    </div>
+    <div class="card" style="grid-column: 1 / -1;">
+      <h2>Top Endpoints</h2>
+      <table id="endpoints"><tr><td>Loading...</td></tr></table>
+    </div>
+  </div>
+  <script>
+    async function load() {
+      try {
+        const [h, m, e] = await Promise.all([
+          fetch('/health').then(r=>r.json()),
+          fetch('/monitor').then(r=>r.json()),
+          fetch('/solana/escrow').then(r=>r.json())
+        ]);
+        document.getElementById('health').innerHTML = '<span class="status"></span>Operational';
+        document.getElementById('uptime').textContent = 'Uptime: ' + m.uptime;
+        document.getElementById('agents').textContent = h.agents?.online || 0;
+        document.getElementById('agentsTotal').textContent = 'Total: ' + (h.agents?.total || 0);
+        document.getElementById('requests').textContent = m.requests?.total || 0;
+        document.getElementById('errorRate').textContent = 'Errors: ' + (m.requests?.errorRate || '0%');
+        document.getElementById('ws').textContent = m.websockets?.current || 0;
+        document.getElementById('wsPeak').textContent = 'Peak: ' + (m.websockets?.peak || 0);
+        document.getElementById('escrow').textContent = (e.balance?.toFixed(4) || '--') + ' SOL';
+        document.getElementById('wallet').textContent = e.wallet ? e.wallet.slice(0,16) + '...' : '--';
+        document.getElementById('tasks').textContent = m.tasks?.completed || 0;
+        document.getElementById('tasksFailed').textContent = 'Failed: ' + (m.tasks?.failed || 0);
+        document.getElementById('endpoints').innerHTML = (m.topEndpoints || [])
+          .map(([p,c]) => '<tr><td>'+p+'</td><td style="text-align:right">'+c+'</td></tr>')
+          .join('') || '<tr><td>No data</td></tr>';
+      } catch(e) { document.getElementById('health').innerHTML = 'Error: '+e.message; }
+    }
+    load(); setInterval(load, 5000);
+  </script>
+</body>
+</html>

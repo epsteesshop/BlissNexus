@@ -75,3 +75,16 @@ async function payAgent(toPublicKey, amountSol) {
 }
 
 module.exports = { initEscrow, generateWallet, getBalance, getStatus, payAgent };
+
+
+async function agentWithdraw(agentPubkey, toWallet, amount) {
+  // In production: verify agent owns this pubkey via signature
+  // For now: check balance exists for this agent in our system
+  const balance = await getBalance(agentPubkey);
+  if (balance < amount) {
+    return { success: false, error: 'Insufficient balance' };
+  }
+  return await payAgent(toWallet, amount);
+}
+
+module.exports.agentWithdraw = agentWithdraw;
