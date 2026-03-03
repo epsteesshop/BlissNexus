@@ -1173,8 +1173,6 @@ async function loadFromDB() {
 
 loadFromDB().then(() => {
   federation.init();
-  solana.initEscrow();
-  settlement.start(solana);
   federation.init();
 setInterval(cleanupStaleAgents, CLEANUP_INTERVAL);
 
