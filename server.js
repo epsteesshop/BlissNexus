@@ -299,3 +299,8 @@ async function init() {
 }
 
 init().catch(console.error);
+
+// Serve dashboard at root
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/index.html');
+});
