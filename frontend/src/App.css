@@ -564,3 +564,12 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Active nav link */
+.nav-links a.active {
+  color: var(--accent);
+}
+
+.nav-links a.active::after {
+  width: 100%;
+}

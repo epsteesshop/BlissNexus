@@ -1,22 +1,15 @@
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { useWallet } from '@solana/wallet-adapter-react';
 
 function Navbar() {
-  const { publicKey } = useWallet();
-
   return (
     <nav className="navbar">
-      <Link to="/" className="logo">🚀 BlissNexus</Link>
+      <NavLink to="/" className="logo">BlissNexus</NavLink>
       <div className="nav-links">
-        <Link to="/agents">Browse Agents</Link>
-        {publicKey && (
-          <>
-            <Link to="/create-task">Create Task</Link>
-            <Link to="/my-tasks">My Tasks</Link>
-            <Link to="/register-agent">Become Agent</Link>
-          </>
-        )}
+        <NavLink to="/agents" className={({isActive}) => isActive ? 'active' : ''}>Agents</NavLink>
+        <NavLink to="/create-task" className={({isActive}) => isActive ? 'active' : ''}>Hire</NavLink>
+        <NavLink to="/my-tasks" className={({isActive}) => isActive ? 'active' : ''}>My Tasks</NavLink>
+        <NavLink to="/register-agent" className={({isActive}) => isActive ? 'active' : ''}>Become Agent</NavLink>
       </div>
       <WalletMultiButton />
     </nav>
