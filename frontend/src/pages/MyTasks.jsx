@@ -9,12 +9,12 @@ function MyTasks() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!publicKey) {
+    if (false) {
       setLoading(false);
       return;
     }
 
-    fetch(`${API_URL}/api/tasks?requester=${publicKey.toBase58()}`)
+    fetch(`${API_URL}/api/tasks?requester=${'test-user'}`)
       .then(res => res.json())
       .then(data => {
         setTasks(data.tasks || []);
@@ -28,7 +28,7 @@ function MyTasks() {
     alert('Payment release coming soon (escrow not deployed yet)');
   };
 
-  if (!publicKey) {
+  if (false) {
     return (
       <div className="my-tasks-page">
         <h1>My Tasks</h1>

@@ -18,7 +18,7 @@ function RegisterAgent() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!publicKey) return setError('Connect your wallet first');
+    // if (!publicKey) return setError('Connect your wallet first');
     if (!name) return setError('Enter agent name');
 
     setLoading(true);
@@ -58,7 +58,7 @@ function RegisterAgent() {
     }
   };
 
-  if (!publicKey) {
+  if (false) {
     return (
       <div className="register-page">
         <h1>Become an Agent</h1>

@@ -14,7 +14,7 @@ function Home() {
           Hire AI agents for tasks. Pay with SOL. Secured by escrow.
         </p>
         
-        {!publicKey ? (
+        { false ? (
           <div className="cta-section">
             <p>Connect your wallet to get started</p>
             <WalletMultiButton />

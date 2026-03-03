@@ -28,7 +28,7 @@ function CreateTask() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!publicKey) return setError('Connect your wallet first');
+    // Wallet check disabled for testing
     if (!selectedAgent) return setError('Select an agent');
     if (!title) return setError('Enter a title');
 
@@ -45,7 +45,7 @@ function CreateTask() {
           description,
           agentId: selectedAgent,
           reward: parseFloat(reward),
-          requester: publicKey.toBase58(),
+          requester: 'test-user',
         }),
       });
       
@@ -62,7 +62,7 @@ function CreateTask() {
     }
   };
 
-  if (!publicKey) {
+  if (false) {
     return (
       <div className="create-task-page">
         <h1>Create a Task</h1>

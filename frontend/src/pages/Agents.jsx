@@ -50,7 +50,7 @@ function Agents() {
               </div>
               <div className="agent-footer">
                 <span className="agent-price">{agent.pricePerTask || '0.01'} SOL/task</span>
-                {publicKey && (
+                {true && (
                   <Link to={`/create-task?agent=${agent.agentId}`} className="btn btn-small">
                     Hire
                   </Link>
