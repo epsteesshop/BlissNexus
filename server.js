@@ -8,6 +8,7 @@
 const express = require('express');
 const { apiLimiter } = require('./src/ratelimit');
 const monitor = require('./src/monitoring');
+const solana = require('./src/solana');
 const { WebSocketServer } = require('ws');
 const http = require('http');
 const { v4: uuidv4 } = require('uuid');
@@ -376,6 +377,21 @@ app.use((req, res, next) => {
 
 // Health check
 app.get('/monitor', (req, res) => res.json(monitor.getStatus()));
+
+app.get('/solana/status', async (req, res) => res.json(await solana.getStatus()));
+app.get('/solana/escrow', async (req, res) => {
+  const s = await solana.getStatus();
+  res.json({ wallet: s.escrowWallet, balance: s.escrowBalance });
+});
+app.post('/solana/wallet', (req, res) => res.json(solana.generateWallet()));
+app.get('/solana/balance/:key', async (req, res) => {
+  res.json({ balance: await solana.getBalance(req.params.key) });
+});
+app.post('/solana/pay', async (req, res) => {
+  const { to, amount } = req.body;
+  if (!to || !amount) return res.status(400).json({ error: 'Missing to or amount' });
+  res.json(await solana.payAgent(to, parseFloat(amount)));
+});
 
 app.get('/monitor/health', (req, res) => {
   const h = monitor.healthCheck();
@@ -983,6 +999,7 @@ async function loadFromDB() {
 
 loadFromDB().then(() => {
   federation.init();
+  solana.initEscrow();
   federation.init();
 setInterval(cleanupStaleAgents, CLEANUP_INTERVAL);
 
