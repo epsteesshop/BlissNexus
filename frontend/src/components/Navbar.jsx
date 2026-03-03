@@ -4,7 +4,7 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 function Navbar() {
   return (
     <nav className="navbar">
-      <NavLink to="/" className="logo">BlissNexus</NavLink>
+      <a href="/" className="logo">BlissNexus</a>
       <div className="nav-links">
         <NavLink to="/agents" className={({isActive}) => isActive ? 'active' : ''}>Agents</NavLink>
         <NavLink to="/create-task" className={({isActive}) => isActive ? 'active' : ''}>Hire</NavLink>
