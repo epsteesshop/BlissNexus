@@ -364,6 +364,8 @@ function completeTask(taskId, result, success = true) {
 // ============================================================================
 
 const app = express();
+});
+
 const server = http.createServer(app);
 
 app.use(express.json());
@@ -439,6 +441,11 @@ app.get('/monitor/health', (req, res) => {
 });
 
 app.get('/dashboard', (req, res) => res.sendFile('dashboard.html', { root: 'public' }));
+
+// Serve React app for /app routes (SPA catch-all)
+app.get('/app', (req, res) => res.sendFile(__dirname + '/public/app/index.html'));
+app.get('/app/*', (req, res) => res.sendFile(__dirname + '/public/app/index.html'));
+
 
 app.get('/health', (req, res) => {
   const onlineAgents = Array.from(agents.values()).filter(a => a.online).length;
