@@ -650,6 +650,27 @@ wss.on('connection', (ws) => {
         }
         break;
         
+      case 'broadcast':
+        if (!payload.content) {
+          return send(ws, { type: 'error', error: 'Missing content' });
+        }
+        // Send to all online agents except sender
+        let broadcastCount = 0;
+        for (const [aid, targetWs] of connections.entries()) {
+          if (aid !== agentId && targetWs.readyState === 1) {
+            send(targetWs, {
+              type: 'broadcast',
+              from: agentId,
+              fromName: agents.get(agentId)?.name,
+              content: payload.content,
+              ts: Date.now()
+            });
+            broadcastCount++;
+          }
+        }
+        send(ws, { type: 'broadcast_sent', recipients: broadcastCount });
+        break;
+        
       case 'task_bid':
         if (!payload.taskId || payload.price === undefined) {
           return send(ws, { type: 'error', error: 'Missing taskId or price' });
