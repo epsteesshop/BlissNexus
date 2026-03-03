@@ -31,10 +31,10 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 const registry = new Registry(redis);
+require("./dashboard-route")(app);
 
 // Middleware
 app.use(express.json());
-app.use(express.static(__dirname));
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -44,10 +44,6 @@ app.use((req, res, next) => {
 // === REST API ===
 
 // Health check
-// Serve dashboard
-app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/index.html");
-});
 
 app.get('/health', (req, res) => {
   const stats = registry.stats();
