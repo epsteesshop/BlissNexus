@@ -23,6 +23,7 @@ if (USE_DB) {
 // Federation (multi-beacon scaling)
 const federation = require('./src/federation');
 
+
 // ============================================================================
 // CONFIG
 // ============================================================================
@@ -227,6 +228,7 @@ function deregisterAgent(agentId) {
   // Sync to database
   if (USE_DB && db) {
     db.setAgentOnline(agentId, false).catch(err => console.error('[DB] offline:', err.message));
+  federation.broadcastAgentOffline(agentId);
   }
 }
 
@@ -629,8 +631,13 @@ wss.on('connection', (ws) => {
         ws.beaconId = payload.beaconId;
         console.log(`[Federation] Peer beacon connected: ${payload.beaconId} (${payload.region})`);
         return send(ws, { type: 'beacon_ack', beaconId: federation.BEACON_ID, region: federation.BEACON_REGION });
+        federation.registerInboundPeer(payload.beaconId, ws);
       }
-      if (type === 'agent_sync' && ws.isBeacon) {
+      if ((type === 'agent_sync' || type === 'agent_offline') && ws.isBeacon) {
+        federation.handlePeerMessage(ws.beaconId, { type, ...payload }, ws);
+        return;
+      }
+      if (false) {
         // Update our knowledge of peer's agents
         const peer = federation.peerBeacons.get(ws.beaconId);
         if (peer) {
@@ -962,6 +969,7 @@ async function loadFromDB() {
 }
 
 loadFromDB().then(() => {
+  federation.init();
   federation.init();
 setInterval(cleanupStaleAgents, CLEANUP_INTERVAL);
 
