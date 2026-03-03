@@ -43,6 +43,11 @@ app.use((req, res, next) => {
 // === REST API ===
 
 // Health check
+// Serve dashboard
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/index.html");
+});
+
 app.get('/health', (req, res) => {
   const stats = registry.stats();
   res.json({ 
@@ -299,8 +304,3 @@ async function init() {
 }
 
 init().catch(console.error);
-
-// Serve dashboard at root
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
-});
