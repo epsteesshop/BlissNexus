@@ -6,6 +6,7 @@
 'use strict';
 
 const express = require('express');
+const { apiLimiter } = require('./src/ratelimit');
 const { WebSocketServer } = require('ws');
 const http = require('http');
 const { v4: uuidv4 } = require('uuid');
@@ -362,6 +363,7 @@ const app = express();
 const server = http.createServer(app);
 
 app.use(express.json());
+app.use(apiLimiter);
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
