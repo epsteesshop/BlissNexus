@@ -958,11 +958,11 @@ async function loadFromDB() {
       for (const cap of (a.capabilities || [])) addAgentToCapability(a.agent_id, cap);
     }
     console.log(`[DB] Loaded ${dbAgents.length} agents from database`);
-    federation.init();
   } catch (err) { console.error('[DB] Load error:', err.message); }
 }
 
 loadFromDB().then(() => {
+  federation.init();
 setInterval(cleanupStaleAgents, CLEANUP_INTERVAL);
 
 server.listen(PORT, () => {
