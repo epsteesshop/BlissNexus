@@ -377,6 +377,11 @@ app.use((req, res, next) => {
 // Health check
 app.get('/monitor', (req, res) => res.json(monitor.getStatus()));
 
+app.get('/monitor/health', (req, res) => {
+  const h = monitor.healthCheck();
+  res.status(h.healthy ? 200 : 503).json(h);
+});
+
 app.get('/health', (req, res) => {
   const onlineAgents = Array.from(agents.values()).filter(a => a.online).length;
   const openTasks = Array.from(tasks.values()).filter(t => t.status === 'open').length;
@@ -583,6 +588,7 @@ function broadcast(data, excludeAgentId = null) {
 }
 
 wss.on('connection', (ws) => {
+    monitor.trackWsConnect();
   let agentId = null;
   let publicKey = null;
   
@@ -769,6 +775,7 @@ wss.on('connection', (ws) => {
   });
   
   ws.on('close', () => {
+    monitor.trackWsDisconnect();
     if (agentId) {
       deregisterAgent(agentId);
       broadcast({ type: 'agent_offline', agentId }, agentId);
