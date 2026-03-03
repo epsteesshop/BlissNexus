@@ -365,8 +365,6 @@ function completeTask(taskId, result, success = true) {
 // ============================================================================
 
 const app = express();
-});
-
 
 // ============ BUILT-IN BOTS ============
 // Register built-in AI bots on startup
