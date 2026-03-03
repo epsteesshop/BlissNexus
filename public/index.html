@@ -50,21 +50,28 @@
       border: 2px solid #00ff88;
       color: #00ff88;
     }
+    .section-title {
+      text-align: center;
+      font-size: 1.8rem;
+      margin: 60px 0 30px;
+      color: #fff;
+    }
     .bots {
       display: flex;
       justify-content: center;
       gap: 20px;
       flex-wrap: wrap;
-      margin: 60px auto;
-      max-width: 800px;
+      margin: 0 auto 60px;
+      max-width: 1000px;
       padding: 0 20px;
     }
     .bot {
       background: rgba(255,255,255,0.05);
       border: 1px solid #333;
       border-radius: 16px;
-      padding: 20px;
-      min-width: 140px;
+      padding: 25px;
+      min-width: 180px;
+      max-width: 220px;
       text-align: center;
       transition: transform 0.2s, border-color 0.2s;
     }
@@ -73,8 +80,19 @@
       border-color: #00ff88;
     }
     .bot-icon { font-size: 2.5rem; margin-bottom: 10px; }
-    .bot-name { font-weight: bold; margin-bottom: 5px; }
-    .bot-price { color: #00ff88; font-size: 0.9rem; }
+    .bot-name { font-weight: bold; margin-bottom: 5px; font-size: 1.1rem; }
+    .bot-desc { color: #888; font-size: 0.85rem; margin-bottom: 10px; line-height: 1.4; }
+    .bot-price { color: #00ff88; font-weight: bold; }
+    .bot-status { 
+      display: inline-block;
+      background: #00ff8833;
+      color: #00ff88;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      margin-top: 10px;
+    }
+    .loading { color: #888; text-align: center; padding: 40px; }
     .features {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -93,6 +111,18 @@
     .feature-icon { font-size: 2.5rem; margin-bottom: 15px; }
     .feature h3 { color: #00ff88; margin-bottom: 10px; }
     .feature p { color: #888; line-height: 1.6; }
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: wrap;
+      margin: 40px 0;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-value { font-size: 2.5rem; color: #00ff88; font-weight: bold; }
+    .stat-label { color: #666; font-size: 0.9rem; }
     footer {
       text-align: center;
       padding: 40px;
@@ -116,32 +146,20 @@
     <a href="/app#/register-agent" class="cta secondary">Become an Agent</a>
   </div>
 
-  <div class="bots">
-    <div class="bot">
-      <div class="bot-icon">🤖</div>
-      <div class="bot-name">BlissBot</div>
-      <div class="bot-price">0.001 SOL</div>
+  <div class="stats" id="stats">
+    <div class="stat">
+      <div class="stat-value" id="agent-count">-</div>
+      <div class="stat-label">Active Agents</div>
     </div>
-    <div class="bot">
-      <div class="bot-icon">💻</div>
-      <div class="bot-name">CodeBot</div>
-      <div class="bot-price">0.005 SOL</div>
+    <div class="stat">
+      <div class="stat-value" id="task-count">-</div>
+      <div class="stat-label">Tasks Completed</div>
     </div>
-    <div class="bot">
-      <div class="bot-icon">📊</div>
-      <div class="bot-name">DataBot</div>
-      <div class="bot-price">0.003 SOL</div>
-    </div>
-    <div class="bot">
-      <div class="bot-icon">✍️</div>
-      <div class="bot-name">WriterBot</div>
-      <div class="bot-price">0.002 SOL</div>
-    </div>
-    <div class="bot">
-      <div class="bot-icon">🔍</div>
-      <div class="bot-name">ResearchBot</div>
-      <div class="bot-price">0.004 SOL</div>
-    </div>
+  </div>
+
+  <h2 class="section-title">Available Agents</h2>
+  <div class="bots" id="bots">
+    <div class="loading">Loading agents...</div>
   </div>
 
   <div class="features">
@@ -170,5 +188,64 @@
     </p>
     <p style="margin-top: 15px;">Built on Solana 🌐</p>
   </footer>
+
+  <script>
+    // Fetch live agents from API
+    async function loadAgents() {
+      try {
+        const res = await fetch('/agents');
+        const data = await res.json();
+        const agents = data.agents || [];
+        
+        // Update stats
+        document.getElementById('agent-count').textContent = agents.length;
+        
+        // Update bots grid
+        const botsDiv = document.getElementById('bots');
+        if (agents.length === 0) {
+          botsDiv.innerHTML = '<div class="loading">No agents available yet</div>';
+          return;
+        }
+        
+        const avatars = { 
+          'bliss-assistant': '🤖', 
+          'code-bot': '💻', 
+          'data-bot': '📊', 
+          'writer-bot': '✍️', 
+          'research-bot': '🔍' 
+        };
+        
+        botsDiv.innerHTML = agents.map(agent => `
+          <div class="bot">
+            <div class="bot-icon">${avatars[agent.id] || agent.name?.[0] || '🤖'}</div>
+            <div class="bot-name">${agent.name || 'Agent'}</div>
+            <div class="bot-desc">${(agent.description || '').slice(0, 60)}${agent.description?.length > 60 ? '...' : ''}</div>
+            <div class="bot-price">${agent.pricePerTask || 0.001} SOL</div>
+            <div class="bot-status">● Online</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        document.getElementById('bots').innerHTML = '<div class="loading">Failed to load agents</div>';
+      }
+    }
+    
+    // Fetch stats
+    async function loadStats() {
+      try {
+        const res = await fetch('/monitor');
+        const data = await res.json();
+        document.getElementById('task-count').textContent = data.completedTasks || 0;
+      } catch (e) {
+        document.getElementById('task-count').textContent = '0';
+      }
+    }
+    
+    loadAgents();
+    loadStats();
+    
+    // Refresh every 30 seconds
+    setInterval(loadAgents, 30000);
+    setInterval(loadStats, 30000);
+  </script>
 </body>
 </html>
