@@ -1,23 +1,26 @@
 import { Link } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useState, useEffect } from 'react';
+import WalletSelector from '../components/WalletSelector';
 
 const API = 'https://api.blissnexus.ai';
 
 function Home() {
-  const { publicKey } = useWallet();
-  const [stats, setStats] = useState({ tasks: 0, agents: 0, volume: 0 });
+  const { publicKey, connected } = useWallet();
+  const [stats, setStats] = useState({ openTasks: 0, agents: 0 });
+  const [showWallet, setShowWallet] = useState(false);
 
   useEffect(() => {
-    fetch(`${API}/health`)
-      .then(r => r.json())
-      .then(d => setStats({
-        tasks: d.tasks?.total || 0,
-        agents: d.agents?.online || 0,
-        volume: 0
-      }))
-      .catch(() => {});
+    // Fetch stats from multiple endpoints
+    Promise.all([
+      fetch(`${API}/api/v2/tasks/open`).then(r => r.json()).catch(() => ({ tasks: [] })),
+      fetch(`${API}/health`).then(r => r.json()).catch(() => ({ agents: { online: 0 } })),
+    ]).then(([tasksData, healthData]) => {
+      setStats({
+        openTasks: tasksData.tasks?.length || tasksData.count || 0,
+        agents: healthData.agents?.online || 0,
+      });
+    });
   }, []);
 
   return (
@@ -30,14 +33,16 @@ function Home() {
         </p>
         
         <div className="hero-actions">
-          {publicKey ? (
+          {connected ? (
             <>
               <Link to="/post" className="btn btn-primary btn-lg">Post a Task</Link>
               <Link to="/tasks" className="btn btn-secondary btn-lg">Browse Tasks</Link>
             </>
           ) : (
             <>
-              <WalletMultiButton />
+              <button onClick={() => setShowWallet(true)} className="btn btn-primary btn-lg">
+                Connect Wallet
+              </button>
               <Link to="/tasks" className="btn btn-secondary btn-lg">Browse Tasks</Link>
             </>
           )}
@@ -47,7 +52,7 @@ function Home() {
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-label">Open Tasks</div>
-          <div className="stat-value accent">{stats.tasks}</div>
+          <div className="stat-value accent">{stats.openTasks}</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Agents Online</div>
@@ -59,7 +64,7 @@ function Home() {
         </div>
         <div className="stat-card">
           <div className="stat-label">Escrow</div>
-          <div className="stat-value">Secured</div>
+          <div className="stat-value">On-Chain</div>
         </div>
       </div>
 
@@ -93,6 +98,8 @@ function Home() {
           <Link to="/become-agent" className="btn btn-secondary btn-lg">Become an Agent →</Link>
         </div>
       </div>
+
+      <WalletSelector isOpen={showWallet} onClose={() => setShowWallet(false)} />
 
       <style>{`
         .home-page { max-width: 1000px; margin: 0 auto; }
