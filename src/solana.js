@@ -1,34 +1,41 @@
 /**
  * BlissNexus Solana Integration - NON-CUSTODIAL
  * 
- * We NEVER touch private keys. Users connect their own wallets.
- * Funds go to on-chain escrow (Anchor program), not our wallet.
+ * Users connect their own wallets. Funds go to on-chain escrow.
+ * Currently configured for DEVNET testing.
  */
 
 const { Connection, PublicKey, LAMPORTS_PER_SOL } = require('@solana/web3.js');
 
-const RPC = process.env.SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
+// Use devnet for testing
+const RPC = process.env.SOLANA_RPC || 'https://api.devnet.solana.com';
 const connection = new Connection(RPC, 'confirmed');
 
-// Anchor escrow program ID (deployed on mainnet)
-const ESCROW_PROGRAM_ID = process.env.ESCROW_PROGRAM_ID || null;
+// Anchor escrow program ID
+const ESCROW_PROGRAM_ID = process.env.ESCROW_PROGRAM_ID || '7vNFHULaw8fmnCZPZ5GDFhWovUixe769qzupuqSA7kjw';
 
 async function getBalance(pubkey) {
   try {
-    return (await connection.getBalance(new PublicKey(pubkey))) / LAMPORTS_PER_SOL;
-  } catch (e) { return 0; }
+    const balance = await connection.getBalance(new PublicKey(pubkey));
+    return balance / LAMPORTS_PER_SOL;
+  } catch (e) { 
+    return 0; 
+  }
 }
 
 async function getStatus() {
   try {
     const slot = await connection.getSlot();
+    const cluster = RPC.includes('devnet') ? 'devnet' : 
+                   RPC.includes('mainnet') ? 'mainnet-beta' : 'custom';
     return {
       connected: true,
-      network: 'mainnet-beta',
+      network: cluster,
       slot,
+      rpc: RPC,
       custodial: false,
-      escrowProgram: ESCROW_PROGRAM_ID || 'NOT_DEPLOYED',
-      message: 'Non-custodial: Users connect their own wallets'
+      escrowProgram: ESCROW_PROGRAM_ID,
+      message: 'Non-custodial escrow on ' + cluster
     };
   } catch (e) {
     return { connected: false, error: e.message };
@@ -36,8 +43,7 @@ async function getStatus() {
 }
 
 /**
- * Verify a wallet signature to prove ownership
- * User signs a message client-side, we verify server-side
+ * Verify a wallet signature
  */
 function verifySignature(message, signature, publicKey) {
   try {
@@ -50,101 +56,68 @@ function verifySignature(message, signature, publicKey) {
     
     return nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
   } catch (e) {
+    console.error('[Solana] Signature verification error:', e.message);
     return false;
   }
 }
 
 /**
- * Generate the escrow PDA (Program Derived Address) for a task
- * This is where funds are locked on-chain
+ * Get escrow PDA for a task
  */
 function getEscrowPDA(taskId) {
-  if (!ESCROW_PROGRAM_ID) return null;
+  const taskBuffer = Buffer.alloc(32);
+  Buffer.from(taskId).copy(taskBuffer);
   
   const [pda] = PublicKey.findProgramAddressSync(
-    [Buffer.from('escrow'), Buffer.from(taskId)],
+    [Buffer.from('escrow'), taskBuffer],
     new PublicKey(ESCROW_PROGRAM_ID)
   );
   return pda.toBase58();
 }
 
 /**
- * Build unsigned transaction for creating escrow
- * Client will sign this with their wallet
+ * Check escrow balance on-chain
  */
-async function buildCreateEscrowTx(taskId, requesterPubkey, workerPubkey, amountSol) {
-  if (!ESCROW_PROGRAM_ID) {
-    return { error: 'Escrow program not deployed yet' };
+async function getEscrowBalance(taskId) {
+  try {
+    const pda = getEscrowPDA(taskId);
+    const balance = await connection.getBalance(new PublicKey(pda));
+    return {
+      pda,
+      balance: balance / LAMPORTS_PER_SOL,
+      funded: balance > 0,
+    };
+  } catch (e) {
+    return { pda: null, balance: 0, funded: false, error: e.message };
   }
-  
-  // Return instruction data for client to build + sign transaction
-  return {
-    program: ESCROW_PROGRAM_ID,
-    instruction: 'createEscrow',
-    accounts: {
-      requester: requesterPubkey,
-      worker: workerPubkey,
-      escrowPDA: getEscrowPDA(taskId),
-      systemProgram: '11111111111111111111111111111111'
-    },
-    args: {
-      taskId: taskId,
-      amount: Math.floor(amountSol * LAMPORTS_PER_SOL)
-    },
-    message: 'Client must build and sign this transaction using @coral-xyz/anchor'
-  };
 }
 
 /**
- * Build unsigned transaction for releasing escrow
- * Requester signs to release funds to worker
+ * Verify a transaction on-chain
  */
-async function buildReleaseTx(taskId, requesterPubkey, workerPubkey) {
-  if (!ESCROW_PROGRAM_ID) {
-    return { error: 'Escrow program not deployed yet' };
+async function verifyTransaction(signature) {
+  try {
+    const tx = await connection.getTransaction(signature, { 
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0
+    });
+    return {
+      confirmed: tx !== null,
+      slot: tx?.slot,
+      blockTime: tx?.blockTime,
+    };
+  } catch (e) {
+    return { confirmed: false, error: e.message };
   }
-  
-  return {
-    program: ESCROW_PROGRAM_ID,
-    instruction: 'release',
-    accounts: {
-      requester: requesterPubkey,
-      worker: workerPubkey,
-      escrowPDA: getEscrowPDA(taskId)
-    },
-    args: { taskId },
-    message: 'Requester must sign to release funds to worker'
-  };
 }
 
-/**
- * Build unsigned transaction for refund
- * Worker signs to allow refund to requester
- */
-async function buildRefundTx(taskId, requesterPubkey, workerPubkey) {
-  if (!ESCROW_PROGRAM_ID) {
-    return { error: 'Escrow program not deployed yet' };
-  }
-  
-  return {
-    program: ESCROW_PROGRAM_ID,
-    instruction: 'refund',
-    accounts: {
-      requester: requesterPubkey,
-      worker: workerPubkey,
-      escrowPDA: getEscrowPDA(taskId)
-    },
-    args: { taskId },
-    message: 'Worker must sign to refund to requester'
-  };
-}
-
-module.exports = { 
-  getBalance, 
+module.exports = {
+  getBalance,
   getStatus,
   verifySignature,
   getEscrowPDA,
-  buildCreateEscrowTx,
-  buildReleaseTx,
-  buildRefundTx
+  getEscrowBalance,
+  verifyTransaction,
+  connection,
+  ESCROW_PROGRAM_ID,
 };

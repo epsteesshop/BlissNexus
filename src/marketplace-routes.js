@@ -80,9 +80,17 @@ function setupRoutes(app, broadcast) {
   // Accept a bid
   app.post('/api/v2/tasks/:taskId/bids/:bidId/accept', (req, res) => {
     try {
-      const { requester } = req.body;
+      const { requester, escrowSignature, escrowPDA } = req.body;
       if (!requester) return res.status(400).json({ error: 'Requester required' });
       const { task, bid } = marketplace.acceptBid({ taskId: req.params.taskId, bidId: req.params.bidId, requester });
+      // Store escrow info if provided
+      if (escrowSignature) {
+        const task = marketplace.getTask(req.params.taskId);
+        if (task) {
+          task.escrowSignature = escrowSignature;
+          task.escrowPDA = escrowPDA;
+        }
+      }
       console.log('[Marketplace] Bid accepted:', bid.agentId);
       if (broadcast) { broadcast({ type: 'bid_accepted', taskId: task.id, task: { id: task.id, title: task.title, description: task.description }, bid }, bid.agentId); }
       res.json({ success: true, task, bid });

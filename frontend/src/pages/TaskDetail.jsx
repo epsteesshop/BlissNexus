@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
+import EscrowPanel from '../components/EscrowPanel';
 
 const API = 'https://api.blissnexus.ai';
 
@@ -16,13 +17,15 @@ function TaskDetail() {
   const [bidForm, setBidForm] = useState({ price: '', timeEstimate: '', message: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showEscrow, setShowEscrow] = useState(false);
+  const [selectedBid, setSelectedBid] = useState(null);
 
   const wallet = publicKey?.toBase58() || 'demo-wallet';
   const isOwner = task?.requester === wallet;
 
   useEffect(() => {
     fetchTask();
-    const interval = setInterval(fetchTask, 10000); // Poll every 10s
+    const interval = setInterval(fetchTask, 10000);
     return () => clearInterval(interval);
   }, [taskId]);
 
@@ -62,7 +65,7 @@ function TaskDetail() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setSuccess('Bid submitted successfully!');
+      setSuccess('Bid submitted!');
       setBidForm({ price: '', timeEstimate: '', message: '' });
       fetchTask();
     } catch (e) {
@@ -72,16 +75,27 @@ function TaskDetail() {
     }
   };
 
-  const acceptBid = async (bidId) => {
+  const selectBidForEscrow = (bid) => {
+    setSelectedBid(bid);
+    setShowEscrow(true);
+  };
+
+  const onEscrowFunded = async (signature, escrowPDA) => {
+    // After escrow is funded, accept the bid
     try {
-      const res = await fetch(`${API}/api/v2/tasks/${taskId}/bids/${bidId}/accept`, {
+      const res = await fetch(`${API}/api/v2/tasks/${taskId}/bids/${selectedBid.id}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requester: wallet }),
+        body: JSON.stringify({ 
+          requester: wallet,
+          escrowSignature: signature,
+          escrowPDA: escrowPDA,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setSuccess('Bid accepted! Waiting for agent to complete work.');
+      setSuccess('Bid accepted! Escrow funded. Waiting for agent.');
+      setShowEscrow(false);
       fetchTask();
     } catch (e) {
       setError(e.message);
@@ -97,7 +111,7 @@ function TaskDetail() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setSuccess('Result approved! Payment released.');
+      setSuccess('Approved! Payment released to agent.');
       fetchTask();
     } catch (e) {
       setError(e.message);
@@ -135,6 +149,7 @@ function TaskDetail() {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
+      {/* Task Details Card */}
       <div className="card" style={{marginBottom: 24}}>
         <div className="card-header">
           <div>
@@ -162,7 +177,28 @@ function TaskDetail() {
         )}
       </div>
 
-      {/* Result section for submitted/completed tasks */}
+      {/* Escrow Panel (when selecting a bid) */}
+      {showEscrow && selectedBid && (
+        <div style={{marginBottom: 24}}>
+          <div className="card" style={{marginBottom: 12, background: 'var(--accent-light)'}}>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+              <div>
+                <strong>Selected Bid:</strong> {selectedBid.agentName} - {selectedBid.price} SOL
+              </div>
+              <button className="btn btn-secondary btn-sm" onClick={() => setShowEscrow(false)}>Cancel</button>
+            </div>
+          </div>
+          <EscrowPanel
+            taskId={taskId}
+            amount={selectedBid.price}
+            workerWallet={selectedBid.wallet}
+            state={task.state}
+            onFunded={onEscrowFunded}
+          />
+        </div>
+      )}
+
+      {/* Result section */}
       {task.result && (
         <div className="result-box">
           <div className="result-label">
@@ -173,7 +209,7 @@ function TaskDetail() {
           {task.state === 'submitted' && isOwner && (
             <div style={{display: 'flex', gap: 12, marginTop: 20}}>
               <button className="btn btn-success" onClick={() => approveResult(5)}>
-                ✓ Approve & Pay
+                ✓ Approve & Release Payment
               </button>
               <button className="btn btn-danger" onClick={disputeResult}>
                 ✕ Dispute
@@ -184,7 +220,7 @@ function TaskDetail() {
       )}
 
       {/* Bids section */}
-      {task.state === 'open' && (
+      {task.state === 'open' && !showEscrow && (
         <div className="bids-section">
           <div className="bids-header">
             <h2 className="bids-title">Bids</h2>
@@ -198,7 +234,7 @@ function TaskDetail() {
           ) : (
             <div className="bids-list">
               {bids.map(bid => (
-                <div key={bid.id} className={`bid-card ${bid.status === 'accepted' ? 'winning' : ''}`}>
+                <div key={bid.id} className="bid-card">
                   <div className="bid-header">
                     <div className="bid-agent">
                       <div className="bid-avatar">{bid.agentName?.[0] || '🤖'}</div>
@@ -206,7 +242,7 @@ function TaskDetail() {
                         <div className="bid-agent-name">{bid.agentName}</div>
                         <div className="bid-agent-stats">
                           <span>⭐ {bid.agentStats?.rating?.toFixed(1) || '0.0'}</span>
-                          <span>✓ {bid.agentStats?.completed || 0} completed</span>
+                          <span>✓ {bid.agentStats?.completed || 0} jobs</span>
                         </div>
                       </div>
                     </div>
@@ -218,8 +254,8 @@ function TaskDetail() {
                   {bid.message && <div className="bid-message">{bid.message}</div>}
                   {isOwner && bid.status === 'pending' && (
                     <div className="bid-actions">
-                      <button className="btn btn-success btn-sm" onClick={() => acceptBid(bid.id)}>
-                        Accept Bid
+                      <button className="btn btn-success btn-sm" onClick={() => selectBidForEscrow(bid)}>
+                        🔒 Accept & Fund Escrow
                       </button>
                     </div>
                   )}
@@ -228,7 +264,7 @@ function TaskDetail() {
             </div>
           )}
 
-          {/* Submit bid form (only for non-owners) */}
+          {/* Submit bid form (for non-owners) */}
           {!isOwner && (
             <div className="card" style={{marginTop: 24}}>
               <h3 style={{fontSize: 18, fontWeight: 600, marginBottom: 16}}>Submit Your Bid</h3>
@@ -245,7 +281,7 @@ function TaskDetail() {
                       value={bidForm.price}
                       onChange={e => setBidForm({...bidForm, price: e.target.value})}
                     />
-                    <p className="form-hint">Max budget: {task.maxBudget} SOL</p>
+                    <p className="form-hint">Max: {task.maxBudget} SOL</p>
                   </div>
                   <div className="form-group">
                     <label className="form-label">Time Estimate</label>
@@ -259,10 +295,10 @@ function TaskDetail() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Message (optional)</label>
+                  <label className="form-label">Message</label>
                   <textarea
                     className="form-textarea"
-                    placeholder="Explain your approach, experience, or any questions..."
+                    placeholder="Explain your approach..."
                     value={bidForm.message}
                     onChange={e => setBidForm({...bidForm, message: e.target.value})}
                   />
@@ -276,14 +312,22 @@ function TaskDetail() {
         </div>
       )}
 
-      {/* Assigned task - show agent working */}
-      {(task.state === 'assigned' || task.state === 'in_progress') && (
+      {/* Assigned/In Progress */}
+      {['assigned', 'in_progress'].includes(task.state) && (
         <div className="card" style={{textAlign: 'center', padding: 40}}>
           <div style={{fontSize: 48, marginBottom: 16}}>⏳</div>
-          <h3 style={{fontSize: 18, marginBottom: 8}}>Agent is working on this task</h3>
+          <h3 style={{fontSize: 18, marginBottom: 8}}>Agent Working</h3>
           <p style={{color: 'var(--text-tertiary)'}}>
-            Assigned to: {task.assignedBid?.agentName || task.assignedAgent}
+            Assigned to: {task.assignedBid?.agentName} | {task.assignedBid?.price} SOL
           </p>
+          {task.escrowPDA && (
+            <p style={{fontSize: 13, marginTop: 12}}>
+              Escrow: <a href={`https://explorer.solana.com/address/${task.escrowPDA}?cluster=devnet`} 
+                         target="_blank" style={{color: 'var(--accent)'}}>
+                {task.escrowPDA.slice(0, 12)}...
+              </a>
+            </p>
+          )}
         </div>
       )}
     </div>

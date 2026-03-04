@@ -107,6 +107,8 @@ function acceptBid({ taskId, bidId, requester }) {
   task.state = TaskState.ASSIGNED;
   task.assignedAgent = bid.agentId;
   task.assignedBid = bid;
+  task.escrowPDA = null;
+  task.escrowSignature = null;
   task.updatedAt = Date.now();
   
   // Update bid statuses
