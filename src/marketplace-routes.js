@@ -198,14 +198,14 @@ function setupRoutes(app, broadcast) {
   console.log('[Marketplace] API v2 routes loaded');
 
   // Debug - show env vars (masked)
-  app.get("/api/v2/debug/env", (req, res) => {
+  app.get("/api/v2/debug/env", requireAdmin, (req, res) => {
     const dbUrl = process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL || "NOT SET";
     const masked = dbUrl.replace(/:[^:@]+@/, ":****@");
     res.json({ DATABASE_URL: masked, actualConnection: db.getConnectionUrl ? db.getConnectionUrl() : "N/A", DATABASE_PUBLIC_URL: process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET", NODE_ENV: process.env.NODE_ENV });
   });
 
   // Debug - try DB init
-  app.get("/api/v2/debug/db-init", async (req, res) => {
+  app.get("/api/v2/debug/db-init", requireAdmin, async (req, res) => {
     try {
       const result = await db.initDB();
       res.json({ initResult: result, dbReady: db.isReady(), lastError: db.getLastError() });
@@ -213,7 +213,7 @@ function setupRoutes(app, broadcast) {
   });
 
   // Debug - check DB status
-  app.get("/api/v2/debug/db", async (req, res) => {
+  app.get("/api/v2/debug/db", requireAdmin, async (req, res) => {
     try {
       const isReady = db.isReady();
       let dbTasks = 0;
@@ -226,7 +226,7 @@ function setupRoutes(app, broadcast) {
   });
 
   // Debug SUPABASE_URL
-  app.get("/api/v2/debug/supabase", (req, res) => {
+  app.get("/api/v2/debug/supabase", requireAdmin, (req, res) => {
     res.json({ 
       SUPABASE_URL: process.env.SUPABASE_URL ? "SET" : "NOT SET",
       DB_URL_IN_USE: db.getConnectionUrl()
