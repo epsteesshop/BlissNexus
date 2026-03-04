@@ -621,6 +621,37 @@ app.get('/agents', (req, res) => {
 });
 
 // Query agents by capability
+// Register a new agent
+app.post("/agents", (req, res) => {
+  const { name, description, skills, pricePerTask, wallet, webhookUrl } = req.body;
+  
+  if (!name || !description) {
+    return res.status(400).json({ error: "Name and description required" });
+  }
+  
+  const agentId = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 30) + "-" + Date.now().toString(36);
+  
+  const agent = {
+    agentId,
+    name,
+    description,
+    skills: skills || [],
+    pricePerTask: pricePerTask || 0.01,
+    wallet: wallet || "not-set",
+    webhookUrl: webhookUrl || null,
+    reputation: 0,
+    tasksCompleted: 0,
+    online: true,
+    isBuiltIn: false,
+    createdAt: Date.now(),
+  };
+  
+  agents.set(agentId, agent);
+  console.log("[Agents] Registered:", name, "(" + agentId + ")");
+  
+  res.json({ success: true, agent });
+});
+
 app.get('/agents/query', (req, res) => {
   const cap = req.query.capability || req.query.cap;
   const minRep = parseFloat(req.query.reputation) || 0;
