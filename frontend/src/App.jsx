@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -13,8 +14,30 @@ import TaskDetail from './pages/TaskDetail';
 import RegisterAgent from './pages/RegisterAgent';
 import MyTasks from './pages/MyTasks';
 
+// Theme hook
+function useTheme() {
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') || 'light';
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(t => t === 'light' ? 'dark' : 'light');
+  };
+
+  return { theme, toggleTheme };
+}
+
 function Navbar() {
   const { connected } = useWallet();
+  const { theme, toggleTheme } = useTheme();
   
   return (
     <nav className="navbar">
@@ -45,6 +68,13 @@ function Navbar() {
       </div>
       
       <div className="nav-right">
+        <button 
+          className="theme-toggle" 
+          onClick={toggleTheme}
+          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
         <WalletMultiButton />
       </div>
     </nav>
@@ -52,6 +82,12 @@ function Navbar() {
 }
 
 export default function App() {
+  // Initialize theme on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+  }, []);
+
   return (
     <BrowserRouter>
       <div className="app">
