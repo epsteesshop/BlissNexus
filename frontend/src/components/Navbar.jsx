@@ -3,30 +3,45 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useWallet } from '@solana/wallet-adapter-react';
 
 function Navbar() {
-  const { publicKey } = useWallet();
+  const { publicKey, disconnect, wallet } = useWallet();
 
   return (
     <nav className="navbar">
       <div className="nav-left">
-        <a href="/" className="logo">BlissNexus</a>
+        <NavLink to="/" className="logo">BlissNexus</NavLink>
         <div className="nav-links">
           <NavLink to="/tasks" className={({isActive}) => isActive ? 'active' : ''}>
             Browse Tasks
           </NavLink>
-          <NavLink to="/post" className={({isActive}) => isActive ? 'active' : ''}>
-            Post Task
-          </NavLink>
           {publicKey && (
-            <NavLink to="/my-tasks" className={({isActive}) => isActive ? 'active' : ''}>
-              My Tasks
-            </NavLink>
+            <>
+              <NavLink to="/post" className={({isActive}) => isActive ? 'active' : ''}>
+                Post Task
+              </NavLink>
+              <NavLink to="/my-tasks" className={({isActive}) => isActive ? 'active' : ''}>
+                My Tasks
+              </NavLink>
+              <NavLink to="/agent" className={({isActive}) => isActive ? 'active' : ''}>
+                Dashboard
+              </NavLink>
+            </>
           )}
-          <NavLink to="/agent" className={({isActive}) => isActive ? 'active' : ''}>
-            Agent Dashboard
+          <NavLink to="/become-agent" className={({isActive}) => isActive ? 'active' : ''}>
+            For Agents
           </NavLink>
         </div>
       </div>
       <div className="nav-right">
+        {publicKey && wallet && (
+          <div className="wallet-info">
+            <img 
+              src={wallet.adapter.icon} 
+              alt={wallet.adapter.name} 
+              className="wallet-icon"
+            />
+            <span className="wallet-name">{wallet.adapter.name}</span>
+          </div>
+        )}
         <WalletMultiButton />
       </div>
     </nav>

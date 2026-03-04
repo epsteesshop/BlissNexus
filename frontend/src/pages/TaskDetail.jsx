@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import EscrowPanel from '../components/EscrowPanel';
 
 const API = 'https://api.blissnexus.ai';
@@ -8,7 +9,7 @@ const API = 'https://api.blissnexus.ai';
 function TaskDetail() {
   const { taskId } = useParams();
   const navigate = useNavigate();
-  const { publicKey } = useWallet();
+  const { publicKey, connected } = useWallet();
   
   const [task, setTask] = useState(null);
   const [bids, setBids] = useState([]);
@@ -20,8 +21,8 @@ function TaskDetail() {
   const [showEscrow, setShowEscrow] = useState(false);
   const [selectedBid, setSelectedBid] = useState(null);
 
-  const wallet = publicKey?.toBase58() || 'demo-wallet';
-  const isOwner = task?.requester === wallet;
+  const wallet = publicKey?.toBase58();
+  const isOwner = wallet && task?.requester === wallet;
 
   useEffect(() => {
     fetchTask();
@@ -31,7 +32,7 @@ function TaskDetail() {
 
   const fetchTask = async () => {
     try {
-      const res = await fetch(`${API}/api/v2/tasks/${taskId}?requester=${wallet}`);
+      const res = await fetch(`${API}/api/v2/tasks/${taskId}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setTask(data);
@@ -45,6 +46,7 @@ function TaskDetail() {
 
   const submitBid = async (e) => {
     e.preventDefault();
+    if (!connected || !wallet) return setError('Connect wallet to bid');
     if (!bidForm.price) return setError('Enter a price');
     
     setBidding(true);
@@ -81,7 +83,6 @@ function TaskDetail() {
   };
 
   const onEscrowFunded = async (signature, escrowPDA) => {
-    // After escrow is funded, accept the bid
     try {
       const res = await fetch(`${API}/api/v2/tasks/${taskId}/bids/${selectedBid.id}/accept`, {
         method: 'POST',
@@ -268,45 +269,55 @@ function TaskDetail() {
           {!isOwner && (
             <div className="card" style={{marginTop: 24}}>
               <h3 style={{fontSize: 18, fontWeight: 600, marginBottom: 16}}>Submit Your Bid</h3>
-              <form onSubmit={submitBid}>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Your Bid (SOL) *</label>
-                    <input
-                      type="number"
-                      step="0.001"
-                      max={task.maxBudget}
-                      className="form-input"
-                      placeholder="0.05"
-                      value={bidForm.price}
-                      onChange={e => setBidForm({...bidForm, price: e.target.value})}
-                    />
-                    <p className="form-hint">Max: {task.maxBudget} SOL</p>
+              
+              {!connected ? (
+                <div style={{textAlign: 'center', padding: 20}}>
+                  <p style={{color: 'var(--text-tertiary)', marginBottom: 16}}>
+                    Connect your wallet to submit a bid
+                  </p>
+                  <WalletMultiButton />
+                </div>
+              ) : (
+                <form onSubmit={submitBid}>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">Your Bid (SOL) *</label>
+                      <input
+                        type="number"
+                        step="0.001"
+                        max={task.maxBudget}
+                        className="form-input"
+                        placeholder="0.05"
+                        value={bidForm.price}
+                        onChange={e => setBidForm({...bidForm, price: e.target.value})}
+                      />
+                      <p className="form-hint">Max: {task.maxBudget} SOL</p>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Time Estimate</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g., 2 hours"
+                        value={bidForm.timeEstimate}
+                        onChange={e => setBidForm({...bidForm, timeEstimate: e.target.value})}
+                      />
+                    </div>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Time Estimate</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="e.g., 2 hours"
-                      value={bidForm.timeEstimate}
-                      onChange={e => setBidForm({...bidForm, timeEstimate: e.target.value})}
+                    <label className="form-label">Message</label>
+                    <textarea
+                      className="form-textarea"
+                      placeholder="Explain your approach..."
+                      value={bidForm.message}
+                      onChange={e => setBidForm({...bidForm, message: e.target.value})}
                     />
                   </div>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Message</label>
-                  <textarea
-                    className="form-textarea"
-                    placeholder="Explain your approach..."
-                    value={bidForm.message}
-                    onChange={e => setBidForm({...bidForm, message: e.target.value})}
-                  />
-                </div>
-                <button type="submit" className="btn btn-primary" disabled={bidding}>
-                  {bidding ? 'Submitting...' : 'Submit Bid'}
-                </button>
-              </form>
+                  <button type="submit" className="btn btn-primary" disabled={bidding}>
+                    {bidding ? 'Submitting...' : 'Submit Bid'}
+                  </button>
+                </form>
+              )}
             </div>
           )}
         </div>
@@ -323,7 +334,7 @@ function TaskDetail() {
           {task.escrowPDA && (
             <p style={{fontSize: 13, marginTop: 12}}>
               Escrow: <a href={`https://explorer.solana.com/address/${task.escrowPDA}?cluster=devnet`} 
-                         target="_blank" style={{color: 'var(--accent)'}}>
+                         target="_blank" rel="noopener noreferrer" style={{color: 'var(--accent)'}}>
                 {task.escrowPDA.slice(0, 12)}...
               </a>
             </p>

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { clusterApiUrl } from '@solana/web3.js';
 
 import Navbar from './components/Navbar';
+import RequireWallet from './components/RequireWallet';
 import Home from './pages/Home';
 import BrowseTasks from './pages/BrowseTasks';
 import TaskDetail from './pages/TaskDetail';
@@ -20,6 +21,8 @@ import './App.css';
 function App() {
   // Use devnet for testing
   const endpoint = useMemo(() => clusterApiUrl('devnet'), []);
+  
+  // Support multiple wallets
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),
     new SolflareWalletAdapter(),
@@ -34,13 +37,28 @@ function App() {
               <Navbar />
               <main className="main-content">
                 <Routes>
+                  {/* Public routes */}
                   <Route path="/" element={<Home />} />
                   <Route path="/tasks" element={<BrowseTasks />} />
                   <Route path="/tasks/:taskId" element={<TaskDetail />} />
-                  <Route path="/post" element={<PostTask />} />
-                  <Route path="/my-tasks" element={<MyTasks />} />
-                  <Route path="/agent" element={<AgentDashboard />} />
                   <Route path="/become-agent" element={<BecomeAgent />} />
+                  
+                  {/* Protected routes - require wallet */}
+                  <Route path="/post" element={
+                    <RequireWallet message="Connect your wallet to post tasks. Your wallet address will be used as your identity.">
+                      <PostTask />
+                    </RequireWallet>
+                  } />
+                  <Route path="/my-tasks" element={
+                    <RequireWallet message="Connect your wallet to view your posted tasks.">
+                      <MyTasks />
+                    </RequireWallet>
+                  } />
+                  <Route path="/agent" element={
+                    <RequireWallet message="Connect your wallet to access your agent dashboard and start earning.">
+                      <AgentDashboard />
+                    </RequireWallet>
+                  } />
                 </Routes>
               </main>
             </div>
