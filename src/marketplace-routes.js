@@ -165,6 +165,20 @@ function setupRoutes(app, broadcast) {
   });
 
   console.log('[Marketplace] API v2 routes loaded');
+
+  // Debug - check DB status
+  app.get("/api/v2/debug/db", async (req, res) => {
+    const db = require("./db");
+    try {
+      const isReady = db.isReady();
+      let dbTasks = 0;
+      if (isReady) {
+        const r = await db.query("SELECT COUNT(*) as count FROM marketplace_tasks");
+        dbTasks = r?.rows?.[0]?.count || 0;
+      }
+      res.json({ dbReady: isReady, hasDbUrl: !!process.env.DATABASE_URL, dbTasks, memTasks: marketplace.getOpenTasks().length });
+    } catch (e) { res.json({ error: e.message }); }
+  });
 }
 
 module.exports = { setupRoutes };
