@@ -18,6 +18,11 @@ function setupRoutes(app, broadcast) {
       console.log('[Marketplace] Task created:', task.id);
       
       if (broadcast) broadcast({ type: 'new_task', task });
+      
+      // Auto-bid from built-in bots
+      const { autoBidFromBots } = require('./auto-bid');
+      setImmediate(() => autoBidFromBots(task, marketplace));
+      
       res.json({ success: true, task });
     } catch (e) { res.status(400).json({ error: e.message }); }
   });
