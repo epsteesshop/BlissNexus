@@ -15,6 +15,12 @@ const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || 'https://pub-0f9b65e78da5406c
 let s3Client = null;
 
 function init() {
+  console.log('[Storage] Checking config:', {
+    hasEndpoint: !!R2_ENDPOINT,
+    hasAccessKey: !!R2_ACCESS_KEY,
+    hasSecretKey: !!R2_SECRET_KEY,
+    endpoint: R2_ENDPOINT ? R2_ENDPOINT.slice(0, 30) + '...' : 'NOT SET'
+  });
   if (!R2_ENDPOINT || !R2_ACCESS_KEY || !R2_SECRET_KEY) {
     console.log('[Storage] R2 not configured - file uploads disabled');
     return false;
