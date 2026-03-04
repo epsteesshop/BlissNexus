@@ -2,7 +2,7 @@
   "redirects": [
     {
       "source": "/(.*)",
-      "destination": "https://api.blissnexus.ai/$1",
+      "destination": "https://api.blissnexus.ai/app/$1",
       "permanent": false
     }
   ]
