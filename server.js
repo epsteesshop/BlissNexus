@@ -33,19 +33,6 @@ if (USE_DB) {
 // Federation (multi-beacon scaling)
 const federation = require('./src/federation');
 const storage = require('./src/storage');
-// Storage debug
-app.get('/api/v2/debug/storage', (req, res) => {
-  res.json({
-    configured: storage.isConfigured(),
-    hasEndpoint: !!process.env.R2_ENDPOINT,
-    hasAccessKey: !!process.env.R2_ACCESS_KEY,
-    hasSecretKey: !!process.env.R2_SECRET_KEY,
-    hasBucket: !!process.env.R2_BUCKET,
-    hasPublicUrl: !!process.env.R2_PUBLIC_URL
-  });
-});
-
-
 const multer = require('multer');
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -677,6 +664,20 @@ app.get('/health', (req, res) => {
       error: e.message
     });
   }
+});
+
+
+
+// Storage debug
+app.get('/api/v2/debug/storage', (req, res) => {
+  res.json({
+    configured: storage.isConfigured(),
+    hasEndpoint: !!process.env.R2_ENDPOINT,
+    hasAccessKey: !!process.env.R2_ACCESS_KEY,
+    hasSecretKey: !!process.env.R2_SECRET_KEY,
+    hasBucket: !!process.env.R2_BUCKET,
+    hasPublicUrl: !!process.env.R2_PUBLIC_URL
+  });
 });
 
 // Federation status
