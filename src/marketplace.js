@@ -54,7 +54,7 @@ async function init() {
 }
 
 // Create a new task
-async function createTask({ title, description, maxBudget, deadline, requester, capabilities }) {
+async function createTask({ title, description, maxBudget, deadline, requester, capabilities, attachments }) {
   const taskId = 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
   
   const task = {
@@ -72,6 +72,7 @@ async function createTask({ title, description, maxBudget, deadline, requester, 
     escrowTx: null,
     escrowPDA: null,
     escrowSignature: null,
+    attachments: attachments || [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };

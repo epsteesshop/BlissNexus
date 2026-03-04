@@ -69,3 +69,12 @@ CREATE INDEX IF NOT EXISTS idx_agents_online ON agents(online) WHERE online = TR
 CREATE INDEX IF NOT EXISTS idx_marketplace_tasks_state ON marketplace_tasks(state);
 CREATE INDEX IF NOT EXISTS idx_marketplace_tasks_requester ON marketplace_tasks(requester);
 CREATE INDEX IF NOT EXISTS idx_marketplace_bids_task ON marketplace_bids(task_id);
+
+-- Add attachments column if not exists
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name = 'marketplace_tasks' AND column_name = 'attachments') THEN
+    ALTER TABLE marketplace_tasks ADD COLUMN attachments JSONB DEFAULT '[]';
+  END IF;
+END $$;

@@ -32,6 +32,14 @@ if (USE_DB) {
 
 // Federation (multi-beacon scaling)
 const federation = require('./src/federation');
+const storage = require('./src/storage');
+const multer = require('multer');
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
+});
+
+
 const marketplaceRoutes = require("./src/marketplace-routes");
 
 
@@ -1237,6 +1245,7 @@ loadFromDB().then(async () => {
   const marketplace = require("./src/marketplace");
   await marketplace.init();
   federation.init();
+  storage.init();
   initBuiltInBots();
   setInterval(cleanupStaleAgents, CLEANUP_INTERVAL);
 });

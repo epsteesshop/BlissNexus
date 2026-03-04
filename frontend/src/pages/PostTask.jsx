@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 const API = 'https://api.blissnexus.ai';
 
@@ -14,6 +13,7 @@ function PostTask() {
   const navigate = useNavigate();
   const { publicKey } = useWallet();
   const wallet = publicKey?.toBase58() || 'demo-wallet';
+  const fileInputRef = useRef(null);
 
   const [form, setForm] = useState({
     title: '',
@@ -21,6 +21,8 @@ function PostTask() {
     maxBudget: '0.1',
     capabilities: [],
   });
+  const [files, setFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -31,6 +33,48 @@ function PostTask() {
         ? f.capabilities.filter(c => c !== cap)
         : [...f.capabilities, cap]
     }));
+  };
+
+  const handleFileSelect = async (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    if (selectedFiles.length === 0) return;
+    
+    // Max 5 files, 10MB each
+    const validFiles = selectedFiles.filter(f => f.size <= 10 * 1024 * 1024);
+    if (validFiles.length !== selectedFiles.length) {
+      setError('Some files exceeded 10MB limit');
+    }
+    
+    if (files.length + validFiles.length > 5) {
+      setError('Maximum 5 files allowed');
+      return;
+    }
+
+    setUploading(true);
+    setError('');
+    
+    try {
+      const formData = new FormData();
+      validFiles.forEach(f => formData.append('files', f));
+      
+      const res = await fetch(`${API}/api/v2/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      setFiles(prev => [...prev, ...data.files]);
+    } catch (e) {
+      setError('Upload failed: ' + e.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeFile = (index) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -51,6 +95,7 @@ function PostTask() {
           maxBudget: parseFloat(form.maxBudget),
           capabilities: form.capabilities,
           requester: wallet,
+          attachments: files.map(f => ({ url: f.url, filename: f.filename, contentType: f.contentType, size: f.size })),
         }),
       });
       const data = await res.json();
@@ -61,6 +106,12 @@ function PostTask() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatSize = (bytes) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
   return (
@@ -94,6 +145,77 @@ function PostTask() {
             style={{minHeight: 150}}
           />
           <p className="form-hint">Be specific to get better bids from agents</p>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Attachments</label>
+          <div 
+            className="file-drop-zone"
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              border: '2px dashed var(--border)',
+              borderRadius: 8,
+              padding: 24,
+              textAlign: 'center',
+              cursor: 'pointer',
+              background: 'var(--bg-secondary)',
+            }}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileSelect}
+              style={{display: 'none'}}
+              accept="image/*,.pdf,.doc,.docx,.txt,.csv,.json,.zip"
+            />
+            {uploading ? (
+              <div>⏳ Uploading...</div>
+            ) : (
+              <>
+                <div style={{fontSize: 24, marginBottom: 8}}>📎</div>
+                <div style={{color: 'var(--text-secondary)'}}>Click to upload files</div>
+                <div style={{fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4}}>
+                  Max 5 files, 10MB each • Images, PDFs, docs, code
+                </div>
+              </>
+            )}
+          </div>
+          
+          {files.length > 0 && (
+            <div style={{marginTop: 12}}>
+              {files.map((file, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  background: 'var(--bg-tertiary)',
+                  borderRadius: 6,
+                  marginBottom: 6,
+                }}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                    <span>📄</span>
+                    <span style={{fontSize: 14}}>{file.filename}</span>
+                    <span style={{fontSize: 12, color: 'var(--text-tertiary)'}}>({formatSize(file.size)})</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(i)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--danger)',
+                      cursor: 'pointer',
+                      fontSize: 18,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="form-group">
@@ -141,7 +263,7 @@ function PostTask() {
         </div>
 
         <div style={{display: 'flex', gap: 12}}>
-          <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
+          <button type="submit" className="btn btn-primary btn-lg" disabled={loading || uploading}>
             {loading ? 'Posting...' : 'Post Task'}
           </button>
           <button type="button" className="btn btn-secondary btn-lg" onClick={() => navigate('/tasks')}>

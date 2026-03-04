@@ -166,6 +166,37 @@ function TaskDetail() {
         <div style={{marginBottom: 20}}>
           <h3 style={{fontSize: 14, fontWeight: 600, marginBottom: 8, color: 'var(--text-tertiary)'}}>Description</h3>
           <p style={{lineHeight: 1.7}}>{task.description || 'No description provided.'}</p>
+          
+          {task.attachments && task.attachments.length > 0 && (
+            <div style={{marginTop: 20}}>
+              <h4 style={{fontSize: 14, color: 'var(--text-tertiary)', marginBottom: 12}}>📎 Attachments</h4>
+              <div style={{display: 'flex', flexWrap: 'wrap', gap: 8}}>
+                {task.attachments.map((file, i) => (
+                  <a
+                    key={i}
+                    href={file.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '8px 14px',
+                      background: 'var(--bg-tertiary)',
+                      borderRadius: 6,
+                      textDecoration: 'none',
+                      color: 'var(--text-primary)',
+                      fontSize: 13,
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    {file.contentType?.startsWith('image/') ? '🖼️' : '📄'}
+                    {file.filename}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {task.capabilities?.length > 0 && (

@@ -16,12 +16,12 @@ function setupRoutes(app, broadcast) {
   // Create a new task
   app.post('/api/v2/tasks', async (req, res) => {
     try {
-      const { title, description, maxBudget, deadline, capabilities, requester } = req.body;
+      const { title, description, maxBudget, deadline, capabilities, requester, attachments } = req.body;
       if (!title) return res.status(400).json({ error: 'Title required' });
       if (!requester) return res.status(400).json({ error: 'Requester wallet required' });
       if (!isValidSolanaAddress(requester)) return res.status(400).json({ error: 'Invalid requester wallet address' });
       
-      const task = await marketplace.createTask({ title, description, maxBudget: maxBudget || 1.0, deadline, capabilities: capabilities || [], requester });
+      const task = await marketplace.createTask({ title, description, maxBudget: maxBudget || 1.0, deadline, capabilities: capabilities || [], requester, attachments: attachments || [] });
       console.log('[Marketplace] Task created:', task.id);
       
       if (broadcast) broadcast({ type: 'new_task', task });

@@ -107,8 +107,8 @@ async function saveTask(task) {
   const result = await query(`
     INSERT INTO marketplace_tasks (id, title, description, max_budget, deadline, capabilities, 
                                    requester, state, assigned_agent, assigned_bid, result, 
-                                   escrow_tx, escrow_pda, escrow_signature, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+                                   escrow_tx, escrow_pda, escrow_signature, attachments, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
     ON CONFLICT (id) DO UPDATE SET
       state = EXCLUDED.state, assigned_agent = EXCLUDED.assigned_agent,
       assigned_bid = EXCLUDED.assigned_bid, result = EXCLUDED.result,
@@ -117,7 +117,7 @@ async function saveTask(task) {
   `, [task.id, task.title, task.description, task.maxBudget, task.deadline,
       task.capabilities || [], task.requester, task.state, task.assignedAgent,
       task.assignedBid ? JSON.stringify(task.assignedBid) : null, task.result,
-      task.escrowTx, task.escrowPDA, task.escrowSignature, task.createdAt, task.updatedAt]);
+      task.escrowTx, task.escrowPDA, task.escrowSignature, JSON.stringify(task.attachments || []), task.createdAt, task.updatedAt]);
   return result?.rows?.[0] || null;
 }
 
