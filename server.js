@@ -1,3 +1,7 @@
+// Force IPv4 before any network modules load
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+
 /**
  * BlissNexus Beacon Server v2.1
  * Full Agent Coordination Network with Task Marketplace
