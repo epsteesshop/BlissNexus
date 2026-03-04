@@ -78,3 +78,12 @@ BEGIN
     ALTER TABLE marketplace_tasks ADD COLUMN attachments JSONB DEFAULT '[]';
   END IF;
 END $$;
+
+-- Add result_attachments column if not exists
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name = 'marketplace_tasks' AND column_name = 'result_attachments') THEN
+    ALTER TABLE marketplace_tasks ADD COLUMN result_attachments JSONB DEFAULT '[]';
+  END IF;
+END $$;

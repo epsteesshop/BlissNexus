@@ -163,7 +163,7 @@ async function startWork(taskId, agentId) {
 }
 
 // Submit result
-async function submitResult(taskId, agentId, result) {
+async function submitResult(taskId, agentId, result, resultAttachments = []) {
   const task = tasks.get(taskId);
   if (!task) throw new Error('Task not found');
   if (task.assignedAgent !== agentId) throw new Error('Not assigned to you');
@@ -171,6 +171,7 @@ async function submitResult(taskId, agentId, result) {
   
   task.state = TaskState.SUBMITTED;
   task.result = result;
+  task.resultAttachments = resultAttachments;
   task.updatedAt = Date.now();
   
   await db.saveTask(task);

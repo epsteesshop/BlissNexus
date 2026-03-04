@@ -113,9 +113,9 @@ function setupRoutes(app, broadcast) {
   // Submit result
   app.post('/api/v2/tasks/:taskId/submit', async (req, res) => {
     try {
-      const { agentId, result } = req.body;
+      const { agentId, result, attachments } = req.body;
       if (!agentId || !result) return res.status(400).json({ error: 'Agent ID and result required' });
-      const task = await marketplace.submitResult(req.params.taskId, agentId, result);
+      const task = await marketplace.submitResult(req.params.taskId, agentId, result, attachments || []);
       if (broadcast) broadcast({ type: 'result_submitted', taskId: task.id }, task.requester);
       res.json({ success: true, task });
     } catch (e) { res.status(400).json({ error: e.message }); }

@@ -197,6 +197,44 @@ function TaskDetail() {
               </div>
             </div>
           )}
+          
+          {task.result && (
+            <div style={{marginTop: 20, padding: 16, background: 'var(--bg-tertiary)', borderRadius: 8}}>
+              <h4 style={{fontSize: 14, marginBottom: 8}}>📋 Result</h4>
+              <p style={{whiteSpace: 'pre-wrap'}}>{task.result}</p>
+              
+              {task.resultAttachments && task.resultAttachments.length > 0 && (
+                <div style={{marginTop: 12}}>
+                  <h5 style={{fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 8}}>📎 Deliverables</h5>
+                  <div style={{display: 'flex', flexWrap: 'wrap', gap: 8}}>
+                    {task.resultAttachments.map((file, i) => (
+                      <a
+                        key={i}
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '6px 12px',
+                          background: 'var(--bg-secondary)',
+                          borderRadius: 6,
+                          textDecoration: 'none',
+                          color: 'var(--accent)',
+                          fontSize: 13,
+                          border: '1px solid var(--border)',
+                        }}
+                      >
+                        {file.contentType?.startsWith('image/') ? '🖼️' : '📄'}
+                        {file.filename}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {task.capabilities?.length > 0 && (
