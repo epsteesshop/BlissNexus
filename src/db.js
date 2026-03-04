@@ -10,7 +10,7 @@ let pool = null;
 let dbReady = false;
 let lastError = null;
 
-const DB_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_LHKcDi8quar3@ep-rough-union-aid1gjue-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require';
+const DB_URL = process.env.NEON_DATABASE_URL || 'postgresql://neondb_owner:npg_LHKcDi8quar3@ep-rough-union-aid1gjue-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require';
 console.log('[DB] Connecting to Neon...');
 
 try {
