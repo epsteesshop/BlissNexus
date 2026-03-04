@@ -166,6 +166,13 @@ function setupRoutes(app, broadcast) {
 
   console.log('[Marketplace] API v2 routes loaded');
 
+  // Debug - show env vars (masked)
+  app.get("/api/v2/debug/env", (req, res) => {
+    const dbUrl = process.env.DATABASE_URL || "NOT SET";
+    const masked = dbUrl.replace(/:[^:@]+@/, ":****@");
+    res.json({ DATABASE_URL: masked, NODE_ENV: process.env.NODE_ENV });
+  });
+
   // Debug - try DB init
   app.get("/api/v2/debug/db-init", async (req, res) => {
     const db = require("./db");
