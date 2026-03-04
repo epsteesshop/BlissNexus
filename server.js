@@ -28,6 +28,7 @@ if (USE_DB) {
 
 // Federation (multi-beacon scaling)
 const federation = require('./src/federation');
+const marketplaceRoutes = require("./src/marketplace-routes");
 
 
 // ============================================================================
@@ -45,6 +46,21 @@ const BID_WINDOW_MS = 10000; // Time agents have to bid on a task
 
 const agents = new Map();        // agentId -> agent record
 const connections = new Map();   // agentId -> WebSocket
+
+// Broadcast to agents via WebSocket
+function broadcastToAgents(message, targetAgentId = null) {
+  const payload = JSON.stringify(message);
+  if (targetAgentId) {
+    // Send to specific agent
+    const ws = connections.get(targetAgentId);
+    if (ws && ws.readyState === 1) ws.send(payload);
+  } else {
+    // Broadcast to all connected agents
+    connections.forEach((ws, agentId) => {
+      if (ws.readyState === 1) ws.send(payload);
+    });
+  }
+}
 const tasks = new Map();         // taskId -> task record
 const taskBids = new Map();      // taskId -> [bids]
 const capabilities = new Map();  // capability -> { description, agents: Set }
@@ -377,6 +393,9 @@ app.use((req, res, next) => {
   next();
 });
 
+
+// Setup marketplace v2 API routes
+marketplaceRoutes.setupRoutes(app, broadcastToAgents);
 // ============ BUILT-IN BOTS ============
 // Register built-in AI bots on startup
 async function initBuiltInBots() {
