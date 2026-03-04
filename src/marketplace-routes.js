@@ -36,20 +36,20 @@ function setupRoutes(app, broadcast) {
     if (!task) return res.status(404).json({ error: 'Task not found' });
     const response = { ...task };
     if (task.state === 'open' || req.query.requester === task.requester) {
-      response.bids = marketplace.getBids(task.id);
+      response.bids = marketplace.getBidsForTask(task.id);
     }
     res.json(response);
   });
   
   // Get tasks by requester
   app.get('/api/v2/tasks/requester/:wallet', (req, res) => {
-    const tasks = marketplace.getTasksByRequester(req.params.wallet);
+    const tasks = marketplace.getTasksForRequester(req.params.wallet);
     res.json({ tasks, count: tasks.length });
   });
   
   // Get tasks by agent
   app.get('/api/v2/tasks/agent/:agentId', (req, res) => {
-    const tasks = marketplace.getTasksByAgent(req.params.agentId);
+    const tasks = marketplace.getTasksForAgent(req.params.agentId);
     res.json({ tasks, count: tasks.length });
   });
   
@@ -73,7 +73,7 @@ function setupRoutes(app, broadcast) {
   
   // Get bids for task
   app.get('/api/v2/tasks/:taskId/bids', (req, res) => {
-    const bids = marketplace.getBids(req.params.taskId);
+    const bids = marketplace.getBidsForTask(req.params.taskId);
     res.json({ bids, count: bids.length });
   });
   
@@ -149,3 +149,101 @@ function setupRoutes(app, broadcast) {
 }
 
 module.exports = { setupRoutes };
+
+  // ============================================================================
+  // AGENT REST API (for agents without WebSocket)
+  // ============================================================================
+  
+  // Register as an agent (get an agent ID tied to wallet)
+  app.post('/api/v2/agents/register', (req, res) => {
+    try {
+      const { wallet, name, capabilities, endpoint } = req.body;
+      if (!wallet) return res.status(400).json({ error: 'Wallet address required' });
+      
+      // Use wallet as agent ID for simplicity
+      const agentId = wallet;
+      const agent = {
+        agentId,
+        wallet,
+        name: name || `Agent ${wallet.slice(0, 8)}`,
+        capabilities: capabilities || [],
+        endpoint: endpoint || null,  // Optional webhook URL
+        registeredAt: Date.now(),
+      };
+      
+      // Store in db (optional)
+      const db = require('./db');
+      if (db.isReady()) {
+        db.upsertAgent({
+          agentId: agent.agentId,
+          publicKey: wallet,
+          name: agent.name,
+          description: '',
+          capabilities: agent.capabilities,
+          online: true,
+        });
+      }
+      
+      console.log('[Marketplace] Agent registered:', agent.name, '-', wallet.slice(0, 8));
+      res.json({ 
+        success: true, 
+        agent,
+        instructions: {
+          poll_tasks: 'GET /api/v2/tasks/open',
+          submit_bid: 'POST /api/v2/tasks/:taskId/bids { agentId, price, wallet, message }',
+          check_assigned: 'GET /api/v2/tasks/agent/:agentId',
+          start_work: 'POST /api/v2/tasks/:taskId/start { agentId }',
+          submit_result: 'POST /api/v2/tasks/:taskId/submit { agentId, result }',
+        }
+      });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+  
+  // Get agent info
+  app.get('/api/v2/agents/:agentId', async (req, res) => {
+    try {
+      const db = require('./db');
+      const agentId = req.params.agentId;
+      
+      // Get stats
+      const stats = marketplace.getAgentStats(agentId);
+      
+      // Get assigned tasks
+      const tasks = marketplace.getTasksForAgent(agentId);
+      const activeTasks = tasks.filter(t => !['completed', 'cancelled'].includes(t.state));
+      
+      res.json({
+        agentId,
+        stats,
+        activeTasks: activeTasks.length,
+        tasks: activeTasks,
+      });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+  
+  // Get pending payments (tasks completed but not yet paid out on-chain)
+  app.get('/api/v2/agents/:agentId/payments', (req, res) => {
+    try {
+      const agentId = req.params.agentId;
+      const tasks = marketplace.getTasksForAgent(agentId);
+      
+      const pending = tasks.filter(t => t.state === 'completed' && !t.paidOut);
+      const history = tasks.filter(t => t.state === 'completed' && t.paidOut);
+      
+      const pendingTotal = pending.reduce((sum, t) => sum + (t.assignedBid?.price || 0), 0);
+      const earnedTotal = history.reduce((sum, t) => sum + (t.assignedBid?.price || 0), 0);
+      
+      res.json({
+        pending: {
+          count: pending.length,
+          total: pendingTotal,
+          tasks: pending.map(t => ({ id: t.id, title: t.title, amount: t.assignedBid?.price, escrowPDA: t.escrowPDA })),
+        },
+        paid: {
+          count: history.length,
+          total: earnedTotal,
+        },
+        wallet: agentId, // Agent's wallet for receiving payments
+      });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
