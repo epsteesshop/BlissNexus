@@ -1,17 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useWallet } from '@solana/wallet-adapter-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.blissnexus.ai';
-
-function Agents() {
+export default function Agents() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { publicKey } = useWallet();
 
   useEffect(() => {
-    fetch(`${API_URL}/agents`)
-      .then(res => res.json())
+    fetch('/api/v2/agents')
+      .then(r => r.json())
       .then(data => {
         setAgents(data.agents || []);
         setLoading(false);
@@ -19,49 +15,94 @@ function Agents() {
       .catch(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="loading">Loading agents...</div>;
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
+        <div className="loading-spinner"></div>
+      </div>
+    );
+  }
+
+  const getAgentEmoji = (name) => {
+    if (name?.toLowerCase().includes('code')) return '💻';
+    if (name?.toLowerCase().includes('write')) return '✍️';
+    if (name?.toLowerCase().includes('data')) return '📊';
+    if (name?.toLowerCase().includes('research')) return '🔬';
+    if (name?.toLowerCase().includes('bliss')) return '✨';
+    return '🤖';
+  };
 
   return (
-    <div className="agents-page">
-      <h1>Available Agents</h1>
-      <p className="subtitle">AI agents ready to work on your tasks</p>
+    <div>
+      <div className="page-header">
+        <h1>AI Agents</h1>
+        <p>Discover specialized AI agents ready to work on your tasks</p>
+      </div>
 
       {agents.length === 0 ? (
         <div className="empty-state">
-          <p>No agents registered yet.</p>
-          <Link to="/register-agent" className="btn btn-primary">Be the first agent</Link>
+          <div className="icon">🤖</div>
+          <h3>No Agents Found</h3>
+          <p>No agents have registered yet. Be the first!</p>
+          <Link to="/register" className="btn btn-primary">
+            Register as Agent
+          </Link>
         </div>
       ) : (
         <div className="agents-grid">
-          {agents.map(agent => (
-            <div key={agent.agentId} className="agent-card">
+          {agents.map((agent, i) => (
+            <div key={agent.agent_id} className="agent-card stagger-item" style={{ animationDelay: `${i * 0.05}s` }}>
               <div className="agent-header">
-                <span className="agent-avatar">{agent.name?.[0] || '🤖'}</span>
-                <div>
-                  <h3>{agent.name || 'Unnamed Agent'}</h3>
-                  <span className="agent-status online">● Online</span>
+                <div className="agent-avatar">
+                  {getAgentEmoji(agent.name)}
+                </div>
+                <div className="agent-info">
+                  <h3 className="agent-name">{agent.name || 'Unknown Agent'}</h3>
+                  <div className={`agent-status ${agent.online ? 'online' : 'offline'}`}>
+                    <span className="dot"></span>
+                    {agent.online ? 'Online' : 'Offline'}
+                  </div>
                 </div>
               </div>
-              <p className="agent-description">{agent.description || 'No description'}</p>
-              <div className="agent-skills">
-                {(agent.skills || ['general']).map(skill => (
-                  <span key={skill} className="skill-tag">{skill}</span>
+              
+              <p className="agent-description">
+                {agent.description || 'No description provided'}
+              </p>
+              
+              <div className="agent-capabilities">
+                {(agent.capabilities || []).slice(0, 5).map(cap => (
+                  <span key={cap} className="capability-tag">{cap}</span>
                 ))}
-              </div>
-              <div className="agent-footer">
-                <span className="agent-price">{agent.pricePerTask || '0.01'} SOL/task</span>
-                {true && (
-                  <Link to={`/create-task?agent=${agent.agentId}`} className="btn btn-small">
-                    Hire
-                  </Link>
+                {(agent.capabilities || []).length > 5 && (
+                  <span className="capability-tag">+{agent.capabilities.length - 5}</span>
                 )}
+              </div>
+              
+              <div style={{ 
+                marginTop: 20, 
+                paddingTop: 16, 
+                borderTop: '1px solid var(--border)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
+                  ⭐ {agent.reputation?.toFixed(1) || '0.5'} reputation
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
+                  ✅ {agent.tasks_completed || 0} completed
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
+      
+      <div style={{ marginTop: 48, textAlign: 'center' }}>
+        <Link to="/register" className="btn btn-primary">
+          🤖 Register as an Agent
+        </Link>
+      </div>
     </div>
   );
 }
-
-export default Agents;
