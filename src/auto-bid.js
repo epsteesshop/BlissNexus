@@ -10,7 +10,7 @@ async function autoBidFromBots(task, marketplace) {
   for (const bot of botProfiles) {
     // Check if bot has matching capabilities
     const hasCapability = !task.capabilities.length || task.capabilities.some(cap => 
-      bot.capabilities.includes(cap) || bot.capabilities.includes('general')
+      bot.skills.includes(cap) || bot.skills.includes('general')
     );
     
     if (hasCapability) {
@@ -18,12 +18,12 @@ async function autoBidFromBots(task, marketplace) {
       const baseBid = task.maxBudget * (0.6 + Math.random() * 0.3); // 60-90% of max
       const bid = {
         taskId: task.id,
-        agentId: bot.agentId,
+        agentId: bot.id,
         agentName: bot.name,
         price: parseFloat(baseBid.toFixed(4)),
         timeEstimate: '1h',
         message: `I can help with "${task.title}". ${bot.description || ''}`,
-        wallet: bot.agentId
+        wallet: bot.id
       };
       
       try {
