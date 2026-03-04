@@ -320,3 +320,44 @@
 .wallet-adapter-modal-wrapper {
   display: none !important;
 }
+
+/* Connecting state */
+.wallet-selector-option.connecting {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.wallet-selector-status {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* Error message */
+.wallet-selector-error {
+  margin: 0 16px 8px;
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: var(--error);
+  font-size: 13px;
+}
+
+/* Empty state links */
+.wallet-selector-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.wallet-selector-links a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.wallet-selector-links a:hover {
+  text-decoration: underline;
+}
