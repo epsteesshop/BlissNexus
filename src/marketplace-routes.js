@@ -166,6 +166,15 @@ function setupRoutes(app, broadcast) {
 
   console.log('[Marketplace] API v2 routes loaded');
 
+  // Debug - try DB init
+  app.get("/api/v2/debug/db-init", async (req, res) => {
+    const db = require("./db");
+    try {
+      const result = await db.initDB();
+      res.json({ initResult: result, dbReady: db.isReady() });
+    } catch (e) { res.json({ error: e.message, stack: e.stack?.split("\n").slice(0,3) }); }
+  });
+
   // Debug - check DB status
   app.get("/api/v2/debug/db", async (req, res) => {
     const db = require("./db");
