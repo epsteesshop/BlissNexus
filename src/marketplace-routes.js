@@ -170,7 +170,7 @@ function setupRoutes(app, broadcast) {
   app.get("/api/v2/debug/env", (req, res) => {
     const dbUrl = process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL || "NOT SET";
     const masked = dbUrl.replace(/:[^:@]+@/, ":****@");
-    res.json({ DATABASE_URL: masked, DATABASE_PUBLIC_URL: process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET", NODE_ENV: process.env.NODE_ENV });
+    res.json({ DATABASE_URL: masked, actualConnection: db.getConnectionUrl ? db.getConnectionUrl() : "N/A", DATABASE_PUBLIC_URL: process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET", NODE_ENV: process.env.NODE_ENV });
   });
 
   // Debug - try DB init
