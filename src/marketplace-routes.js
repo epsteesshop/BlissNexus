@@ -36,7 +36,10 @@ function setupRoutes(app, broadcast) {
   
   // Get open tasks
   app.get('/api/v2/tasks/open', (req, res) => {
-    const tasks = marketplace.getOpenTasks();
+    const tasks = marketplace.getOpenTasks().map(task => ({
+      ...task,
+      bidCount: marketplace.getBidsForTask(task.id).length
+    }));
     res.json({ tasks, count: tasks.length });
   });
   

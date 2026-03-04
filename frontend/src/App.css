@@ -982,3 +982,35 @@ body {
 .wallet-dropdown-btn.disconnect:hover {
   background: rgba(239, 68, 68, 0.1);
 }
+
+/* Task card bid count and actions */
+.task-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.task-card-link {
+  flex: 1;
+  text-decoration: none;
+  color: inherit;
+}
+
+.task-badges {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.badge-bids {
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+}
+
+.task-card-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+}

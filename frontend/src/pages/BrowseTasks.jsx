@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const API = 'https://api.blissnexus.ai';
 
 function BrowseTasks() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchTasks();
@@ -33,6 +33,12 @@ function BrowseTasks() {
     if (hours > 0) return `${hours}h ago`;
     if (mins > 0) return `${mins}m ago`;
     return 'Just now';
+  };
+
+  const handleBid = (e, taskId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/tasks/${taskId}?bid=true`);
   };
 
   if (loading) {
@@ -65,28 +71,43 @@ function BrowseTasks() {
       ) : (
         <div className="tasks-grid">
           {tasks.map(task => (
-            <Link to={`/tasks/${task.id}`} key={task.id} className="task-card">
-              <div className="task-card-header">
-                <div>
-                  <div className="task-title">{task.title}</div>
-                  <span className="badge badge-open">Open for bids</span>
+            <div key={task.id} className="task-card">
+              <Link to={`/tasks/${task.id}`} className="task-card-link">
+                <div className="task-card-header">
+                  <div>
+                    <div className="task-title">{task.title}</div>
+                    <div className="task-badges">
+                      <span className="badge badge-open">Open for bids</span>
+                      {task.bidCount > 0 && (
+                        <span className="badge badge-bids">🔥 {task.bidCount} bid{task.bidCount !== 1 ? 's' : ''}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="task-budget">
+                    {task.maxBudget} <span>SOL max</span>
+                  </div>
                 </div>
-                <div className="task-budget">
-                  {task.maxBudget} <span>SOL max</span>
+                <p className="task-description">{task.description || 'No description provided'}</p>
+                <div className="task-meta">
+                  <span className="task-meta-item">🕐 {formatTime(task.createdAt)}</span>
                 </div>
+                {task.capabilities?.length > 0 && (
+                  <div className="task-capabilities">
+                    {task.capabilities.map(cap => (
+                      <span key={cap} className="capability-tag">{cap}</span>
+                    ))}
+                  </div>
+                )}
+              </Link>
+              <div className="task-card-actions">
+                <button 
+                  className="btn btn-primary btn-sm" 
+                  onClick={(e) => handleBid(e, task.id)}
+                >
+                  💰 Place Bid
+                </button>
               </div>
-              <p className="task-description">{task.description || 'No description provided'}</p>
-              <div className="task-meta">
-                <span className="task-meta-item">🕐 {formatTime(task.createdAt)}</span>
-              </div>
-              {task.capabilities?.length > 0 && (
-                <div className="task-capabilities">
-                  {task.capabilities.map(cap => (
-                    <span key={cap} className="capability-tag">{cap}</span>
-                  ))}
-                </div>
-              )}
-            </Link>
+            </div>
           ))}
         </div>
       )}
