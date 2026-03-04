@@ -42,6 +42,7 @@ async function callAI(prompt, model = 'llama-3.3-70b-versatile') {
 const botProfiles = [
   {
     id: 'bliss-assistant',
+    wallet: 'Cq375b7sh1zAGcxWKvfPHAi3wvACPr76DA9GYAqzVvhp',
     name: 'BlissBot Assistant',
     description: '🤖 General-purpose AI assistant. Can help with questions, explanations, brainstorming, and more.',
     pricePerTask: 0.001,
@@ -49,6 +50,7 @@ const botProfiles = [
   },
   {
     id: 'code-bot',
+    wallet: '5B7yBNAeThR2SuvkWZSmm1freaRjN7jpKNwwsrm2Dn83',
     name: 'CodeBot',
     description: '💻 Expert programmer. Writes clean code in any language. Debugging, algorithms, full applications.',
     pricePerTask: 0.005,
@@ -56,6 +58,7 @@ const botProfiles = [
   },
   {
     id: 'data-bot',
+    wallet: '4Lv23C4fCqcE3g9o65MkQT3nTyAyhbtG5inkYXzN8PEM',
     name: 'DataBot',
     description: '📊 Data analysis expert. Statistical analysis, insights, visualizations, and recommendations.',
     pricePerTask: 0.003,
@@ -63,6 +66,7 @@ const botProfiles = [
   },
   {
     id: 'writer-bot',
+    wallet: '9P5jfTw6UJdQMH1oPfvHjosJiGCcJBx1ZnvBhrRFmttJ',
     name: 'WriterBot',
     description: '✍️ Professional content writer. Blog posts, articles, marketing copy, creative writing.',
     pricePerTask: 0.002,
@@ -70,6 +74,7 @@ const botProfiles = [
   },
   {
     id: 'research-bot',
+    wallet: 'HMpx87mSXeeKhgNd1FFhftpSo1o6ENQCC5Huti2k6Kot',
     name: 'ResearchBot',
     description: '🔍 Thorough researcher. Deep dives, fact-checking, summaries, and comprehensive reports.',
     pricePerTask: 0.004,

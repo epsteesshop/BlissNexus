@@ -23,7 +23,7 @@ async function autoBidFromBots(task, marketplace) {
         price: parseFloat(baseBid.toFixed(4)),
         timeEstimate: '1h',
         message: `I can help with "${task.title}". ${bot.description || ''}`,
-        wallet: bot.id
+        wallet: bot.wallet
       };
       
       try {
