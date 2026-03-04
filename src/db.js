@@ -10,17 +10,30 @@ let pool = null;
 let dbReady = false;
 let lastError = null;
 
-// Connection URL priority: PG_CONNECTION > DATABASE_URL > fallback
-const DB_URL = process.env.PG_CONNECTION 
-  || process.env.DATABASE_URL 
-  || 'postgres://blissnexus:bn_secure_2026@maglev.proxy.rlwy.net:41600/blissnexus';
+// Get the best available database URL
+function getDbUrl() {
+  // Priority 1: PG_CONNECTION (explicit override)
+  if (process.env.PG_CONNECTION) {
+    return process.env.PG_CONNECTION;
+  }
+  
+  // Priority 2: DATABASE_URL (if not internal)
+  const dbUrl = process.env.DATABASE_URL || '';
+  if (dbUrl && !dbUrl.includes('.internal')) {
+    return dbUrl;
+  }
+  
+  // Priority 3: Hardcoded fallback (Railway public proxy)
+  return 'postgres://blissnexus:bn_secure_2026@maglev.proxy.rlwy.net:41600/blissnexus';
+}
 
-console.log('[DB] Using connection:', DB_URL.replace(/:[^:@]+@/, ':****@'));
+const DB_URL = getDbUrl();
+console.log('[DB] Using:', DB_URL.replace(/:[^:@]+@/, ':****@'));
 
 try {
   pool = new Pool({
     connectionString: DB_URL,
-    ssl: DB_URL.includes('railway') ? { rejectUnauthorized: false } : false,
+    ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 10000,
     max: 5
   });
@@ -53,7 +66,7 @@ async function initDB() {
       }
       dbReady = true;
       lastError = null;
-      console.log('[DB] Ready');
+      console.log('[DB] Ready!');
       return { success: true };
     } finally {
       client.release();
