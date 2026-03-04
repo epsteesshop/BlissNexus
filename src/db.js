@@ -1,6 +1,6 @@
 /**
  * BlissNexus Database Layer
- * PostgreSQL persistence - fails gracefully if unavailable
+ * PostgreSQL persistence
  */
 
 const { Pool } = require('pg');
@@ -9,54 +9,67 @@ const path = require('path');
 
 let pool = null;
 let dbReady = false;
+let lastError = null;
 
-// Try to create pool (don't crash if it fails)
+// Create pool
 try {
   if (process.env.DATABASE_URL) {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false },
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 10000,
       max: 5
     });
     pool.on('error', (err) => {
       console.error('[DB] Pool error:', err.message);
+      lastError = err.message;
     });
+    console.log('[DB] Pool created');
   }
 } catch (err) {
   console.error('[DB] Failed to create pool:', err.message);
+  lastError = err.message;
 }
 
 async function initDB() {
   if (!pool) {
+    lastError = 'No pool (DATABASE_URL not set?)';
     console.log('[DB] No database configured');
-    return false;
+    return { success: false, error: lastError };
   }
   
   try {
+    console.log('[DB] Connecting...');
     const client = await pool.connect();
+    console.log('[DB] Connected!');
     try {
       const schemaPath = path.join(__dirname, '..', 'db', 'schema.sql');
+      console.log('[DB] Schema path:', schemaPath);
       if (fs.existsSync(schemaPath)) {
         const schema = fs.readFileSync(schemaPath, 'utf8');
+        console.log('[DB] Running schema...');
         await client.query(schema);
+        console.log('[DB] Schema applied');
+      } else {
+        console.log('[DB] No schema file found');
       }
       dbReady = true;
-      console.log('[DB] PostgreSQL connected and schema initialized');
-      return true;
+      lastError = null;
+      console.log('[DB] PostgreSQL ready');
+      return { success: true };
     } finally {
       client.release();
     }
   } catch (err) {
+    lastError = err.message;
     console.error('[DB] Init failed:', err.message);
-    console.log('[DB] Running without persistence');
-    return false;
+    return { success: false, error: err.message };
   }
 }
 
 function isReady() { return dbReady; }
+function getLastError() { return lastError; }
 
-// Safe query wrapper
 async function query(sql, params) {
   if (!dbReady || !pool) return null;
   try {
@@ -67,10 +80,7 @@ async function query(sql, params) {
   }
 }
 
-// ============================================================================
 // AGENTS
-// ============================================================================
-
 async function getAgent(agentId) {
   const result = await query('SELECT * FROM agents WHERE agent_id = $1', [agentId]);
   return result?.rows?.[0] || null;
@@ -118,28 +128,7 @@ async function heartbeatAgent(agentId) {
   await query('UPDATE agents SET last_seen = NOW() WHERE agent_id = $1', [agentId]);
 }
 
-// ============================================================================
-// STATS
-// ============================================================================
-
-async function getNetworkStats() {
-  if (!dbReady) return null;
-  const agents = await query(`SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE online = TRUE) as online FROM agents`);
-  const tasks = await query(`SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = 'open') as open FROM tasks`);
-  if (!agents || !tasks) return null;
-  return { agents: agents.rows[0], tasks: tasks.rows[0] };
-}
-
-module.exports = {
-  initDB, isReady, query,
-  getAgent, upsertAgent, setAgentOnline, getAllAgents, getAgentsByCapability, heartbeatAgent,
-  getNetworkStats
-};
-
-// ============================================================================
 // MARKETPLACE TASKS
-// ============================================================================
-
 async function saveTask(task) {
   if (!dbReady) return null;
   const result = await query(`
@@ -148,14 +137,10 @@ async function saveTask(task) {
                                    escrow_tx, escrow_pda, escrow_signature, created_at, updated_at)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
     ON CONFLICT (id) DO UPDATE SET
-      state = EXCLUDED.state,
-      assigned_agent = EXCLUDED.assigned_agent,
-      assigned_bid = EXCLUDED.assigned_bid,
-      result = EXCLUDED.result,
-      escrow_tx = EXCLUDED.escrow_tx,
-      escrow_pda = EXCLUDED.escrow_pda,
-      escrow_signature = EXCLUDED.escrow_signature,
-      updated_at = EXCLUDED.updated_at
+      state = EXCLUDED.state, assigned_agent = EXCLUDED.assigned_agent,
+      assigned_bid = EXCLUDED.assigned_bid, result = EXCLUDED.result,
+      escrow_tx = EXCLUDED.escrow_tx, escrow_pda = EXCLUDED.escrow_pda,
+      escrow_signature = EXCLUDED.escrow_signature, updated_at = EXCLUDED.updated_at
     RETURNING *
   `, [
     task.id, task.title, task.description, task.maxBudget, task.deadline,
@@ -193,29 +178,18 @@ async function getTasksByAgent(agentId) {
 
 function dbRowToTask(row) {
   return {
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    maxBudget: parseFloat(row.max_budget),
-    deadline: row.deadline,
-    capabilities: row.capabilities || [],
-    requester: row.requester,
-    state: row.state,
-    assignedAgent: row.assigned_agent,
+    id: row.id, title: row.title, description: row.description,
+    maxBudget: parseFloat(row.max_budget), deadline: row.deadline,
+    capabilities: row.capabilities || [], requester: row.requester,
+    state: row.state, assignedAgent: row.assigned_agent,
     assignedBid: row.assigned_bid ? (typeof row.assigned_bid === 'string' ? JSON.parse(row.assigned_bid) : row.assigned_bid) : null,
-    result: row.result,
-    escrowTx: row.escrow_tx,
-    escrowPDA: row.escrow_pda,
+    result: row.result, escrowTx: row.escrow_tx, escrowPDA: row.escrow_pda,
     escrowSignature: row.escrow_signature,
-    createdAt: parseInt(row.created_at),
-    updatedAt: parseInt(row.updated_at),
+    createdAt: parseInt(row.created_at), updatedAt: parseInt(row.updated_at),
   };
 }
 
-// ============================================================================
-// MARKETPLACE BIDS
-// ============================================================================
-
+// BIDS
 async function saveBid(bid) {
   if (!dbReady) return null;
   const result = await query(`
@@ -230,31 +204,17 @@ async function saveBid(bid) {
 async function getBidsForTask(taskId) {
   const result = await query('SELECT * FROM marketplace_bids WHERE task_id = $1 ORDER BY price ASC', [taskId]);
   return result?.rows?.map(row => ({
-    id: row.id,
-    taskId: row.task_id,
-    agentId: row.agent_id,
-    agentName: row.agent_name,
-    price: parseFloat(row.price),
-    timeEstimate: row.time_estimate,
-    message: row.message,
-    wallet: row.wallet,
-    status: row.status,
-    createdAt: parseInt(row.created_at),
+    id: row.id, taskId: row.task_id, agentId: row.agent_id, agentName: row.agent_name,
+    price: parseFloat(row.price), timeEstimate: row.time_estimate, message: row.message,
+    wallet: row.wallet, status: row.status, createdAt: parseInt(row.created_at),
   })) || [];
 }
 
-// ============================================================================
 // AGENT STATS
-// ============================================================================
-
 async function getAgentStats(agentId) {
   const result = await query('SELECT * FROM agent_stats WHERE agent_id = $1', [agentId]);
   if (result?.rows?.[0]) {
-    return {
-      completed: result.rows[0].completed,
-      rating: parseFloat(result.rows[0].rating),
-      totalEarned: parseFloat(result.rows[0].total_earned),
-    };
+    return { completed: result.rows[0].completed, rating: parseFloat(result.rows[0].rating), totalEarned: parseFloat(result.rows[0].total_earned) };
   }
   return { completed: 0, rating: 0, totalEarned: 0 };
 }
@@ -264,21 +224,23 @@ async function updateAgentStats(agentId, stats) {
   await query(`
     INSERT INTO agent_stats (agent_id, completed, rating, total_earned)
     VALUES ($1, $2, $3, $4)
-    ON CONFLICT (agent_id) DO UPDATE SET
-      completed = EXCLUDED.completed,
-      rating = EXCLUDED.rating,
-      total_earned = EXCLUDED.total_earned
+    ON CONFLICT (agent_id) DO UPDATE SET completed = EXCLUDED.completed, rating = EXCLUDED.rating, total_earned = EXCLUDED.total_earned
   `, [agentId, stats.completed, stats.rating, stats.totalEarned]);
 }
 
-// Add to exports
-module.exports.saveTask = saveTask;
-module.exports.getTask = getTask;
-module.exports.getAllTasks = getAllTasks;
-module.exports.getOpenTasks = getOpenTasks;
-module.exports.getTasksByRequester = getTasksByRequester;
-module.exports.getTasksByAgent = getTasksByAgent;
-module.exports.saveBid = saveBid;
-module.exports.getBidsForTask = getBidsForTask;
-module.exports.getAgentStats = getAgentStats;
-module.exports.updateAgentStats = updateAgentStats;
+async function getNetworkStats() {
+  if (!dbReady) return null;
+  const agents = await query(`SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE online = TRUE) as online FROM agents`);
+  const tasks = await query(`SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE state = 'open') as open FROM marketplace_tasks`);
+  if (!agents || !tasks) return null;
+  return { agents: agents.rows[0], tasks: tasks.rows[0] };
+}
+
+module.exports = {
+  initDB, isReady, getLastError, query,
+  getAgent, upsertAgent, setAgentOnline, getAllAgents, getAgentsByCapability, heartbeatAgent,
+  saveTask, getTask, getAllTasks, getOpenTasks, getTasksByRequester, getTasksByAgent,
+  saveBid, getBidsForTask,
+  getAgentStats, updateAgentStats,
+  getNetworkStats
+};

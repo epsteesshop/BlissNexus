@@ -171,7 +171,7 @@ function setupRoutes(app, broadcast) {
     const db = require("./db");
     try {
       const result = await db.initDB();
-      res.json({ initResult: result, dbReady: db.isReady() });
+      res.json({ initResult: result, dbReady: db.isReady(), lastError: db.getLastError() });
     } catch (e) { res.json({ error: e.message, stack: e.stack?.split("\n").slice(0,3) }); }
   });
 
