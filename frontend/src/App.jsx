@@ -1,119 +1,73 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { useWallet } from '@solana/wallet-adapter-react';
-import './App.css';
-import '@solana/wallet-adapter-react-ui/styles.css';
+import { useMemo, useCallback } from 'react';
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
+import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { clusterApiUrl } from '@solana/web3.js';
 
-// Pages
+import Navbar from './components/Navbar';
+import RequireWallet from './components/RequireWallet';
 import Home from './pages/Home';
 import BrowseTasks from './pages/BrowseTasks';
-import Agents from './pages/Agents';
-import PostTask from './pages/PostTask';
 import TaskDetail from './pages/TaskDetail';
-import RegisterAgent from './pages/RegisterAgent';
+import PostTask from './pages/PostTask';
 import MyTasks from './pages/MyTasks';
+import AgentDashboard from './pages/AgentDashboard';
+import BecomeAgent from './pages/BecomeAgent';
 
-// Theme hook
-function useTheme() {
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') || 'light';
-    }
-    return 'light';
-  });
+import '@solana/wallet-adapter-react-ui/styles.css';
+import './App.css';
+import './wallet.css';
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(t => t === 'light' ? 'dark' : 'light');
-  };
-
-  return { theme, toggleTheme };
-}
-
-function Navbar() {
-  const { connected } = useWallet();
-  const { theme, toggleTheme } = useTheme();
+function App() {
+  const endpoint = useMemo(() => clusterApiUrl('devnet'), []);
   
-  return (
-    <nav className="navbar">
-      <div className="nav-left">
-        <NavLink to="/" className="logo">
-          <span className="logo-icon">⚡</span>
-          <span className="logo-text">BlissNexus</span>
-        </NavLink>
-        
-        <div className="nav-links">
-          <NavLink to="/tasks" className={({ isActive }) => isActive ? 'active' : ''}>
-            Browse Tasks
-          </NavLink>
-          <NavLink to="/agents" className={({ isActive }) => isActive ? 'active' : ''}>
-            Agents
-          </NavLink>
-          {connected && (
-            <>
-              <NavLink to="/tasks/new" className={({ isActive }) => isActive ? 'active' : ''}>
-                Post Task
-              </NavLink>
-              <NavLink to="/my-tasks" className={({ isActive }) => isActive ? 'active' : ''}>
-                My Tasks
-              </NavLink>
-            </>
-          )}
-        </div>
-      </div>
-      
-      <div className="nav-right">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙' : '☀️'}
-        </button>
-        <WalletMultiButton />
-      </div>
-    </nav>
-  );
-}
+  const wallets = useMemo(() => [
+    new PhantomWalletAdapter(),
+    new SolflareWalletAdapter(),
+  ], []);
 
-export default function App() {
-  // Initialize theme on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', saved);
+  const onError = useCallback((error) => {
+    console.error('Wallet error:', error);
   }, []);
 
   return (
-    <BrowserRouter>
-      <div className="app">
-        <Navbar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/tasks" element={<BrowseTasks />} />
-            <Route path="/tasks/new" element={<PostTask />} />
-            <Route path="/tasks/:id" element={<TaskDetail />} />
-            <Route path="/agents" element={<Agents />} />
-            <Route path="/register" element={<RegisterAgent />} />
-            <Route path="/my-tasks" element={<MyTasks />} />
-          </Routes>
-        </main>
-        
-        <footer style={{
-          padding: '24px 32px',
-          borderTop: '1px solid var(--border)',
-          textAlign: 'center',
-          color: 'var(--text-tertiary)',
-          fontSize: 14
-        }}>
-          <p>BlissNexus — AI Agent Marketplace on Solana</p>
-        </footer>
-      </div>
-    </BrowserRouter>
+    <ConnectionProvider endpoint={endpoint}>
+      <WalletProvider wallets={wallets} autoConnect={true} onError={onError}>
+        <WalletModalProvider>
+          <BrowserRouter basename="/app">
+            <div className="app">
+              <Navbar />
+              <main className="main-content">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/tasks" element={<BrowseTasks />} />
+                  <Route path="/tasks/:taskId" element={<TaskDetail />} />
+                  <Route path="/become-agent" element={<BecomeAgent />} />
+                  
+                  <Route path="/post" element={
+                    <RequireWallet message="Connect your wallet to post tasks.">
+                      <PostTask />
+                    </RequireWallet>
+                  } />
+                  <Route path="/my-tasks" element={
+                    <RequireWallet message="Connect your wallet to view your tasks.">
+                      <MyTasks />
+                    </RequireWallet>
+                  } />
+                  <Route path="/agent" element={
+                    <RequireWallet message="Connect your wallet to access your dashboard.">
+                      <AgentDashboard />
+                    </RequireWallet>
+                  } />
+                </Routes>
+              </main>
+            </div>
+          </BrowserRouter>
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
   );
 }
+
+export default App;

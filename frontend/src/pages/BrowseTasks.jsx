@@ -1,124 +1,111 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { Link, useNavigate } from 'react-router-dom';
 
-export default function BrowseTasks() {
+const API = 'https://api.blissnexus.ai';
+
+function BrowseTasks() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { publicKey } = useWallet();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('/api/v2/tasks/open')
-      .then(r => r.json())
-      .then(data => {
-        setTasks(data.tasks || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    fetchTasks();
   }, []);
 
-  const handleBid = async (taskId) => {
-    if (!publicKey) {
-      alert('Please connect your wallet first');
-      return;
-    }
-    
-    const price = prompt('Enter your bid amount in SOL:');
-    if (!price) return;
-    
-    const message = prompt('Enter a message for the client (optional):') || '';
-    
+  const fetchTasks = async () => {
     try {
-      const res = await fetch(`/api/v2/tasks/${taskId}/bids`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          agentId: publicKey.toString(),
-          agentName: 'Wallet User',
-          price: parseFloat(price),
-          wallet: publicKey.toString(),
-          message
-        })
-      });
-      
+      const res = await fetch(`${API}/api/v2/tasks/open`);
       const data = await res.json();
-      if (data.error) {
-        alert('Error: ' + data.error);
-      } else {
-        alert('Bid submitted successfully!');
-        // Refresh tasks
-        const updated = await fetch('/api/v2/tasks/open').then(r => r.json());
-        setTasks(updated.tasks || []);
-      }
-    } catch (err) {
-      alert('Failed to submit bid');
+      setTasks(data.tasks || []);
+    } catch (e) {
+      console.error('Failed to fetch tasks:', e);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const formatTime = (ts) => {
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(mins / 60);
+    const days = Math.floor(hours / 24);
+    if (days > 0) return `${days}d ago`;
+    if (hours > 0) return `${hours}h ago`;
+    if (mins > 0) return `${mins}m ago`;
+    return 'Just now';
+  };
+
+  const handleBid = (e, taskId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/tasks/${taskId}?bid=true`);
+  };
+
   if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
-        <div className="loading-spinner"></div>
-      </div>
-    );
+    return <div className="loading"><div className="spinner"></div> Loading tasks...</div>;
   }
 
   return (
     <div>
       <div className="page-header">
-        <h1>Browse Tasks</h1>
-        <p>Find tasks that match your expertise and submit competitive bids</p>
+        <h1 className="page-title">Browse Tasks</h1>
+        <p className="page-subtitle">Find tasks that match your skills and submit competitive bids</p>
+      </div>
+
+      <div className="tasks-toolbar" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24}}>
+        <div className="tasks-count" style={{color: 'var(--text-tertiary)', fontSize: 14}}>
+          {tasks.length} open {tasks.length === 1 ? 'task' : 'tasks'}
+        </div>
+        <button className="btn btn-secondary btn-sm" onClick={fetchTasks}>
+          ↻ Refresh
+        </button>
       </div>
 
       {tasks.length === 0 ? (
         <div className="empty-state">
-          <div className="icon">📋</div>
-          <h3>No Open Tasks</h3>
-          <p>There are no tasks available right now. Check back later or post your own task.</p>
-          <Link to="/tasks/new" className="btn btn-primary">
-            Post a Task
-          </Link>
+          <div className="empty-icon">📭</div>
+          <div className="empty-title">No open tasks</div>
+          <div className="empty-text">Check back soon or post your own task</div>
+          <Link to="/post" className="btn btn-primary">Post a Task</Link>
         </div>
       ) : (
         <div className="tasks-grid">
-          {tasks.map((task, i) => (
-            <div key={task.id} className="task-card stagger-item" style={{ animationDelay: `${i * 0.05}s` }}>
-              <div className="task-header">
-                <h3 className="task-title">{task.title}</h3>
-                <span className="task-budget">{task.maxBudget} SOL</span>
-              </div>
-              
-              <p className="task-description">{task.description}</p>
-              
-              <div className="task-meta">
-                {(task.capabilities || []).map(cap => (
-                  <span key={cap} className="task-tag">{cap}</span>
-                ))}
-              </div>
-              
-              {task.attachments?.length > 0 && (
-                <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--text-tertiary)' }}>
-                  📎 {task.attachments.length} attachment{task.attachments.length > 1 ? 's' : ''}
+          {tasks.map(task => (
+            <div key={task.id} className="task-card">
+              <Link to={`/tasks/${task.id}`} className="task-card-link">
+                <div className="task-card-header">
+                  <div>
+                    <div className="task-title">{task.title}</div>
+                    <div className="task-badges">
+                      <span className="badge badge-open">Open for bids</span>
+                      {task.bidCount > 0 && (
+                        <span className="badge badge-bids">🔥 {task.bidCount} bid{task.bidCount !== 1 ? 's' : ''}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="task-budget">
+                    {task.maxBudget} <span>SOL max</span>
+                  </div>
                 </div>
-              )}
-              
-              <div className="task-footer">
-                <div className="task-bids">
-                  <span>Bids:</span>
-                  <span className="count">{task.bidCount || 0}</span>
+                <p className="task-description">{task.description || 'No description provided'}</p>
+                <div className="task-meta">
+                  <span className="task-meta-item">🕐 {formatTime(task.createdAt)}</span>
                 </div>
-                
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Link to={`/tasks/${task.id}`} className="btn btn-secondary btn-sm">
-                    View Details
-                  </Link>
-                  <button 
-                    onClick={() => handleBid(task.id)} 
-                    className="btn btn-primary btn-sm"
-                  >
-                    Bid Now
-                  </button>
-                </div>
+                {task.capabilities?.length > 0 && (
+                  <div className="task-capabilities">
+                    {task.capabilities.map(cap => (
+                      <span key={cap} className="capability-tag">{cap}</span>
+                    ))}
+                  </div>
+                )}
+              </Link>
+              <div className="task-card-actions">
+                <button 
+                  className="btn btn-primary btn-sm" 
+                  onClick={(e) => handleBid(e, task.id)}
+                >
+                  Bid Now
+                </button>
               </div>
             </div>
           ))}
@@ -127,3 +114,5 @@ export default function BrowseTasks() {
     </div>
   );
 }
+
+export default BrowseTasks;

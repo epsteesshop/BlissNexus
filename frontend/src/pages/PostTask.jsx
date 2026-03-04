@@ -1,27 +1,32 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 
-const CAPABILITY_OPTIONS = [
-  'coding', 'writing', 'research', 'data-analysis', 
-  'creative', 'debugging', 'automation', 'general'
+const API = 'https://api.blissnexus.ai';
+
+const CAPABILITIES = [
+  'coding', 'writing', 'data-analysis', 'research', 'design',
+  'translation', 'summarization', 'customer-support', 'content-creation'
 ];
 
-export default function PostTask() {
+function PostTask() {
   const navigate = useNavigate();
-  const { publicKey, connected } = useWallet();
-  const [loading, setLoading] = useState(false);
-  const [files, setFiles] = useState([]);
-  const [dragOver, setDragOver] = useState(false);
-  
+  const { publicKey } = useWallet();
+  const wallet = publicKey?.toBase58() || 'demo-wallet';
+  const fileInputRef = useRef(null);
+
   const [form, setForm] = useState({
     title: '',
     description: '',
-    maxBudget: '',
-    capabilities: []
+    maxBudget: '0.1',
+    capabilities: [],
   });
+  const [files, setFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleCapabilityToggle = (cap) => {
+  const toggleCapability = (cap) => {
     setForm(f => ({
       ...f,
       capabilities: f.capabilities.includes(cap)
@@ -30,56 +35,58 @@ export default function PostTask() {
     }));
   };
 
-  const handleFiles = (newFiles) => {
-    const fileList = Array.from(newFiles).slice(0, 5 - files.length);
-    setFiles(prev => [...prev, ...fileList].slice(0, 5));
-  };
+  const handleFileSelect = async (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    if (selectedFiles.length === 0) return;
+    
+    // Max 5 files, 10MB each
+    const validFiles = selectedFiles.filter(f => f.size <= 10 * 1024 * 1024);
+    if (validFiles.length !== selectedFiles.length) {
+      setError('Some files exceeded 10MB limit');
+    }
+    
+    if (files.length + validFiles.length > 5) {
+      setError('Maximum 5 files allowed');
+      return;
+    }
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    handleFiles(e.dataTransfer.files);
+    setUploading(true);
+    setError('');
+    
+    try {
+      const formData = new FormData();
+      validFiles.forEach(f => formData.append('files', f));
+      
+      const res = await fetch(`${API}/api/v2/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      setFiles(prev => [...prev, ...data.files]);
+    } catch (e) {
+      setError('Upload failed: ' + e.message);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const removeFile = (index) => {
-    setFiles(files.filter((_, i) => i !== index));
-  };
-
-  const uploadFiles = async () => {
-    if (files.length === 0) return [];
-    
-    const formData = new FormData();
-    files.forEach(f => formData.append('files', f));
-    
-    const res = await fetch('/api/v2/upload', {
-      method: 'POST',
-      body: formData
-    });
-    
-    const data = await res.json();
-    return data.files || [];
+    setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!connected || !publicKey) {
-      alert('Please connect your wallet first');
-      return;
-    }
-    
-    if (!form.title || !form.description || !form.maxBudget) {
-      alert('Please fill in all required fields');
-      return;
-    }
+    if (!form.title) return setError('Enter a title');
+    if (!form.description) return setError('Enter a description');
     
     setLoading(true);
-    
+    setError('');
+
     try {
-      // Upload files first
-      const attachments = await uploadFiles();
-      
-      const res = await fetch('/api/v2/tasks', {
+      const res = await fetch(`${API}/api/v2/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -87,51 +94,44 @@ export default function PostTask() {
           description: form.description,
           maxBudget: parseFloat(form.maxBudget),
           capabilities: form.capabilities,
-          requester: publicKey.toString(),
-          attachments
-        })
+          requester: wallet,
+          attachments: files.map(f => ({ url: f.url, filename: f.filename, contentType: f.contentType, size: f.size })),
+        }),
       });
-      
       const data = await res.json();
-      
-      if (data.error) {
-        alert('Error: ' + data.error);
-      } else {
-        navigate(`/tasks/${data.task.id}`);
-      }
-    } catch (err) {
-      alert('Failed to create task');
+      if (!res.ok) throw new Error(data.error);
+      navigate(`/tasks/${data.task.id}`);
+    } catch (e) {
+      setError(e.message);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!connected) {
-    return (
-      <div className="empty-state">
-        <div className="icon">🔗</div>
-        <h3>Connect Your Wallet</h3>
-        <p>You need to connect your Solana wallet to post a task</p>
-      </div>
-    );
-  }
+  const formatSize = (bytes) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto' }}>
+    <div style={{maxWidth: 700, margin: '0 auto'}}>
       <div className="page-header">
-        <h1>Post a Task</h1>
-        <p>Describe your task and AI agents will compete to help you</p>
+        <h1 className="page-title">Post a Task</h1>
+        <p className="page-subtitle">Describe your task and set your budget. Agents will compete for your work.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="card" style={{ padding: 32 }}>
+      {error && <div className="alert alert-error">{error}</div>}
+
+      <form onSubmit={handleSubmit} className="card">
         <div className="form-group">
           <label className="form-label">Task Title *</label>
           <input
             type="text"
             className="form-input"
-            placeholder="e.g., Write a Python web scraper"
+            placeholder="e.g., Write a blog post about AI"
             value={form.title}
-            onChange={e => setForm({ ...form, title: e.target.value })}
+            onChange={e => setForm({...form, title: e.target.value})}
           />
         </div>
 
@@ -139,100 +139,75 @@ export default function PostTask() {
           <label className="form-label">Description *</label>
           <textarea
             className="form-textarea"
-            placeholder="Describe what you need done. Be specific about requirements, deliverables, and any constraints..."
+            placeholder="Describe your task in detail. What do you need? What's the expected output? Any specific requirements?"
             value={form.description}
-            onChange={e => setForm({ ...form, description: e.target.value })}
+            onChange={e => setForm({...form, description: e.target.value})}
+            style={{minHeight: 150}}
           />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Maximum Budget (SOL) *</label>
-          <input
-            type="number"
-            step="0.01"
-            min="0.01"
-            className="form-input"
-            placeholder="0.50"
-            value={form.maxBudget}
-            onChange={e => setForm({ ...form, maxBudget: e.target.value })}
-          />
-          <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 8 }}>
-            Agents will bid at or below this amount
-          </p>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Required Capabilities</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-            {CAPABILITY_OPTIONS.map(cap => (
-              <button
-                key={cap}
-                type="button"
-                onClick={() => handleCapabilityToggle(cap)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: 'var(--radius-full)',
-                  border: '1px solid',
-                  borderColor: form.capabilities.includes(cap) ? 'var(--accent)' : 'var(--border)',
-                  background: form.capabilities.includes(cap) ? 'rgba(99, 102, 241, 0.2)' : 'var(--glass-bg)',
-                  color: form.capabilities.includes(cap) ? 'var(--accent)' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  transition: 'all var(--transition)'
-                }}
-              >
-                {cap}
-              </button>
-            ))}
-          </div>
+          <p className="form-hint">Be specific to get better bids from agents</p>
         </div>
 
         <div className="form-group">
           <label className="form-label">Attachments</label>
-          <div
-            className={`file-upload-zone ${dragOver ? 'drag-over' : ''}`}
-            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={handleDrop}
-            onClick={() => document.getElementById('file-input').click()}
+          <div 
+            className="file-drop-zone"
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              border: '2px dashed var(--border)',
+              borderRadius: 8,
+              padding: 24,
+              textAlign: 'center',
+              cursor: 'pointer',
+              background: 'var(--bg-secondary)',
+            }}
           >
-            <div className="icon">📁</div>
-            <p>Drag and drop files here, or click to browse</p>
-            <p className="hint">Max 5 files, 10MB each (images, PDF, text, JSON, ZIP)</p>
             <input
-              id="file-input"
+              ref={fileInputRef}
               type="file"
               multiple
-              style={{ display: 'none' }}
-              onChange={e => handleFiles(e.target.files)}
+              onChange={handleFileSelect}
+              style={{display: 'none'}}
+              accept="image/*,.pdf,.doc,.docx,.txt,.csv,.json,.zip"
             />
+            {uploading ? (
+              <div>⏳ Uploading...</div>
+            ) : (
+              <>
+                <div style={{fontSize: 24, marginBottom: 8}}>📎</div>
+                <div style={{color: 'var(--text-secondary)'}}>Click to upload files</div>
+                <div style={{fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4}}>
+                  Max 5 files, 10MB each • Images, PDFs, docs, code
+                </div>
+              </>
+            )}
           </div>
           
           {files.length > 0 && (
-            <div style={{ marginTop: 16, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <div style={{marginTop: 12}}>
               {files.map((file, i) => (
                 <div key={i} style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8,
+                  justifyContent: 'space-between',
                   padding: '8px 12px',
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius)',
-                  fontSize: 13
+                  background: 'var(--bg-tertiary)',
+                  borderRadius: 6,
+                  marginBottom: 6,
                 }}>
-                  <span>📄 {file.name}</span>
+                  <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                    <span>📄</span>
+                    <span style={{fontSize: 14}}>{file.filename}</span>
+                    <span style={{fontSize: 12, color: 'var(--text-tertiary)'}}>({formatSize(file.size)})</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeFile(i)}
                     style={{
                       background: 'none',
                       border: 'none',
-                      color: 'var(--error)',
+                      color: 'var(--danger)',
                       cursor: 'pointer',
-                      padding: 0,
-                      fontSize: 16
+                      fontSize: 18,
                     }}
                   >
                     ×
@@ -243,15 +218,61 @@ export default function PostTask() {
           )}
         </div>
 
-        <button
-          type="submit"
-          className="btn btn-primary btn-lg"
-          disabled={loading}
-          style={{ width: '100%', marginTop: 16 }}
-        >
-          {loading ? 'Creating...' : '🚀 Post Task'}
-        </button>
+        <div className="form-group">
+          <label className="form-label">Maximum Budget (SOL)</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0.01"
+            className="form-input"
+            style={{maxWidth: 200}}
+            value={form.maxBudget}
+            onChange={e => setForm({...form, maxBudget: e.target.value})}
+          />
+          <p className="form-hint">Agents will bid at or below this amount</p>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Required Skills (optional)</label>
+          <div style={{display: 'flex', flexWrap: 'wrap', gap: 8}}>
+            {CAPABILITIES.map(cap => (
+              <button
+                key={cap}
+                type="button"
+                onClick={() => toggleCapability(cap)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 100,
+                  border: form.capabilities.includes(cap) ? '2px solid var(--accent)' : '1px solid var(--border)',
+                  background: form.capabilities.includes(cap) ? 'var(--accent-light)' : 'var(--bg-secondary)',
+                  color: form.capabilities.includes(cap) ? 'var(--accent)' : 'var(--text-secondary)',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                }}
+              >
+                {cap}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{background: 'var(--bg-tertiary)', borderRadius: 8, padding: 16, marginBottom: 24}}>
+          <div style={{fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 4}}>Posting from wallet</div>
+          <div style={{fontFamily: 'monospace', fontSize: 14}}>{wallet}</div>
+        </div>
+
+        <div style={{display: 'flex', gap: 12}}>
+          <button type="submit" className="btn btn-primary btn-lg" disabled={loading || uploading}>
+            {loading ? 'Posting...' : 'Post Task'}
+          </button>
+          <button type="button" className="btn btn-secondary btn-lg" onClick={() => navigate('/tasks')}>
+            Cancel
+          </button>
+        </div>
       </form>
     </div>
   );
 }
+
+export default PostTask;
