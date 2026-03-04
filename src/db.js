@@ -33,7 +33,7 @@ console.log('[DB] Using:', DB_URL.replace(/:[^:@]+@/, ':****@'));
 try {
   pool = new Pool({
     connectionString: DB_URL,
-    ssl: { rejectUnauthorized: false },
+    ssl: false,
     connectionTimeoutMillis: 10000,
     max: 5
   });
