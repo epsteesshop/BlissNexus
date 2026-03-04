@@ -5,19 +5,25 @@
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const dns = require('dns');
+
+// Force IPv4
+dns.setDefaultResultOrder('ipv4first');
 
 let pool = null;
 let dbReady = false;
 let lastError = null;
 
-const DB_URL = process.env.SUPABASE_URL || 'postgresql://postgres:JURGVohSrEHEQqvS@db.bjtnjvjlbytlugxidksd.supabase.co:5432/postgres';
-console.log('[DB] Connecting to Supabase...');
+// Use pooler URL for better IPv4 support
+const DB_URL = process.env.SUPABASE_URL || 'postgresql://postgres.bjtnjvjlbytlugxidksd:JURGVohSrEHEQqvS@aws-0-us-east-1.pooler.supabase.com:6543/postgres';
+console.log('[DB] URL source:', process.env.SUPABASE_URL ? 'env' : 'fallback');
+console.log('[DB] Connecting to Supabase pooler...');
 
 try {
   pool = new Pool({
     connectionString: DB_URL,
     ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 10000,
+    connectionTimeoutMillis: 15000,
     max: 10
   });
   pool.on('error', (err) => {
@@ -61,7 +67,7 @@ async function initDB() {
 
 function isReady() { return dbReady; }
 function getLastError() { return lastError; }
-function getConnectionUrl() { return 'supabase (masked)'; }
+function getConnectionUrl() { return DB_URL.includes('pooler') ? 'supabase-pooler' : 'supabase-direct'; }
 
 async function query(sql, params) {
   if (!dbReady || !pool) return null;

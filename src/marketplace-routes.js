@@ -193,6 +193,14 @@ function setupRoutes(app, broadcast) {
       res.json({ dbReady: isReady, hasDbUrl: !!process.env.DATABASE_URL, dbTasks, memTasks: marketplace.getOpenTasks().length });
     } catch (e) { res.json({ error: e.message }); }
   });
+
+  // Debug SUPABASE_URL
+  app.get("/api/v2/debug/supabase", (req, res) => {
+    res.json({ 
+      SUPABASE_URL: process.env.SUPABASE_URL ? "SET" : "NOT SET",
+      DB_URL_IN_USE: db.getConnectionUrl()
+    });
+  });
 }
 
 module.exports = { setupRoutes };
