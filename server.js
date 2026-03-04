@@ -639,17 +639,29 @@ app.get('/app/*', (req, res) => res.sendFile(__dirname + '/public/app/index.html
 
 
 app.get('/health', (req, res) => {
-  const onlineAgents = Array.from(agents.values()).filter(a => a.online).length;
-  const marketplaceTasks = marketplace.getOpenTasks();
-  const allTasks = marketplace.getAllTasks ? marketplace.getAllTasks() : marketplaceTasks;
-  res.json({
-    ok: true,
-    service: 'BlissNexus Beacon',
-    version: '2.0.0',
-    agents: { total: agents.size, online: onlineAgents },
-    tasks: { total: allTasks.length, open: marketplaceTasks.length },
-    capabilities: capabilities.size
-  });
+  try {
+    const onlineAgents = Array.from(agents.values()).filter(a => a.online).length;
+    let openTaskCount = 0;
+    let totalTaskCount = 0;
+    try {
+      const openTasks = marketplace.getOpenTasks();
+      openTaskCount = openTasks.length;
+      totalTaskCount = marketplace.getAllTasks ? marketplace.getAllTasks().length : openTaskCount;
+    } catch (e) {
+      console.error('[Health] Task count error:', e.message);
+    }
+    res.json({
+      ok: true,
+      service: 'BlissNexus Beacon',
+      version: '2.0.0',
+      agents: { total: agents.size, online: onlineAgents },
+      tasks: { total: totalTaskCount, open: openTaskCount },
+      capabilities: capabilities.size
+    });
+  } catch (e) {
+    console.error('[Health] Error:', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // Federation status
