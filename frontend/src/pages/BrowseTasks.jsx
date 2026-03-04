@@ -104,7 +104,7 @@ function BrowseTasks() {
                   className="btn btn-primary btn-sm" 
                   onClick={(e) => handleBid(e, task.id)}
                 >
-                  💰 Place Bid
+                  Bid Now
                 </button>
               </div>
             </div>
