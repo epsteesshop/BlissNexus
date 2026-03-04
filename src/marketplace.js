@@ -93,6 +93,12 @@ async function submitBid({ taskId, agentId, agentName, price, timeEstimate, mess
   if (task.state !== TaskState.OPEN) throw new Error('Task not accepting bids');
   if (price > task.maxBudget) throw new Error('Bid exceeds max budget');
   
+  // Check if agent already bid on this task
+  const existingBids = bids.get(taskId) || [];
+  if (existingBids.some(b => b.agentId === agentId)) {
+    throw new Error('You have already bid on this task');
+  }
+  
   const bidId = 'bid_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
   
   const bid = {
