@@ -851,3 +851,134 @@ body {
 .wallet-adapter-modal-list-more {
   color: var(--accent) !important;
 }
+
+/* ========================================
+   CUSTOM WALLET DROPDOWN
+======================================== */
+.wallet-connected {
+  position: relative;
+}
+
+.wallet-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: all 0.2s;
+}
+
+.wallet-button:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent);
+}
+
+.wallet-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+}
+
+.wallet-address {
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 13px;
+}
+
+.wallet-arrow {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-left: 4px;
+}
+
+.wallet-dropdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+}
+
+.wallet-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 280px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  z-index: 999;
+  overflow: hidden;
+}
+
+.wallet-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.wallet-dropdown-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.wallet-dropdown-network {
+  font-size: 11px;
+  padding: 3px 8px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: 100px;
+  font-weight: 500;
+}
+
+.wallet-dropdown-address {
+  padding: 12px 16px;
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.wallet-dropdown-actions {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wallet-dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.wallet-dropdown-btn:hover {
+  background: var(--bg-secondary);
+}
+
+.wallet-dropdown-btn.disconnect {
+  color: var(--error);
+}
+
+.wallet-dropdown-btn.disconnect:hover {
+  background: rgba(239, 68, 68, 0.1);
+}

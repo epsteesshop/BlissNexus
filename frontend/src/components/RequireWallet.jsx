@@ -1,10 +1,11 @@
 import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 function RequireWallet({ children, message }) {
-  const { connected, publicKey } = useWallet();
+  const { connected } = useWallet();
+  const { setVisible } = useWalletModal();
 
-  if (!connected || !publicKey) {
+  if (!connected) {
     return (
       <div className="require-wallet">
         <div className="require-wallet-box">
@@ -14,7 +15,12 @@ function RequireWallet({ children, message }) {
             {message || 'You need to connect a Solana wallet to access this page.'}
           </p>
           <div className="require-wallet-action">
-            <WalletMultiButton />
+            <button 
+              className="btn btn-primary btn-lg"
+              onClick={() => setVisible(true)}
+            >
+              Select Wallet
+            </button>
           </div>
           <p className="require-wallet-hint">
             Supports Phantom, Solflare, and other Solana wallets

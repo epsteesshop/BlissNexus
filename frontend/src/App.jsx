@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
@@ -22,15 +22,24 @@ function App() {
   // Use devnet for testing
   const endpoint = useMemo(() => clusterApiUrl('devnet'), []);
   
-  // Support multiple wallets
+  // Support multiple wallets - order matters for display
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),
     new SolflareWalletAdapter(),
   ], []);
 
+  // Handle wallet errors gracefully
+  const onError = useCallback((error) => {
+    console.error('Wallet error:', error);
+  }, []);
+
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider 
+        wallets={wallets} 
+        autoConnect={false}
+        onError={onError}
+      >
         <WalletModalProvider>
           <BrowserRouter basename="/app">
             <div className="app">
