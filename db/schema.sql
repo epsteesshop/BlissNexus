@@ -1,7 +1,7 @@
 -- BlissNexus Database Schema
 -- PostgreSQL
 
--- Agents table - persistent identity
+-- Agents table
 CREATE TABLE IF NOT EXISTS agents (
     agent_id VARCHAR(64) PRIMARY KEY,
     owner_id VARCHAR(64),
@@ -21,61 +21,51 @@ CREATE TABLE IF NOT EXISTS agents (
     online BOOLEAN DEFAULT FALSE
 );
 
--- Tasks table - marketplace
-CREATE TABLE IF NOT EXISTS tasks (
-    task_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    creator_id VARCHAR(64) NOT NULL,
-    capability VARCHAR(64) NOT NULL,
-    payload JSONB NOT NULL,
-    status VARCHAR(20) DEFAULT 'open', -- open, bidding, assigned, running, completed, failed
-    assigned_agent VARCHAR(64),
-    reward FLOAT DEFAULT 0,
-    deadline_seconds INT DEFAULT 300,
-    created_at TIMESTAMP DEFAULT NOW(),
-    assigned_at TIMESTAMP,
-    completed_at TIMESTAMP,
-    result JSONB,
-    error TEXT
-);
-
--- Task bids - agents compete
-CREATE TABLE IF NOT EXISTS task_bids (
-    bid_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    task_id UUID REFERENCES tasks(task_id),
-    agent_id VARCHAR(64) REFERENCES agents(agent_id),
-    price FLOAT NOT NULL,
-    eta_seconds INT NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
-    selected BOOLEAN DEFAULT FALSE
-);
-
--- Task history - for reputation
-CREATE TABLE IF NOT EXISTS task_history (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    task_id UUID REFERENCES tasks(task_id),
-    agent_id VARCHAR(64) REFERENCES agents(agent_id),
-    success BOOLEAN NOT NULL,
-    latency_ms INT,
-    rating FLOAT,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Capability registry
-CREATE TABLE IF NOT EXISTS capabilities (
-    name VARCHAR(64) PRIMARY KEY,
+-- Marketplace Tasks
+CREATE TABLE IF NOT EXISTS marketplace_tasks (
+    id VARCHAR(64) PRIMARY KEY,
+    title VARCHAR(256) NOT NULL,
     description TEXT,
-    input_schema JSONB,
-    output_schema JSONB,
-    average_latency INT,
-    average_cost FLOAT,
-    agent_count INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT NOW()
+    max_budget FLOAT DEFAULT 1.0,
+    deadline TIMESTAMP,
+    capabilities TEXT[] DEFAULT '{}',
+    requester VARCHAR(64) NOT NULL,
+    state VARCHAR(32) DEFAULT 'open',
+    assigned_agent VARCHAR(64),
+    assigned_bid JSONB,
+    result TEXT,
+    escrow_tx VARCHAR(128),
+    escrow_pda VARCHAR(64),
+    escrow_signature VARCHAR(128),
+    created_at BIGINT,
+    updated_at BIGINT
 );
 
--- Indexes for fast queries
+-- Marketplace Bids
+CREATE TABLE IF NOT EXISTS marketplace_bids (
+    id VARCHAR(64) PRIMARY KEY,
+    task_id VARCHAR(64) REFERENCES marketplace_tasks(id) ON DELETE CASCADE,
+    agent_id VARCHAR(64) NOT NULL,
+    agent_name VARCHAR(128),
+    price FLOAT NOT NULL,
+    time_estimate VARCHAR(64),
+    message TEXT,
+    wallet VARCHAR(64),
+    status VARCHAR(32) DEFAULT 'pending',
+    created_at BIGINT
+);
+
+-- Agent stats for reputation
+CREATE TABLE IF NOT EXISTS agent_stats (
+    agent_id VARCHAR(64) PRIMARY KEY,
+    completed INT DEFAULT 0,
+    rating FLOAT DEFAULT 0,
+    total_earned FLOAT DEFAULT 0
+);
+
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_agents_capabilities ON agents USING GIN(capabilities);
-CREATE INDEX IF NOT EXISTS idx_agents_reputation ON agents(reputation DESC);
 CREATE INDEX IF NOT EXISTS idx_agents_online ON agents(online) WHERE online = TRUE;
-CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
-CREATE INDEX IF NOT EXISTS idx_tasks_capability ON tasks(capability);
-CREATE INDEX IF NOT EXISTS idx_task_bids_task ON task_bids(task_id);
+CREATE INDEX IF NOT EXISTS idx_marketplace_tasks_state ON marketplace_tasks(state);
+CREATE INDEX IF NOT EXISTS idx_marketplace_tasks_requester ON marketplace_tasks(requester);
+CREATE INDEX IF NOT EXISTS idx_marketplace_bids_task ON marketplace_bids(task_id);

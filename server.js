@@ -1224,12 +1224,13 @@ async function loadFromDB() {
   } catch (err) { console.error('[DB] Load error:', err.message); }
 }
 
-loadFromDB().then(() => {
+loadFromDB().then(async () => {
+  const marketplace = require("./src/marketplace");
+  await marketplace.init();
   federation.init();
   initBuiltInBots();
-  federation.init();
-  initBuiltInBots();
-setInterval(cleanupStaleAgents, CLEANUP_INTERVAL);
+  setInterval(cleanupStaleAgents, CLEANUP_INTERVAL);
+});
 
 server.listen(PORT, () => {
   console.log(`
