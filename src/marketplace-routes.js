@@ -3,6 +3,7 @@
  */
 
 const marketplace = require('./marketplace');
+const db = require('./db');
 
 function setupRoutes(app, broadcast) {
   
@@ -137,7 +138,6 @@ function setupRoutes(app, broadcast) {
       const { wallet, name, capabilities } = req.body;
       if (!wallet) return res.status(400).json({ error: 'Wallet required' });
       
-      const db = require('./db');
       if (db.isReady()) {
         db.upsertAgent({ agentId: wallet, publicKey: wallet, name: name || wallet.slice(0,8), capabilities: capabilities || [], online: true });
       }
@@ -175,7 +175,6 @@ function setupRoutes(app, broadcast) {
 
   // Debug - try DB init
   app.get("/api/v2/debug/db-init", async (req, res) => {
-    const db = require("./db");
     try {
       const result = await db.initDB();
       res.json({ initResult: result, dbReady: db.isReady(), lastError: db.getLastError() });
@@ -184,7 +183,6 @@ function setupRoutes(app, broadcast) {
 
   // Debug - check DB status
   app.get("/api/v2/debug/db", async (req, res) => {
-    const db = require("./db");
     try {
       const isReady = db.isReady();
       let dbTasks = 0;
