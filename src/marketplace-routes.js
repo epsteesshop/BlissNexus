@@ -4,6 +4,7 @@
 
 const marketplace = require('./marketplace');
 const db = require('./db');
+const { requireAdmin } = require('./auth');
 
 
 // Validate Solana wallet address format
