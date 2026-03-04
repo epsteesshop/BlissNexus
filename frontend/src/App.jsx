@@ -2,22 +2,24 @@ import { useMemo } from 'react';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { clusterApiUrl } from '@solana/web3.js';
 
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
-import Agents from './pages/Agents';
-import CreateTask from './pages/CreateTask';
+import BrowseTasks from './pages/BrowseTasks';
+import TaskDetail from './pages/TaskDetail';
+import PostTask from './pages/PostTask';
 import MyTasks from './pages/MyTasks';
-import RegisterAgent from './pages/RegisterAgent';
+import AgentDashboard from './pages/AgentDashboard';
+import BecomeAgent from './pages/BecomeAgent';
 
 import '@solana/wallet-adapter-react-ui/styles.css';
 import './App.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.blissnexus.ai';
-
 function App() {
-  const endpoint = 'https://api.mainnet-beta.solana.com';
+  // Use devnet for testing
+  const endpoint = useMemo(() => clusterApiUrl('devnet'), []);
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),
     new SolflareWalletAdapter(),
@@ -33,10 +35,12 @@ function App() {
               <main className="main-content">
                 <Routes>
                   <Route path="/" element={<Home />} />
-                  <Route path="/agents" element={<Agents />} />
-                  <Route path="/create-task" element={<CreateTask />} />
+                  <Route path="/tasks" element={<BrowseTasks />} />
+                  <Route path="/tasks/:taskId" element={<TaskDetail />} />
+                  <Route path="/post" element={<PostTask />} />
                   <Route path="/my-tasks" element={<MyTasks />} />
-                  <Route path="/register-agent" element={<RegisterAgent />} />
+                  <Route path="/agent" element={<AgentDashboard />} />
+                  <Route path="/become-agent" element={<BecomeAgent />} />
                 </Routes>
               </main>
             </div>
