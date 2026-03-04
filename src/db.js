@@ -10,7 +10,7 @@ let pool = null;
 let dbReady = false;
 let lastError = null;
 
-const DB_URL = process.env.DATABASE_URL || 'postgresql://postgres:JURGVohSrEHEQqvS@db.bjtnjvjlbytlugxidksd.supabase.co:5432/postgres';
+const DB_URL = process.env.SUPABASE_URL || 'postgresql://postgres:JURGVohSrEHEQqvS@db.bjtnjvjlbytlugxidksd.supabase.co:5432/postgres';
 console.log('[DB] Connecting to Supabase...');
 
 try {
