@@ -1,29 +1,23 @@
 /**
- * BlissNexus Database Layer - PostgreSQL (Supabase)
+ * BlissNexus Database Layer - PostgreSQL (Neon)
  */
 
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
-const dns = require('dns');
-
-// Force IPv4
-dns.setDefaultResultOrder('ipv4first');
 
 let pool = null;
 let dbReady = false;
 let lastError = null;
 
-// Use pooler URL for better IPv4 support
-const DB_URL = process.env.SUPABASE_URL || 'postgresql://postgres:JURGVohSrEHEQqvS@db.bjtnjvjlbytlugxidksd.supabase.co:5432/postgres';
-console.log('[DB] URL source:', process.env.SUPABASE_URL ? 'env' : 'fallback');
-console.log('[DB] Connecting to Supabase pooler...');
+const DB_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_LHKcDi8quar3@ep-rough-union-aid1gjue-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require';
+console.log('[DB] Connecting to Neon...');
 
 try {
   pool = new Pool({
     connectionString: DB_URL,
-    ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 15000,
+    ssl: true,
+    connectionTimeoutMillis: 10000,
     max: 10
   });
   pool.on('error', (err) => {
@@ -43,7 +37,7 @@ async function initDB() {
   
   try {
     const client = await pool.connect();
-    console.log('[DB] Connected to Supabase!');
+    console.log('[DB] Connected to Neon!');
     try {
       const schemaPath = path.join(__dirname, '..', 'db', 'schema.sql');
       if (fs.existsSync(schemaPath)) {
@@ -67,7 +61,7 @@ async function initDB() {
 
 function isReady() { return dbReady; }
 function getLastError() { return lastError; }
-function getConnectionUrl() { return DB_URL.includes('pooler') ? 'supabase-pooler' : 'supabase-direct'; }
+function getConnectionUrl() { return 'neon (masked)'; }
 
 async function query(sql, params) {
   if (!dbReady || !pool) return null;
