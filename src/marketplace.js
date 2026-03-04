@@ -11,6 +11,16 @@ const bids = new Map();  // taskId -> [bids]
 const agentStats = new Map();  // agentId -> stats
 
 // Task states
+// Parse deadline like "24h", "7d", or null
+function parseDeadline(d) {
+  if (!d) return null;
+  const match = d.match(/^(\d+)(h|d|m)$/);
+  if (!match) return null;
+  const [, num, unit] = match;
+  const ms = unit === "h" ? num * 3600000 : unit === "d" ? num * 86400000 : num * 60000;
+  return new Date(Date.now() + parseInt(ms)).toISOString();
+}
+
 const TaskState = {
   OPEN: 'open',
   ASSIGNED: 'assigned',
@@ -52,7 +62,7 @@ async function createTask({ title, description, maxBudget, deadline, requester, 
     title,
     description: description || '',
     maxBudget: parseFloat(maxBudget) || 1.0,
-    deadline: deadline || null,
+    deadline: parseDeadline(deadline),
     capabilities: capabilities || [],
     requester,
     state: TaskState.OPEN,
