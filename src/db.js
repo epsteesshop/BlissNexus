@@ -13,9 +13,9 @@ let lastError = null;
 
 // Create pool
 try {
-  if (process.env.DATABASE_URL) {
+  if (process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL) {
     pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL,
       ssl: { rejectUnauthorized: false },
       connectionTimeoutMillis: 10000,
       max: 5
