@@ -400,6 +400,35 @@ app.use(express.json());
 // Bot detection - serve API info to AI agents (must be before static)
 const { botMiddleware } = require('./src/bot-detect');
 app.use(botMiddleware);
+// File upload endpoint
+app.post('/api/v2/upload', upload.array('files', 5), async (req, res) => {
+  try {
+    if (!storage.isConfigured()) {
+      return res.status(503).json({ error: 'File storage not configured' });
+    }
+    
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files provided' });
+    }
+    
+    const results = [];
+    for (const file of req.files) {
+      const result = await storage.uploadFile(
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+      results.push(result);
+      console.log('[Upload]', file.originalname, '->', result.key);
+    }
+    
+    res.json({ success: true, files: results });
+  } catch (e) {
+    console.error('[Upload] Error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.use(express.static('public'));
 
 app.use((req, res, next) => {
@@ -611,13 +640,14 @@ app.get('/app/*', (req, res) => res.sendFile(__dirname + '/public/app/index.html
 
 app.get('/health', (req, res) => {
   const onlineAgents = Array.from(agents.values()).filter(a => a.online).length;
-  const openTasks = Array.from(tasks.values()).filter(t => t.status === 'open').length;
+  const marketplaceTasks = marketplace.getOpenTasks();
+  const allTasks = marketplace.getAllTasks ? marketplace.getAllTasks() : marketplaceTasks;
   res.json({
     ok: true,
     service: 'BlissNexus Beacon',
     version: '2.0.0',
     agents: { total: agents.size, online: onlineAgents },
-    tasks: { total: tasks.size, open: openTasks },
+    tasks: { total: allTasks.length, open: marketplaceTasks.length },
     capabilities: capabilities.size
   });
 });

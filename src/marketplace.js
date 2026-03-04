@@ -228,6 +228,10 @@ function getTask(taskId) {
   return tasks.get(taskId) || null;
 }
 
+function getAllTasks() {
+  return Array.from(tasks.values());
+}
+
 function getOpenTasks() {
   return Array.from(tasks.values()).filter(t => t.state === TaskState.OPEN);
 }
@@ -266,6 +270,7 @@ module.exports = {
   approveResult,
   disputeResult,
   getTask,
+  getAllTasks,
   getOpenTasks,
   getTasksForRequester,
   getTasksForAgent,
