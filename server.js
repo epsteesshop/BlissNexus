@@ -385,6 +385,10 @@ const app = express();
 // Middleware - MUST come before routes
 app.use(express.json());
 app.use(express.static('public'));
+
+// Bot detection - serve API info to AI agents
+const { botMiddleware } = require('./src/bot-detect');
+app.use(botMiddleware);
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
