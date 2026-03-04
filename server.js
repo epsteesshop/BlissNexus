@@ -41,6 +41,7 @@ const upload = multer({
 
 
 const marketplaceRoutes = require("./src/marketplace-routes");
+const marketplace = require("./src/marketplace");
 
 
 // ============================================================================
