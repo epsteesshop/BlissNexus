@@ -5,6 +5,12 @@
 const marketplace = require('./marketplace');
 const db = require('./db');
 
+
+// Validate Solana wallet address format
+function isValidSolanaAddress(addr) {
+  return addr && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);
+}
+
 function setupRoutes(app, broadcast) {
   
   // Create a new task
@@ -13,6 +19,7 @@ function setupRoutes(app, broadcast) {
       const { title, description, maxBudget, deadline, capabilities, requester } = req.body;
       if (!title) return res.status(400).json({ error: 'Title required' });
       if (!requester) return res.status(400).json({ error: 'Requester wallet required' });
+      if (!isValidSolanaAddress(requester)) return res.status(400).json({ error: 'Invalid requester wallet address' });
       
       const task = await marketplace.createTask({ title, description, maxBudget: maxBudget || 1.0, deadline, capabilities: capabilities || [], requester });
       console.log('[Marketplace] Task created:', task.id);
@@ -60,6 +67,7 @@ function setupRoutes(app, broadcast) {
       if (!agentId) return res.status(400).json({ error: 'Agent ID required' });
       if (!price) return res.status(400).json({ error: 'Price required' });
       
+      if (!isValidSolanaAddress(wallet)) return res.status(400).json({ error: 'Invalid agent wallet address' });
       const bid = await marketplace.submitBid({ taskId: req.params.taskId, agentId, agentName, price, timeEstimate, message, wallet });
       console.log('[Marketplace] Bid:', bid.id, '-', price, 'SOL');
       res.json({ success: true, bid });
@@ -142,6 +150,11 @@ function setupRoutes(app, broadcast) {
     try {
       const { wallet, name, capabilities } = req.body;
       if (!wallet) return res.status(400).json({ error: 'Wallet required' });
+      
+      // Validate Solana address format (base58, 32-44 chars)
+      if (!isValidSolanaAddress(wallet)) {
+        return res.status(400).json({ error: 'Invalid Solana wallet address' });
+      }
       
       if (db.isReady()) {
         db.upsertAgent({ agentId: wallet, publicKey: wallet, name: name || wallet.slice(0,8), capabilities: capabilities || [], online: true });
