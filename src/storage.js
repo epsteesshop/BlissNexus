@@ -10,6 +10,7 @@ const R2_ENDPOINT = process.env.R2_ENDPOINT;
 const R2_ACCESS_KEY = process.env.R2_ACCESS_KEY;
 const R2_SECRET_KEY = process.env.R2_SECRET_KEY;
 const R2_BUCKET = process.env.R2_BUCKET || 'blissnexus-files';
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || 'https://pub-0f9b65e78da5406c9d1fb1ba2332e33c.r2.dev';
 
 let s3Client = null;
 
@@ -28,7 +29,7 @@ function init() {
     },
   });
   
-  console.log('[Storage] R2 configured for bucket:', R2_BUCKET);
+  console.log('[Storage] R2 configured, public URL:', R2_PUBLIC_URL);
   return true;
 }
 
@@ -46,8 +47,8 @@ async function uploadFile(buffer, filename, contentType) {
     ContentType: contentType,
   }));
   
-  // Return public URL (requires R2 bucket to have public access or use signed URLs)
-  const url = `${R2_ENDPOINT}/${R2_BUCKET}/${key}`;
+  // Return public URL
+  const url = `${R2_PUBLIC_URL}/${key}`;
   return { key, url, filename, contentType, size: buffer.length };
 }
 
