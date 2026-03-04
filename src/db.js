@@ -15,7 +15,7 @@ let dbReady = false;
 let lastError = null;
 
 // Use pooler URL for better IPv4 support
-const DB_URL = process.env.SUPABASE_URL || 'postgresql://postgres.bjtnjvjlbytlugxidksd:JURGVohSrEHEQqvS@aws-0-us-east-1.pooler.supabase.com:6543/postgres';
+const DB_URL = process.env.SUPABASE_URL || 'postgresql://postgres:JURGVohSrEHEQqvS@db.bjtnjvjlbytlugxidksd.supabase.co:5432/postgres';
 console.log('[DB] URL source:', process.env.SUPABASE_URL ? 'env' : 'fallback');
 console.log('[DB] Connecting to Supabase pooler...');
 
