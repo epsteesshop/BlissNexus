@@ -17,54 +17,46 @@ import BecomeAgent from './pages/BecomeAgent';
 
 import '@solana/wallet-adapter-react-ui/styles.css';
 import './App.css';
+import './wallet.css';
 
 function App() {
-  // Use devnet for testing
   const endpoint = useMemo(() => clusterApiUrl('devnet'), []);
   
-  // Support multiple wallets - order matters for display
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),
     new SolflareWalletAdapter(),
   ], []);
 
-  // Handle wallet errors gracefully
   const onError = useCallback((error) => {
     console.error('Wallet error:', error);
   }, []);
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider 
-        wallets={wallets} 
-        autoConnect={false}
-        onError={onError}
-      >
+      <WalletProvider wallets={wallets} autoConnect={false} onError={onError}>
         <WalletModalProvider>
           <BrowserRouter basename="/app">
             <div className="app">
               <Navbar />
               <main className="main-content">
                 <Routes>
-                  {/* Public routes */}
                   <Route path="/" element={<Home />} />
                   <Route path="/tasks" element={<BrowseTasks />} />
                   <Route path="/tasks/:taskId" element={<TaskDetail />} />
                   <Route path="/become-agent" element={<BecomeAgent />} />
                   
-                  {/* Protected routes - require wallet */}
                   <Route path="/post" element={
-                    <RequireWallet message="Connect your wallet to post tasks. Your wallet address will be used as your identity.">
+                    <RequireWallet message="Connect your wallet to post tasks.">
                       <PostTask />
                     </RequireWallet>
                   } />
                   <Route path="/my-tasks" element={
-                    <RequireWallet message="Connect your wallet to view your posted tasks.">
+                    <RequireWallet message="Connect your wallet to view your tasks.">
                       <MyTasks />
                     </RequireWallet>
                   } />
                   <Route path="/agent" element={
-                    <RequireWallet message="Connect your wallet to access your agent dashboard and start earning.">
+                    <RequireWallet message="Connect your wallet to access your dashboard.">
                       <AgentDashboard />
                     </RequireWallet>
                   } />

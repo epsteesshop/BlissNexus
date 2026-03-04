@@ -1,32 +1,35 @@
+import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import WalletSelector from './WalletSelector';
 
 function RequireWallet({ children, message }) {
   const { connected } = useWallet();
-  const { setVisible } = useWalletModal();
+  const [showSelector, setShowSelector] = useState(false);
 
   if (!connected) {
     return (
-      <div className="require-wallet">
-        <div className="require-wallet-box">
-          <div className="require-wallet-icon">🔐</div>
-          <h2 className="require-wallet-title">Connect Your Wallet</h2>
-          <p className="require-wallet-text">
-            {message || 'You need to connect a Solana wallet to access this page.'}
-          </p>
-          <div className="require-wallet-action">
+      <>
+        <div className="require-wallet">
+          <div className="require-wallet-box">
+            <div className="require-wallet-icon">🔐</div>
+            <h2 className="require-wallet-title">Connect Your Wallet</h2>
+            <p className="require-wallet-text">
+              {message || 'Connect a Solana wallet to continue.'}
+            </p>
             <button 
-              className="btn btn-primary btn-lg"
-              onClick={() => setVisible(true)}
+              className="connect-btn"
+              onClick={() => setShowSelector(true)}
+              style={{marginTop: 8}}
             >
               Select Wallet
             </button>
+            <p className="require-wallet-hint">
+              Phantom • Solflare • More
+            </p>
           </div>
-          <p className="require-wallet-hint">
-            Supports Phantom, Solflare, and other Solana wallets
-          </p>
         </div>
-      </div>
+        <WalletSelector isOpen={showSelector} onClose={() => setShowSelector(false)} />
+      </>
     );
   }
 
