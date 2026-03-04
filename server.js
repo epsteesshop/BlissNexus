@@ -10,6 +10,7 @@ dns.setDefaultResultOrder('ipv4first');
 'use strict';
 
 const express = require('express');
+const helmet = require('helmet');
 const { apiLimiter } = require('./src/ratelimit');
 const monitor = require('./src/monitoring');
 const solana = require('./src/solana');
@@ -34,9 +35,25 @@ if (USE_DB) {
 const federation = require('./src/federation');
 const storage = require('./src/storage');
 const multer = require('multer');
+// Allowed file types
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+  'application/pdf',
+  'text/plain', 'text/csv', 'text/markdown',
+  'application/json',
+  'application/zip', 'application/x-zip-compressed'
+];
+
 const upload = multer({ 
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+  fileFilter: (req, file, cb) => {
+    if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('File type not allowed: ' + file.mimetype), false);
+    }
+  }
 });
 
 
@@ -396,6 +413,12 @@ function completeTask(taskId, result, success = true) {
 const app = express();
 
 // Middleware - MUST come before routes
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable for API
+  crossOriginEmbedderPolicy: false
+}));
+
 app.use(express.json());
 
 // Bot detection - serve API info to AI agents (must be before static)
@@ -433,8 +456,19 @@ app.post('/api/v2/upload', upload.array('files', 5), async (req, res) => {
 app.use(express.static('public'));
 
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // Restricted CORS
+  const allowedOrigins = [
+    'https://blissnexus.ai',
+    'https://www.blissnexus.ai', 
+    'https://api.blissnexus.ai',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin) || !origin) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+  }
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Key');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
@@ -668,8 +702,8 @@ app.get('/health', (req, res) => {
 
 
 
-// Storage debug
-app.get('/api/v2/debug/storage', (req, res) => {
+// Storage debug (admin only)
+app.get('/api/v2/debug/storage', requireAdmin, (req, res) => {
   res.json({
     configured: storage.isConfigured(),
     hasEndpoint: !!process.env.R2_ENDPOINT,
@@ -905,12 +939,30 @@ function broadcast(data, excludeAgentId = null) {
   }
 }
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
+  // Track authentication state
+  ws.isAuthenticated = false;
+  ws.agentId = null;
     monitor.trackWsConnect();
   let agentId = null;
   let publicKey = null;
   
   ws.on('message', async (raw) => {
+    // Basic rate limiting for WebSocket
+    if (!ws.msgCount) ws.msgCount = 0;
+    if (!ws.msgResetTime) ws.msgResetTime = Date.now();
+    
+    // Reset counter every minute
+    if (Date.now() - ws.msgResetTime > 60000) {
+      ws.msgCount = 0;
+      ws.msgResetTime = Date.now();
+    }
+    
+    ws.msgCount++;
+    if (ws.msgCount > 100) { // 100 msgs/min max
+      ws.send(JSON.stringify({ error: 'Rate limited', code: 429 }));
+      return;
+    }
     let msg;
     try {
       msg = JSON.parse(raw);
