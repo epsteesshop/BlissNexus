@@ -168,6 +168,16 @@ function setupRoutes(app, broadcast) {
     } catch (e) { res.status(400).json({ error: e.message }); }
   });
   
+  // List all agents
+  app.get('/api/v2/agents', async (req, res) => {
+    try {
+      const agents = db.isReady() ? await db.getAllAgents() : [];
+      res.json({ agents, count: agents.length });
+    } catch (e) {
+      res.json({ agents: [], count: 0, error: e.message });
+    }
+  });
+
   // Get agent info
   app.get('/api/v2/agents/:agentId', (req, res) => {
     const stats = marketplace.getAgentStats(req.params.agentId);
