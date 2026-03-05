@@ -567,9 +567,6 @@ function setupRoutes(app, broadcast) {
       res.status(500).json({ error: e.message });
     }
   });
-}
-
-module.exports = { setupRoutes };
 
   // Admin: Kick all connected agents
   app.post('/api/admin/kick-all', (req, res) => {
@@ -591,3 +588,6 @@ module.exports = { setupRoutes };
     }
     res.json({ success: true, kicked, message: `Kicked ${kicked.length} agents` });
   });
+}
+
+module.exports = { setupRoutes };
