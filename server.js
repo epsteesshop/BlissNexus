@@ -74,8 +74,10 @@ const BID_WINDOW_MS = 10000; // Time agents have to bid on a task
 // IN-MEMORY STATE (Redis/Postgres in production)
 // ============================================================================
 
-const agents = new Map();        // agentId -> agent record
-const connections = new Map();   // agentId -> WebSocket
+global.agents = new Map();
+const agents = global.agents;        // agentId -> agent record
+global.connections = new Map();
+const connections = global.connections;   // agentId -> WebSocket
 
 // Broadcast to agents via WebSocket
 function broadcastToAgents(message, targetAgentId = null) {

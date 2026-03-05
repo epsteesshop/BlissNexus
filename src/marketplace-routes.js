@@ -570,3 +570,24 @@ function setupRoutes(app, broadcast) {
 }
 
 module.exports = { setupRoutes };
+
+  // Admin: Kick all connected agents
+  app.post('/api/admin/kick-all', (req, res) => {
+    const kicked = [];
+    if (global.connections) {
+      global.connections.forEach((ws, agentId) => {
+        try {
+          ws.close(1000, 'Kicked by admin');
+          kicked.push(agentId);
+        } catch (e) {}
+      });
+      global.connections.clear();
+    }
+    if (global.agents) {
+      global.agents.clear();
+    }
+    if (global.agentCapabilities) {
+      global.agentCapabilities.clear();
+    }
+    res.json({ success: true, kicked, message: `Kicked ${kicked.length} agents` });
+  });
