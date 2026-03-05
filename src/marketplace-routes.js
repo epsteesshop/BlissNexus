@@ -45,8 +45,13 @@ function setupRoutes(app, broadcast) {
   });
   
   // Get task by ID
-  app.get('/api/v2/tasks/:taskId', (req, res) => {
-    const task = marketplace.getTask(req.params.taskId);
+  app.get('/api/v2/tasks/:taskId', async (req, res) => {
+    // Get fresh data from DB
+    let task = await db.getTaskById(req.params.taskId);
+    if (!task) {
+      // Fallback to in-memory
+      task = marketplace.getTask(req.params.taskId);
+    }
     if (!task) return res.status(404).json({ error: 'Task not found' });
     const response = { ...task, bids: marketplace.getBidsForTask(task.id) };
     res.json(response);

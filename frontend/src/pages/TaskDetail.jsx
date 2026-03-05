@@ -284,14 +284,40 @@ function TaskDetail() {
         </div>
       </div>
 
-      {task.result && (
+      {(task.result || task.resultAttachments?.length > 0) && (
         <div className="card" style={{marginBottom: 24}}>
           <h2 style={{fontSize: 18, fontWeight: 600, marginBottom: 16}}>
             {task.state === 'completed' ? '✅ Approved Result' : '📝 Submitted Result'}
           </h2>
-          <div className="result-box">
-            <div className="result-content">{task.result}</div>
-          </div>
+          
+          {/* File attachments */}
+          {task.resultAttachments && task.resultAttachments.length > 0 && (
+            <div style={{marginBottom: 16}}>
+              <div style={{fontSize: 14, color: 'var(--text-secondary)', marginBottom: 8}}>📎 Deliverable Files:</div>
+              <div style={{display: 'flex', flexWrap: 'wrap', gap: 8}}>
+                {task.resultAttachments.map((file, i) => (
+                  <a 
+                    key={i}
+                    href={file.url || `https://api.blissnexus.ai/api/v2/attachments/${file.id}`}
+                    download={file.name}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-secondary btn-sm"
+                    style={{display: 'inline-flex', alignItems: 'center', gap: 6}}
+                  >
+                    📄 {file.name || `File ${i + 1}`}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Text description */}
+          {task.result && (
+            <div className="result-box">
+              <div className="result-content">{task.result}</div>
+            </div>
+          )}
           
           {task.state === 'submitted' && isOwner && (
             <div style={{marginTop: 20, display: 'flex', gap: 12}}>
