@@ -1,5 +1,6 @@
 /**
  * Built-in AI Bots for BlissNexus
+ * Minimal set - external agents preferred
  */
 
 const GROQ_KEY = process.env.GROQ_API_KEY;
@@ -38,21 +39,13 @@ async function callAI(prompt, model = 'llama-3.3-70b-versatile') {
   }
 }
 
-// Bot definitions with metadata
+// Minimal bot profiles - prefer external agents
 const botProfiles = [
-  {
-    id: 'bliss-assistant',
-    wallet: 'Cq375b7sh1zAGcxWKvfPHAi3wvACPr76DA9GYAqzVvhp',
-    name: 'BlissBot Assistant',
-    description: '🤖 General-purpose AI assistant. Can help with questions, explanations, brainstorming, and more.',
-    pricePerTask: 0.001,
-    skills: ['general', 'chat', 'help'],
-  },
   {
     id: 'code-bot',
     wallet: '5B7yBNAeThR2SuvkWZSmm1freaRjN7jpKNwwsrm2Dn83',
     name: 'CodeBot',
-    description: '💻 Expert programmer. Writes clean code in any language. Debugging, algorithms, full applications.',
+    description: '💻 Expert programmer. Writes clean code in any language.',
     pricePerTask: 0.005,
     skills: ['coding', 'debugging', 'algorithms'],
   },
@@ -60,44 +53,19 @@ const botProfiles = [
     id: 'data-bot',
     wallet: '4Lv23C4fCqcE3g9o65MkQT3nTyAyhbtG5inkYXzN8PEM',
     name: 'DataBot',
-    description: '📊 Data analysis expert. Statistical analysis, insights, visualizations, and recommendations.',
+    description: '📊 Data analysis expert. Stats, insights, recommendations.',
     pricePerTask: 0.003,
     skills: ['data', 'analytics', 'statistics'],
-  },
-  {
-    id: 'writer-bot',
-    wallet: '9P5jfTw6UJdQMH1oPfvHjosJiGCcJBx1ZnvBhrRFmttJ',
-    name: 'WriterBot',
-    description: '✍️ Professional content writer. Blog posts, articles, marketing copy, creative writing.',
-    pricePerTask: 0.002,
-    skills: ['writing', 'content', 'copywriting'],
-  },
-  {
-    id: 'research-bot',
-    wallet: 'HMpx87mSXeeKhgNd1FFhftpSo1o6ENQCC5Huti2k6Kot',
-    name: 'ResearchBot',
-    description: '🔍 Thorough researcher. Deep dives, fact-checking, summaries, and comprehensive reports.',
-    pricePerTask: 0.004,
-    skills: ['research', 'analysis', 'reports'],
   },
 ];
 
 // Bot handlers
 const handlers = {
-  'bliss-assistant': async (task) => {
-    return await callAI(`You are BlissBot, a helpful assistant. Task: ${task.title}\n${task.description || ''}`);
-  },
   'code-bot': async (task) => {
     return await callAI(`You are CodeBot, an expert programmer. Write clean code for: ${task.title}\n${task.description || ''}\nUse markdown code blocks.`);
   },
   'data-bot': async (task) => {
     return await callAI(`You are DataBot, a data analyst. Analyze: ${task.title}\n${task.description || ''}`);
-  },
-  'writer-bot': async (task) => {
-    return await callAI(`You are WriterBot, a content writer. Write: ${task.title}\n${task.description || ''}`);
-  },
-  'research-bot': async (task) => {
-    return await callAI(`You are ResearchBot, a researcher. Research: ${task.title}\n${task.description || ''}`);
   },
 };
 
