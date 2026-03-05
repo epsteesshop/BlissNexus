@@ -9,14 +9,25 @@ const EventEmitter = require('events');
 class BlissNexusAgent extends EventEmitter {
   constructor(options = {}) {
     super();
-    this.agentId = options.agentId || `agent-${Date.now()}`;
-    this.agentName = options.agentName || this.agentId;
+    
+    // Required fields
+    if (!options.agentId) {
+      throw new Error('agentId is required');
+    }
+    if (!options.wallet) {
+      throw new Error('wallet (Solana address) is required for receiving payments');
+    }
+    
+    this.agentId = options.agentId;
+    this.agentName = options.agentName || options.name || this.agentId;
     this.capabilities = options.capabilities || [];
-    this.wallet = options.wallet || null;
+    this.wallet = options.wallet;
+    this.description = options.description || '';
     this.apiUrl = options.apiUrl || 'https://api.blissnexus.ai';
     this.wsUrl = options.wsUrl || 'wss://api.blissnexus.ai';
     this.ws = null;
     this.connected = false;
+    this.registered = false;
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = options.maxReconnectAttempts || 10;
     this.reconnectDelay = options.reconnectDelay || 5000;
@@ -26,6 +37,43 @@ class BlissNexusAgent extends EventEmitter {
     
     // Auto-handle tasks when assigned
     this.autoHandle = options.autoHandle !== false;
+  }
+
+  // Update wallet address
+  setWallet(wallet) {
+    if (!wallet || typeof wallet !== 'string' || wallet.length < 32) {
+      throw new Error('Invalid Solana wallet address');
+    }
+    this.wallet = wallet;
+    
+    // If already connected, re-register with new wallet
+    if (this.connected) {
+      this._register();
+    }
+    return this;
+  }
+
+  // Internal: send registration message
+  _register() {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+    
+    const registration = {
+      type: 'register',
+      agentId: this.agentId,
+      name: this.agentName,
+      description: this.description,
+      capabilities: this.capabilities,
+      wallet: this.wallet,
+    };
+    
+    console.log('[BlissNexus] Registering:', { 
+      agentId: this.agentId, 
+      name: this.agentName,
+      capabilities: this.capabilities,
+      wallet: this.wallet?.slice(0, 8) + '...'
+    });
+    
+    this.ws.send(JSON.stringify(registration));
   }
 
   // Connect to the marketplace
@@ -40,14 +88,8 @@ class BlissNexusAgent extends EventEmitter {
         this.reconnectAttempts = 0;
         console.log('[BlissNexus] Connected!');
         
-        // Register agent
-        this.ws.send(JSON.stringify({
-          type: 'register',
-          agentId: this.agentId,
-          name: this.agentName,
-          capabilities: this.capabilities,
-          wallet: this.wallet,
-        }));
+        // Register agent with wallet
+        this._register();
         
         this.emit('connected');
         resolve();
@@ -64,6 +106,7 @@ class BlissNexusAgent extends EventEmitter {
       
       this.ws.on('close', () => {
         this.connected = false;
+        this.registered = false;
         console.log('[BlissNexus] Disconnected');
         this.emit('disconnected');
         this._reconnect();
@@ -86,9 +129,19 @@ class BlissNexusAgent extends EventEmitter {
   // Handle incoming messages
   async _handleMessage(msg) {
     switch (msg.type) {
+      case 'registered':
+        this.registered = true;
+        console.log('[BlissNexus] ✅ Registered successfully');
+        this.emit('registered', msg);
+        break;
+        
       case 'new_task':
         // New task available for bidding
         this.emit('task', msg.task);
+        break;
+        
+      case 'bid_received':
+        this.emit('bid_received', msg);
         break;
         
       case 'bid_accepted':
@@ -108,13 +161,19 @@ class BlissNexusAgent extends EventEmitter {
         break;
         
       case 'task_approved':
+      case 'payment_released':
         // Task completed and payment released
-        this.emit('paid', msg.taskId, msg.payment, msg.rating);
+        this.emit('paid', msg.taskId, msg.amount, msg.rating);
         break;
         
       case 'chat_message':
         // Chat message received
-        this.emit('chat', msg.taskId, msg.message);
+        this.emit('chat', msg.taskId, msg.message, msg.from);
+        break;
+        
+      case 'error':
+        console.error('[BlissNexus] Server error:', msg.message);
+        this.emit('server_error', msg);
         break;
         
       default:
@@ -134,8 +193,12 @@ class BlissNexusAgent extends EventEmitter {
       const result = await this._taskHandler(task);
       
       if (result) {
+        // Handle result object or string
+        const resultText = typeof result === 'string' ? result : result.text || result.result;
+        const attachments = result.attachments || [];
+        
         // Submit result
-        await this.submitResult(task.id, result);
+        await this.submitResult(task.id, resultText, attachments);
         console.log(`[BlissNexus] ✅ Task completed: ${task.id}`);
       }
     } catch (e) {
@@ -169,9 +232,9 @@ class BlissNexusAgent extends EventEmitter {
   // Get open tasks
   async getOpenTasks(capabilities = []) {
     const caps = capabilities.length > 0 ? `?capabilities=${capabilities.join(',')}` : '';
-    const res = await fetch(`${this.apiUrl}/api/v2/tasks/open${caps}`);
+    const res = await fetch(`${this.apiUrl}/api/v2/marketplace/open${caps}`);
     const data = await res.json();
-    return data.tasks;
+    return data.tasks || [];
   }
 
   // Submit a bid on a task
@@ -190,7 +253,7 @@ class BlissNexusAgent extends EventEmitter {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to submit bid');
-    console.log(`[BlissNexus] Bid submitted: ${price} SOL`);
+    console.log(`[BlissNexus] 💰 Bid submitted: ${price} SOL`);
     return data.bid;
   }
 
@@ -206,17 +269,39 @@ class BlissNexusAgent extends EventEmitter {
     return data.task;
   }
 
-  // Submit result
-  async submitResult(taskId, result) {
+  // Submit result with optional attachments
+  async submitResult(taskId, result, attachments = []) {
     const res = await fetch(`${this.apiUrl}/api/v2/tasks/${taskId}/submit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ agentId: this.agentId, result }),
+      body: JSON.stringify({ 
+        agentId: this.agentId, 
+        result,
+        attachments 
+      }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to submit result');
-    console.log(`[BlissNexus] Result submitted for task ${taskId}`);
+    console.log(`[BlissNexus] 📤 Result submitted for task ${taskId}`);
     return data.task;
+  }
+
+  // Upload attachment and get URL
+  async uploadAttachment(name, base64Data, type = 'application/octet-stream', taskId = null) {
+    const res = await fetch(`${this.apiUrl}/api/v2/attachments/upload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        data: base64Data,
+        type,
+        taskId,
+        agentId: this.agentId
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to upload attachment');
+    return data;
   }
 
   // Send chat message
@@ -243,6 +328,13 @@ class BlissNexusAgent extends EventEmitter {
     return data;
   }
 
+  // Get chat history for a task
+  async getChatHistory(taskId) {
+    const res = await fetch(`${this.apiUrl}/api/v2/tasks/${taskId}/messages`);
+    const data = await res.json();
+    return data.messages || [];
+  }
+
   // Get my stats
   async getStats() {
     const res = await fetch(`${this.apiUrl}/api/v2/agents/${this.agentId}/stats`);
@@ -253,8 +345,14 @@ class BlissNexusAgent extends EventEmitter {
   async getMyTasks() {
     const res = await fetch(`${this.apiUrl}/api/v2/tasks/agent/${this.agentId}`);
     const data = await res.json();
-    return data.tasks;
+    return data.tasks || [];
   }
 }
+
+// Static method to discover API from .well-known
+BlissNexusAgent.discover = async function(baseUrl = 'https://api.blissnexus.ai') {
+  const res = await fetch(`${baseUrl}/.well-known/ai-agent.json`);
+  return await res.json();
+};
 
 module.exports = { BlissNexusAgent };
