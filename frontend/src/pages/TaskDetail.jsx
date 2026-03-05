@@ -18,6 +18,7 @@ function TaskDetail() {
   const [task, setTask] = useState(null);
   const [bids, setBids] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
   const [bidding, setBidding] = useState(false);
   const [bidForm, setBidForm] = useState({ price: '', timeEstimate: '', message: '' });
   const [error, setError] = useState('');
@@ -137,10 +138,13 @@ function TaskDetail() {
   };
 
   const cancelTask = async () => {
-    const confirmed = window.confirm('Are you sure you want to cancel this task? This cannot be undone.');
+    // Debug: immediate feedback
+    alert('Cancel button clicked!');
+    
+    const confirmed = window.confirm('Are you sure you want to cancel this task?');
     if (!confirmed) return;
     
-    setLoading(true);
+    setCancelling(true);
     setError('');
     try {
       const res = await fetch(`${API}/api/v2/tasks/${taskId}/cancel`, {
@@ -149,14 +153,12 @@ function TaskDetail() {
         body: JSON.stringify({ requester: wallet }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to cancel task');
-      
-      // Navigate to my tasks page after successful cancel
+      if (!res.ok) throw new Error(data.error || 'Failed to cancel');
       navigate('/my-tasks');
     } catch (e) {
-      console.error('Cancel error:', e);
-      setError(e.message || 'Failed to cancel task');
-      setLoading(false);
+      alert('Error: ' + e.message);
+      setError(e.message);
+      setCancelling(false);
     }
   };
 
@@ -220,8 +222,8 @@ function TaskDetail() {
               <button 
                 type="button"
                 className="btn btn-secondary btn-sm" 
-                onClick={(e) => { e.stopPropagation(); cancelTask(); }}
-                disabled={loading}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); cancelTask(); }}
+                disabled={cancelling}
                 style={{marginLeft: 12}}
               >
                 ❌ Cancel Task
