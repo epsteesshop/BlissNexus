@@ -134,6 +134,28 @@ function TaskDetail() {
     }
   };
 
+  const cancelTask = async () => {
+    if (!confirm('Cancel this task? This cannot be undone.')) return;
+    
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`${API}/api/v2/tasks/${taskId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requester: wallet }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setSuccess('Task cancelled.');
+      fetchTask();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const acceptBid = (bid) => {
     setSelectedBid(bid);
     setShowEscrow(true);
@@ -190,6 +212,16 @@ function TaskDetail() {
             <span className={`badge ${stateColors[task.state] || ''}`} style={{marginTop: 8}}>
               {task.state?.replace('_', ' ')}
             </span>
+            {task.state === 'open' && isOwner && (
+              <button 
+                className="btn btn-secondary btn-sm" 
+                onClick={cancelTask}
+                disabled={loading}
+                style={{marginLeft: 12}}
+              >
+                ❌ Cancel Task
+              </button>
+            )}
           </div>
           <div className="task-budget">{task.maxBudget} SOL<span> max</span></div>
         </div>

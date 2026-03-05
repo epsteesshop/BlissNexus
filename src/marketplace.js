@@ -218,6 +218,23 @@ async function approveResult(taskId, requester, rating = 5) {
   return task;
 }
 
+
+// Cancel task (only if no bid accepted yet)
+async function cancelTask(taskId, requester) {
+  const task = tasks.get(taskId);
+  if (!task) throw new Error('Task not found');
+  if (task.requester !== requester) throw new Error('Not authorized');
+  if (task.state !== TaskState.OPEN) throw new Error('Can only cancel open tasks');
+  
+  task.state = TaskState.CANCELLED;
+  task.updatedAt = Date.now();
+  
+  // Persist
+  await db.saveTask(task);
+  console.log('[Marketplace] Task cancelled:', taskId);
+  
+  return task;
+}
 // Dispute result
 async function disputeResult(taskId, requester, reason) {
   const task = tasks.get(taskId);
@@ -278,6 +295,7 @@ module.exports = {
   startWork,
   submitResult,
   approveResult,
+  cancelTask,
   disputeResult,
   getTask,
   getAllTasks,

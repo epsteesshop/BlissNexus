@@ -184,6 +184,17 @@ function setupRoutes(app, broadcast) {
     } catch (e) { res.status(400).json({ error: e.message }); }
   });
   
+  // Cancel task (before bid accepted)
+  app.post('/api/v2/tasks/:taskId/cancel', async (req, res) => {
+    try {
+      const { requester } = req.body;
+      if (!requester) return res.status(400).json({ error: 'Requester required' });
+      const task = await marketplace.cancelTask(req.params.taskId, requester);
+      if (broadcast) broadcast({ type: 'task_cancelled', taskId: task.id });
+      res.json({ success: true, task });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+  
   // Dispute
   app.post('/api/v2/tasks/:taskId/dispute', async (req, res) => {
     try {
