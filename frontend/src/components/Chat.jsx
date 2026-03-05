@@ -77,12 +77,13 @@ export default function Chat({ taskId, task }) {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        // Add message to local state immediately
-        if (data.message) {
-          setMessages(prev => [...prev, data.message]);
-        }
         setInput('');
+        // Refetch messages to ensure sync
+        const refreshRes = await fetch(`/api/v2/tasks/${taskId}/messages${userId ? `?userId=${userId}` : ''}`);
+        const refreshData = await refreshRes.json();
+        if (refreshData.messages) {
+          setMessages(refreshData.messages);
+        }
       } else {
         const err = await res.json();
         alert(err.error || 'Failed to send');
