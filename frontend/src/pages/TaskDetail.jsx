@@ -400,20 +400,6 @@ function TaskDetail() {
         </div>
       )}
 
-
-      {/* Manual release for stuck payments */}
-      {task && task.state === 'completed' && task.escrowPDA && isOwner && (
-        <div className="card" style={{marginTop: 24}}>
-          <h3 style={{fontSize: 16, marginBottom: 12}}>💸 Release Payment</h3>
-          <p style={{fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16}}>
-            Click to release escrowed funds to the agent.
-          </p>
-          <button className="btn btn-primary" onClick={() => approveResult(5)} disabled={loading}>
-            {loading ? 'Releasing...' : `Release Payment to ${task.assignedBid?.agentName || 'Agent'}`}
-          </button>
-        </div>
-      )}
-      {task && task.state === 'completed' && (
         <div style={{ marginTop: 24 }}>
           <Rating taskId={taskId} task={task} />
         </div>
