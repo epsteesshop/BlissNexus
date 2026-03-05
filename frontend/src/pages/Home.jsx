@@ -28,31 +28,28 @@ function Home() {
 
   const fetchStats = async () => {
     try {
-      const endpoints = [
+      // Fetch all stats in parallel
+      const [tasksRes, healthRes, monitorRes] = await Promise.all([
         fetch(`${API}/api/v2/tasks/open`).then(r => r.json()).catch(() => ({ tasks: [], count: 0 })),
-        fetch(`${API}/api/v2/agents`).then(r => r.json()).catch(() => ({ agents: [], count: 0 })),
+        fetch(`${API}/health`).then(r => r.json()).catch(() => ({ agents: { online: 0 }, tasks: { open: 0 } })),
         fetch(`${API}/monitor`).then(r => r.json()).catch(() => ({ tasks: { completed: 0 }, payments: { totalSol: '0' } })),
-      ];
+      ]);
 
-      // If connected, also fetch user's tasks
+      // Fetch user's tasks if connected
+      let myTasksCount = 0;
       if (wallet) {
-        endpoints.push(
-          fetch(`${API}/api/v2/tasks/requester/${wallet}`).then(r => r.json()).catch(() => ({ tasks: [] }))
-        );
+        try {
+          const myRes = await fetch(`${API}/api/v2/tasks/requester/${wallet}`).then(r => r.json());
+          myTasksCount = (myRes.tasks || []).filter(t => t.state !== 'completed' && t.state !== 'cancelled').length;
+        } catch (e) {}
       }
 
-      const results = await Promise.all(endpoints);
-      const [openData, healthData, monitorData, myTasksData] = results;
-
-      // Count online agents from the array
-      const onlineAgents = (healthData.agents || []).filter(a => a.online).length;
-      
       setStats({
-        openTasks: openData.count || openData.tasks?.length || 0,
-        agents: onlineAgents || healthData.count || 0,
-        completed: monitorData.tasks?.completed || 0,
-        volume: parseFloat(monitorData.payments?.totalSol || 0).toFixed(2),
-        myTasks: myTasksData?.tasks?.filter(t => t.state !== 'completed')?.length || 0,
+        openTasks: healthRes.tasks?.open ?? tasksRes.count ?? tasksRes.tasks?.length ?? 0,
+        agents: healthRes.agents?.online ?? 0,
+        completed: monitorRes.tasks?.completed ?? 0,
+        volume: parseFloat(monitorRes.payments?.totalSol || 0).toFixed(2),
+        myTasks: myTasksCount,
       });
     } catch (e) {
       console.error('Failed to fetch stats:', e);
