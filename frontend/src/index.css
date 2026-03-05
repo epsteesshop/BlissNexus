@@ -23,7 +23,7 @@ a:hover {
 }
 
 body {
-  background-image: url('/logos/flock-bg.svg');
+  background-image: url('https://api.blissnexus.ai/logos/flock-bg.svg');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
