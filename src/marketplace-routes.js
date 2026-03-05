@@ -365,22 +365,16 @@ function setupRoutes(app, broadcast) {
         return res.status(400).json({ error: "Can only rate completed tasks" });
       }
       
-      // Determine rater role and ratee
+      // Only task creator can rate the agent
       const requesterId = task.requester_id || task.requesterId || task.requester;
       const assignedAgent = task.assigned_agent || task.assignedAgent;
       
-      let rateeId, raterRole;
-      if (raterId === requesterId) {
-        // Requester rating the agent
-        rateeId = assignedAgent;
-        raterRole = 'requester';
-      } else if (raterId === assignedAgent) {
-        // Agent rating the requester
-        rateeId = requesterId;
-        raterRole = 'agent';
-      } else {
-        return res.status(403).json({ error: "Only task participants can rate" });
+      if (raterId !== requesterId) {
+        return res.status(403).json({ error: "Only task creator can rate" });
       }
+      
+      const rateeId = assignedAgent;
+      const raterRole = 'requester';
       
       // Check if already rated
       const alreadyRated = await db.hasUserRatedTask(taskId, raterId);

@@ -8,29 +8,29 @@ export default function Rating({ taskId, task }) {
   const [review, setReview] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [existingRatings, setExistingRatings] = useState([]);
+  const [existingRating, setExistingRating] = useState(null);
   const [error, setError] = useState('');
 
   const userId = publicKey?.toString();
   const state = task?.state || task?.status;
   const requesterId = task?.requester_id || task?.requesterId || task?.requester;
-  const assignedAgent = task?.assigned_agent || task?.assignedAgent;
 
-  // Check if user is a participant
+  // Only task creator can rate
   const isRequester = userId === requesterId;
-  const isAgent = userId === assignedAgent;
-  const canRate = (isRequester || isAgent) && state === 'completed';
+  const canRate = isRequester && state === 'completed';
 
-  // Load existing ratings
+  // Load existing rating
   useEffect(() => {
     if (!taskId) return;
     fetch(`/api/v2/tasks/${taskId}/ratings`)
       .then(r => r.json())
       .then(data => {
-        setExistingRatings(data.ratings || []);
-        // Check if current user already rated
-        if (userId && data.ratings?.some(r => r.rater_id === userId)) {
-          setSubmitted(true);
+        const ratings = data.ratings || [];
+        if (ratings.length > 0) {
+          setExistingRating(ratings[0]);
+          if (userId && ratings[0].rater_id === userId) {
+            setSubmitted(true);
+          }
         }
       })
       .catch(() => {});
@@ -57,7 +57,7 @@ export default function Rating({ taskId, task }) {
       
       if (res.ok) {
         setSubmitted(true);
-        setExistingRatings(prev => [...prev, data.rating]);
+        setExistingRating(data.rating);
       } else {
         setError(data.error || 'Failed to submit rating');
       }
@@ -73,9 +73,6 @@ export default function Rating({ taskId, task }) {
     return null;
   }
 
-  // Show existing ratings
-  const otherRating = existingRatings.find(r => r.rater_id !== userId);
-
   return (
     <div style={{
       border: '1px solid var(--border)',
@@ -84,37 +81,35 @@ export default function Rating({ taskId, task }) {
       background: 'var(--bg-secondary)',
       marginTop: 24
     }}>
-      <h3 style={{ margin: '0 0 16px 0', fontSize: 16 }}>⭐ Ratings</h3>
+      <h3 style={{ margin: '0 0 16px 0', fontSize: 16 }}>⭐ Agent Rating</h3>
       
-      {/* Show other party's rating if exists */}
-      {otherRating && (
+      {/* Show existing rating */}
+      {existingRating && (
         <div style={{
           padding: '12px 16px',
           background: 'var(--bg-tertiary)',
           borderRadius: 'var(--radius)',
-          marginBottom: 16
+          marginBottom: canRate && !submitted ? 16 : 0
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <span style={{ color: '#f59e0b' }}>
-              {'★'.repeat(otherRating.rating)}{'☆'.repeat(5 - otherRating.rating)}
+            <span style={{ color: '#f59e0b', fontSize: 18 }}>
+              {'★'.repeat(existingRating.rating)}{'☆'.repeat(5 - existingRating.rating)}
             </span>
-            <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-              from {otherRating.rater_role === 'requester' ? 'Task Creator' : 'Agent'}
-            </span>
+            <span style={{ fontWeight: 600 }}>{existingRating.rating}/5</span>
           </div>
-          {otherRating.review && (
-            <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
-              "{otherRating.review}"
+          {existingRating.review && (
+            <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 8 }}>
+              "{existingRating.review}"
             </div>
           )}
         </div>
       )}
       
-      {/* Rating form */}
-      {canRate && !submitted ? (
+      {/* Rating form - only for task creator who hasn't rated yet */}
+      {canRate && !submitted && !existingRating ? (
         <div>
           <div style={{ marginBottom: 12, fontSize: 14, color: 'var(--text-secondary)' }}>
-            Rate the {isRequester ? 'agent' : 'task creator'}:
+            How was the agent's work?
           </div>
           
           {/* Star picker */}
@@ -155,7 +150,8 @@ export default function Rating({ taskId, task }) {
               fontSize: 14,
               minHeight: 80,
               resize: 'vertical',
-              marginBottom: 12
+              marginBottom: 12,
+              boxSizing: 'border-box'
             }}
           />
           
@@ -181,19 +177,20 @@ export default function Rating({ taskId, task }) {
             {submitting ? 'Submitting...' : 'Submit Rating'}
           </button>
         </div>
-      ) : submitted ? (
+      ) : canRate && submitted ? (
         <div style={{
-          padding: '16px',
+          padding: '12px 16px',
           background: 'var(--bg-tertiary)',
           borderRadius: 'var(--radius)',
           textAlign: 'center',
-          color: 'var(--text-secondary)'
+          color: 'var(--text-secondary)',
+          fontSize: 14
         }}>
-          ✓ You've rated this task
+          ✓ Thanks for your feedback!
         </div>
-      ) : !canRate && existingRatings.length === 0 ? (
+      ) : !existingRating ? (
         <div style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>
-          No ratings yet
+          No rating yet
         </div>
       ) : null}
     </div>
