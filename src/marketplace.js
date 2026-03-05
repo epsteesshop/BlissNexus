@@ -260,6 +260,7 @@ function broadcast(event, data) {
 }
 
 module.exports = {
+  clearAllTasks,
   init,
   TaskState,
   createTask,
@@ -279,3 +280,11 @@ module.exports = {
   setBroadcastFunction,
   broadcast,
 };
+
+// Clear all tasks (admin)
+function clearAllTasks() {
+  tasks.clear();
+  bids.clear();
+  console.log('[Marketplace] All tasks cleared');
+}
+

@@ -578,6 +578,13 @@ function setupRoutes(app, broadcast) {
           kicked.push(agentId);
         } catch (e) {}
       });
+
+  // Clear all in-memory tasks
+  app.post('/api/admin/clear-tasks', (req, res) => {
+    const marketplace = require('./src/marketplace');
+    marketplace.clearAllTasks();
+    res.json({ success: true, message: 'In-memory tasks cleared' });
+  });
       global.connections.clear();
     }
     if (global.agents) {
