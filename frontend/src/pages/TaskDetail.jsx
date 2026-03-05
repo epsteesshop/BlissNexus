@@ -247,8 +247,8 @@ function TaskDetail() {
               <button 
                 type="button"
                 className="btn btn-secondary btn-sm" 
-                onClick={() => { alert("TEST"); }}
-                disabled={cancelling}
+                ref={cancelBtnRef}
+                
                 style={{marginLeft: 12}}
               >
                 ❌ Cancel Task
