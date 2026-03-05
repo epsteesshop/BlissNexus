@@ -1526,3 +1526,14 @@ const shutdown = async (signal) => {
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 // reload Wed Mar  4 22:25:57 CST 2026
+
+// Debug: list in-memory agents
+app.get('/api/debug/agents', (req, res) => {
+  const list = Array.from(agents.values()).map(a => ({
+    id: a.agentId,
+    name: a.name,
+    online: a.online,
+    lastSeen: new Date(a.lastSeen).toISOString()
+  }));
+  res.json({ count: list.length, agents: list });
+});
