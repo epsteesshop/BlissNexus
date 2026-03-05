@@ -26,8 +26,9 @@ function TaskDetail() {
   const [selectedBid, setSelectedBid] = useState(null);
 
   const wallet = publicKey?.toBase58();
-  const isOwner = wallet && task?.requester === wallet;
-  console.log('[TaskDetail] wallet:', wallet, 'task.requester:', task?.requester, 'isOwner:', wallet && task?.requester === wallet);
+  // Check multiple possible field names for requester
+  const taskRequester = task?.requester || task?.requester_id || task?.requesterId;
+  const isOwner = wallet && taskRequester === wallet;
 
   const fetchTask = async () => {
     try {
