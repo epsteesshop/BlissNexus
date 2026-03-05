@@ -27,6 +27,7 @@ function TaskDetail() {
 
   const wallet = publicKey?.toBase58();
   const isOwner = wallet && task?.requester === wallet;
+  console.log('[TaskDetail] wallet:', wallet, 'task.requester:', task?.requester, 'isOwner:', wallet && task?.requester === wallet);
 
   const fetchTask = async () => {
     try {
@@ -135,6 +136,7 @@ function TaskDetail() {
   };
 
   const cancelTask = async () => {
+    console.log('[Cancel] Button clicked, wallet:', wallet, 'taskId:', taskId);
     if (!window.confirm('Cancel this task? This cannot be undone.')) return;
     
     setLoading(true);
