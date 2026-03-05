@@ -65,7 +65,7 @@ function TaskDetail() {
         .then(r => r.json())
         .then(d => {
           if (d.success) {
-            window.location.href = '/my-tasks';
+            window.location.href = '/app/my-tasks';
           } else {
             btn.textContent = '❌ Failed - tap to retry';
             btn.disabled = false;
