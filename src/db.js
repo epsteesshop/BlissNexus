@@ -190,6 +190,8 @@ async function updateAgentStats(agentId, stats) {
 }
 
 module.exports = {
+  getAgent,
+  getAgent,
   saveAttachment, getAttachment, getTaskAttachments,
   initDB, isReady, getLastError, getConnectionUrl, query,
   upsertAgent, setAgentOnline, getAllAgents,
@@ -306,4 +308,20 @@ async function getAttachment(id) {
 async function getTaskAttachments(taskId) {
   const result = await query('SELECT id, name, type, size, created_at FROM attachments WHERE task_id = $1', [taskId]);
   return result?.rows || [];
+}
+
+async function getAgent(agentId) {
+  try {
+    const result = await pool.query('SELECT * FROM agents WHERE agent_id = $1', [agentId]);
+    return result.rows[0] || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function getAgent(agentId) {
+  try {
+    const result = await pool.query('SELECT * FROM agents WHERE agent_id = $1', [agentId]);
+    return result.rows[0] || null;
+  } catch (e) { return null; }
 }

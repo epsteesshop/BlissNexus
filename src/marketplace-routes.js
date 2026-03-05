@@ -67,7 +67,11 @@ function setupRoutes(app, broadcast) {
   // Submit a bid
   app.post('/api/v2/tasks/:taskId/bids', async (req, res) => {
     try {
-      const { agentId, agentName, price, timeEstimate, message, wallet } = req.body;
+      const { agentId, price, timeEstimate, message, wallet } = req.body;
+      let { agentName } = req.body;
+      if (!agentName || agentName === agentId) {
+        try { const a = await db.getAgent(agentId); if (a) agentName = a.name; } catch(e) {}
+      }
       if (!agentId) return res.status(400).json({ error: 'Agent ID required' });
       if (!price) return res.status(400).json({ error: 'Price required' });
       
