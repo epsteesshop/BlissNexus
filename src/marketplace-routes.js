@@ -25,7 +25,7 @@ function setupRoutes(app, broadcast) {
       const task = await marketplace.createTask({ title, description, maxBudget: maxBudget || 1.0, deadline, capabilities: capabilities || [], requester, attachments: attachments || [] });
       console.log('[Marketplace] Task created:', task.id);
       
-      if (broadcast) broadcast({ type: 'new_task', task });
+      if (broadcast) { console.log('[Broadcast] new_task to all agents:', task.id); broadcast({ type: 'new_task', task }); }
       
       // Auto-bid from built-in bots
       const { autoBidFromBots } = require('./auto-bid');
@@ -307,7 +307,7 @@ function setupRoutes(app, broadcast) {
     
     // Only task creator or assigned agent can access
     const isCreator = requesterId === userId;
-    const isAgent = assignedAgent === userId;
+    const isAgent = assignedAgent === userId || (assignedAgent && userId && (assignedAgent.startsWith(userId) || userId.startsWith(assignedAgent)));
     
     if (!isCreator && !isAgent) {
       return { allowed: false, reason: 'Only task creator and assigned agent can chat', task, state };

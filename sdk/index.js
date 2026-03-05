@@ -64,6 +64,7 @@ class BlissNexusAgent extends EventEmitter {
       description: this.description,
       capabilities: this.capabilities,
       wallet: this.wallet,
+      publicKey: this.wallet,
     };
     
     console.log('[BlissNexus] Registering:', { 
@@ -249,6 +250,7 @@ class BlissNexusAgent extends EventEmitter {
         timeEstimate,
         message,
         wallet: this.wallet,
+      publicKey: this.wallet,
       }),
     });
     const data = await res.json();

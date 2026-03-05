@@ -67,7 +67,7 @@ const marketplace = require("./src/marketplace");
 // ============================================================================
 
 const PORT = process.env.PORT || 3000;
-const HEARTBEAT_TIMEOUT = 60000;
+const HEARTBEAT_TIMEOUT = 300000; // 5 minutes
 const CLEANUP_INTERVAL = 30000;
 const BID_WINDOW_MS = 10000; // Time agents have to bid on a task
 
@@ -1015,6 +1015,11 @@ function broadcast(data, excludeAgentId = null) {
 }
 
 wss.on('connection', (ws, req) => {
+  // Keep connection alive with pings every 30s
+  const pingInterval = setInterval(() => {
+    if (ws.readyState === 1) ws.ping();
+  }, 30000);
+  ws.on("close", () => clearInterval(pingInterval));
   // Track authentication state
   ws.isAuthenticated = false;
   ws.agentId = null;
@@ -1117,6 +1122,7 @@ wss.on('connection', (ws, req) => {
     
     switch (type) {
       case 'heartbeat':
+      case 'ping':
         heartbeat(agentId);
         send(ws, { type: 'heartbeat_ack', ts: Date.now() });
         break;

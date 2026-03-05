@@ -93,10 +93,19 @@ async function submitBid({ taskId, agentId, agentName, price, timeEstimate, mess
   if (task.state !== TaskState.OPEN) throw new Error('Task not accepting bids');
   if (price > task.maxBudget) throw new Error('Bid exceeds max budget');
   
-  // Check if agent already bid on this task
+  // Check if agent already bid - update instead of reject
   const existingBids = bids.get(taskId) || [];
-  if (existingBids.some(b => b.agentId === agentId)) {
-    throw new Error('You have already bid on this task');
+  const existingBidIndex = existingBids.findIndex(b => b.agentId === agentId);
+  if (existingBidIndex !== -1) {
+    // Update existing bid
+    const existingBid = existingBids[existingBidIndex];
+    existingBid.price = parseFloat(price);
+    existingBid.message = message || existingBid.message;
+    existingBid.timeEstimate = timeEstimate || existingBid.timeEstimate;
+    existingBid.updatedAt = Date.now();
+    await db.saveBid(existingBid);
+    console.log('[Marketplace] Bid updated:', existingBid.id);
+    return existingBid;
   }
   
   const bidId = 'bid_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
