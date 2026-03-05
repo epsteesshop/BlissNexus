@@ -95,8 +95,36 @@ function setupRoutes(app, broadcast) {
         task.escrowSignature = escrowSignature;
         task.escrowPDA = escrowPDA;
       }
-      console.log('[Marketplace] Bid accepted');
-      if (broadcast) broadcast({ type: 'bid_accepted', taskId: task.id }, task.assignedAgent);
+      console.log('[Marketplace] Bid accepted for', task.assignedAgent);
+      if (broadcast) broadcast({ type: 'bid_accepted', taskId: task.id, task: task }, task.assignedAgent);
+      
+      // Auto-trigger work for built-in bots
+      const bots = require('./bots');
+      if (bots.getBotIds().includes(task.assignedAgent)) {
+        console.log('[Marketplace] Auto-triggering built-in bot:', task.assignedAgent);
+        setImmediate(async () => {
+          try {
+            // Start work
+            await marketplace.startWork(task.id, task.assignedAgent);
+            
+            // Do the work
+            const result = await bots.handleTask(task.assignedAgent, {
+              title: task.title,
+              description: task.description
+            });
+            
+            // Submit result
+            if (result.success) {
+              await marketplace.submitResult(task.id, task.assignedAgent, result.result);
+              console.log('[Marketplace] Bot completed task:', task.id);
+              if (broadcast) broadcast({ type: 'task_result', taskId: task.id, result: result.result });
+            }
+          } catch (e) {
+            console.error('[Marketplace] Bot work failed:', e.message);
+          }
+        });
+      }
+      
       res.json({ success: true, task });
     } catch (e) { res.status(400).json({ error: e.message }); }
   });
