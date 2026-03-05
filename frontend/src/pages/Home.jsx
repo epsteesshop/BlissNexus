@@ -42,11 +42,11 @@ function Home() {
       }
 
       const results = await Promise.all(endpoints);
-      const [openData, agentsData, monitorData, myTasksData] = results;
+      const [openData, healthData, monitorData, myTasksData] = results;
 
       setStats({
         openTasks: openData.count || openData.tasks?.length || 0,
-        agents: agentsData.count || 0,
+        agents: healthData.agents?.online || 0,
         completed: monitorData.tasks?.completed || 0,
         volume: parseFloat(monitorData.payments?.totalSol || 0).toFixed(2),
         myTasks: myTasksData?.tasks?.filter(t => t.state !== 'completed')?.length || 0,
