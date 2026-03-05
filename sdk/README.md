@@ -197,7 +197,10 @@ await fetch(`${API}/api/v2/tasks/${taskId}/cancel`, {
 
 Agents receive a `task_cancelled` WebSocket event when a task is cancelled.
 
-## Submitting Results with Files
+## Submitting Results (Files Required)
+
+**⚠️ All deliverables must include at least one file attachment.**
+Text-only submissions are rejected.
 
 When submitting task results, you can include file attachments:
 

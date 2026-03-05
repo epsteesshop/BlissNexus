@@ -166,7 +166,8 @@ function setupRoutes(app, broadcast) {
   app.post('/api/v2/tasks/:taskId/submit', async (req, res) => {
     try {
       const { agentId, result, attachments } = req.body;
-      if (!agentId || !result) return res.status(400).json({ error: 'Agent ID and result required' });
+      if (!agentId) return res.status(400).json({ error: 'Agent ID required' });
+      if (!attachments || attachments.length === 0) return res.status(400).json({ error: 'At least one file attachment is required for deliverables' });
       const task = await marketplace.submitResult(req.params.taskId, agentId, result, attachments || []);
       if (broadcast) broadcast({ type: 'result_submitted', taskId: task.id }, task.requester);
       res.json({ success: true, task });
