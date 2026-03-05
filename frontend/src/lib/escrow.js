@@ -1,10 +1,10 @@
 /**
  * BlissNexus Escrow Integration
  * Uses the deployed Anchor escrow program on Solana Devnet
+ * Program ID: 64korfZTbv6sZQyuxa5FandZsLBkdKMPHR39bnaPeAxc
  */
 
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { AnchorProvider, Program, BN } from '@coral-xyz/anchor';
 
 // Devnet RPCs with fallback
 const DEVNET_RPCS = [
@@ -14,43 +14,6 @@ const DEVNET_RPCS = [
 
 export const DEVNET_RPC = DEVNET_RPCS[0];
 export const ESCROW_PROGRAM_ID = '64korfZTbv6sZQyuxa5FandZsLBkdKMPHR39bnaPeAxc';
-
-// IDL for the escrow program (minimal version for client)
-const IDL = {
-  "version": "0.1.0",
-  "name": "blissnexus_escrow",
-  "instructions": [
-    {
-      "name": "createEscrow",
-      "accounts": [
-        { "name": "requester", "isMut": true, "isSigner": true },
-        { "name": "escrow", "isMut": true, "isSigner": false },
-        { "name": "systemProgram", "isMut": false, "isSigner": false }
-      ],
-      "args": [
-        { "name": "taskId", "type": { "array": ["u8", 32] } },
-        { "name": "amount", "type": "u64" }
-      ]
-    },
-    {
-      "name": "release",
-      "accounts": [
-        { "name": "requester", "isMut": true, "isSigner": true },
-        { "name": "agent", "isMut": true, "isSigner": false },
-        { "name": "escrow", "isMut": true, "isSigner": false }
-      ],
-      "args": []
-    },
-    {
-      "name": "refund",
-      "accounts": [
-        { "name": "requester", "isMut": true, "isSigner": true },
-        { "name": "escrow", "isMut": true, "isSigner": false }
-      ],
-      "args": []
-    }
-  ]
-};
 
 // Get connection with fallback
 export function getConnection() {
@@ -69,7 +32,7 @@ export function taskIdToBytes(taskId) {
 // Get escrow PDA for a task
 export async function getEscrowPDA(taskId) {
   const taskBytes = new Uint8Array(taskIdToBytes(taskId));
-  const [pda, bump] = await PublicKey.findProgramAddressSync(
+  const [pda, bump] = PublicKey.findProgramAddressSync(
     [new TextEncoder().encode('escrow'), taskBytes],
     new PublicKey(ESCROW_PROGRAM_ID)
   );
@@ -111,21 +74,14 @@ export async function requestAirdrop(walletAddress, solAmount = 1) {
 }
 
 /**
- * Build create escrow transaction
+ * Build fund escrow transaction
+ * Transfers SOL to the escrow PDA
  */
 export async function buildFundEscrowTransaction(requesterWallet, taskId, solAmount) {
   const connection = getConnection();
   const { pda } = await getEscrowPDA(taskId);
-  const programId = new PublicKey(ESCROW_PROGRAM_ID);
   const requesterPubkey = new PublicKey(requesterWallet);
   
-  // Create instruction data for createEscrow
-  // Anchor discriminator + taskId (32 bytes) + amount (8 bytes)
-  const taskBytes = taskIdToBytes(taskId);
-  const amountBN = new BN(Math.floor(solAmount * LAMPORTS_PER_SOL));
-  
-  // Build the transaction using System transfer for now
-  // (The full Anchor integration requires the IDL to be properly loaded)
   const transaction = new Transaction();
   
   transaction.add(
@@ -145,27 +101,6 @@ export async function buildFundEscrowTransaction(requesterWallet, taskId, solAmo
     transaction,
     escrowPDA: pda.toBase58(),
     amount: solAmount,
-  };
-}
-
-/**
- * Build refund transaction (for disputes)
- */
-export async function buildRefundTransaction(requesterWallet, taskId) {
-  const connection = getConnection();
-  const { pda } = await getEscrowPDA(taskId);
-  
-  const balance = await connection.getBalance(pda);
-  if (balance === 0) {
-    throw new Error('Escrow is empty');
-  }
-  
-  // For now, refunds need the on-chain program
-  // This will be called via the program instruction
-  return {
-    escrowPDA: pda.toBase58(),
-    balance: balance / LAMPORTS_PER_SOL,
-    programId: ESCROW_PROGRAM_ID,
   };
 }
 
@@ -215,7 +150,6 @@ export default {
   getBalance,
   requestAirdrop,
   buildFundEscrowTransaction,
-  buildRefundTransaction,
   checkEscrowFunding,
   verifyTransaction,
   getEscrowPDA,
