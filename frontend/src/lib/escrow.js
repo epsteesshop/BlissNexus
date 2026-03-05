@@ -149,6 +149,10 @@ export async function buildReleaseTransaction(requesterWallet, taskId, agentWall
   const { pda: escrowPDA } = getEscrowPDA(taskId);
   
   const discriminator = getDiscriminator('release');
+  const taskBytes = taskIdToBytes(taskId);
+  
+  // Instruction data: [8-byte discriminator][32-byte task_id]
+  const data = concatBytes(discriminator, taskBytes);
   
   const instruction = new TransactionInstruction({
     keys: [
@@ -157,7 +161,7 @@ export async function buildReleaseTransaction(requesterWallet, taskId, agentWall
       { pubkey: escrowPDA, isSigner: false, isWritable: true },
     ],
     programId,
-    data: discriminator,
+    data,
   });
   
   const transaction = new Transaction().add(instruction);
@@ -213,7 +217,11 @@ export async function buildCancelTransaction(requesterWallet, taskId) {
   const requesterPubkey = new PublicKey(requesterWallet);
   const { pda: escrowPDA } = getEscrowPDA(taskId);
   
-  const discriminator = getDiscriminator('cancel');
+  const discriminator = getDiscriminator('refund');  // Anchor instruction is 'refund'
+  const taskBytes = taskIdToBytes(taskId);
+  
+  // Instruction data: [8-byte discriminator][32-byte task_id]
+  const data = concatBytes(discriminator, taskBytes);
   
   const instruction = new TransactionInstruction({
     keys: [
@@ -221,7 +229,7 @@ export async function buildCancelTransaction(requesterWallet, taskId) {
       { pubkey: escrowPDA, isSigner: false, isWritable: true },
     ],
     programId,
-    data: discriminator,
+    data,
   });
   
   const transaction = new Transaction().add(instruction);
