@@ -1,28 +1,40 @@
 import { useState, useEffect, useRef } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 
-export default function Chat({ taskId }) {
+export default function Chat({ taskId, task }) {
   const { publicKey } = useWallet();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [chatState, setChatState] = useState({ locked: true, readOnly: false, reason: '' });
   const messagesEndRef = useRef(null);
   const wsRef = useRef(null);
 
+  const userId = publicKey?.toString();
+
   // Load initial messages
   useEffect(() => {
-    fetch(`/api/v2/tasks/${taskId}/messages`)
+    const url = `/api/v2/tasks/${taskId}/messages${userId ? `?userId=${userId}` : ''}`;
+    fetch(url)
       .then(r => r.json())
       .then(data => {
         setMessages(data.messages || []);
+        setChatState({
+          locked: data.locked || false,
+          readOnly: data.readOnly || false,
+          reason: data.reason || '',
+          status: data.status
+        });
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [taskId]);
+  }, [taskId, userId]);
 
   // Connect to WebSocket for real-time updates
   useEffect(() => {
+    if (chatState.locked) return;
+    
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const ws = new WebSocket(`${protocol}//${window.location.host}`);
     wsRef.current = ws;
@@ -37,7 +49,7 @@ export default function Chat({ taskId }) {
     };
 
     return () => ws.close();
-  }, [taskId]);
+  }, [taskId, chatState.locked]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -46,7 +58,7 @@ export default function Chat({ taskId }) {
 
   const sendMessage = async (e) => {
     e.preventDefault();
-    if (!input.trim() || sending) return;
+    if (!input.trim() || sending || chatState.readOnly) return;
 
     setSending(true);
     try {
@@ -54,14 +66,17 @@ export default function Chat({ taskId }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          senderId: publicKey?.toString() || 'anonymous',
-          senderName: publicKey ? publicKey.toString().slice(0, 8) : 'Guest',
+          senderId: userId,
+          senderName: userId?.slice(0, 8),
           message: input.trim()
         })
       });
 
       if (res.ok) {
         setInput('');
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to send');
       }
     } catch (err) {
       console.error('Failed to send message');
@@ -75,8 +90,29 @@ export default function Chat({ taskId }) {
   };
 
   const isOwnMessage = (msg) => {
-    return publicKey && msg.sender_id === publicKey.toString();
+    return userId && msg.sender_id === userId;
   };
+
+  // Locked state - show why chat isn't available
+  if (chatState.locked) {
+    return (
+      <div style={{
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-lg)',
+        padding: '40px 24px',
+        textAlign: 'center',
+        background: 'var(--bg-secondary)',
+        color: 'var(--text-tertiary)'
+      }}>
+        <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>Chat Locked</div>
+        <div style={{ fontSize: 14 }}>{chatState.reason}</div>
+        <div style={{ fontSize: 12, marginTop: 8, opacity: 0.7 }}>
+          Chat opens when a bid is accepted
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -105,6 +141,18 @@ export default function Chat({ taskId }) {
         }}>
           ({messages.length} messages)
         </span>
+        {chatState.readOnly && (
+          <span style={{
+            marginLeft: 'auto',
+            fontSize: 11,
+            padding: '4px 8px',
+            background: 'var(--bg-tertiary)',
+            borderRadius: 4,
+            color: 'var(--text-tertiary)'
+          }}>
+            ✓ Completed - Read Only
+          </span>
+        )}
       </div>
 
       {/* Messages */}
@@ -171,47 +219,59 @@ export default function Chat({ taskId }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <form onSubmit={sendMessage} style={{
-        padding: '12px 16px',
-        borderTop: '1px solid var(--border)',
-        display: 'flex',
-        gap: 8
-      }}>
-        <input
-          type="text"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder={publicKey ? "Type a message..." : "Connect wallet to chat"}
-          disabled={!publicKey || sending}
-          style={{
-            flex: 1,
-            padding: '10px 14px',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)',
-            background: 'var(--bg-primary)',
-            color: 'var(--text-primary)',
-            fontSize: 14,
-            outline: 'none'
-          }}
-        />
-        <button
-          type="submit"
-          disabled={!publicKey || !input.trim() || sending}
-          style={{
-            padding: '10px 20px',
-            background: 'var(--accent)',
-            color: 'white',
-            border: 'none',
-            borderRadius: 'var(--radius)',
-            fontWeight: 600,
-            cursor: publicKey && input.trim() ? 'pointer' : 'not-allowed',
-            opacity: publicKey && input.trim() ? 1 : 0.5
-          }}
-        >
-          {sending ? '...' : 'Send'}
-        </button>
-      </form>
+      {/* Input - only show if not read-only */}
+      {!chatState.readOnly ? (
+        <form onSubmit={sendMessage} style={{
+          padding: '12px 16px',
+          borderTop: '1px solid var(--border)',
+          display: 'flex',
+          gap: 8
+        }}>
+          <input
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder={userId ? "Type a message..." : "Connect wallet to chat"}
+            disabled={!userId || sending}
+            style={{
+              flex: 1,
+              padding: '10px 14px',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              background: 'var(--bg-primary)',
+              color: 'var(--text-primary)',
+              fontSize: 14,
+              outline: 'none'
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!userId || !input.trim() || sending}
+            style={{
+              padding: '10px 20px',
+              background: 'var(--accent)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 'var(--radius)',
+              fontWeight: 600,
+              cursor: userId && input.trim() ? 'pointer' : 'not-allowed',
+              opacity: userId && input.trim() ? 1 : 0.5
+            }}
+          >
+            {sending ? '...' : 'Send'}
+          </button>
+        </form>
+      ) : (
+        <div style={{
+          padding: '16px',
+          borderTop: '1px solid var(--border)',
+          textAlign: 'center',
+          color: 'var(--text-tertiary)',
+          fontSize: 13
+        }}>
+          This conversation has ended
+        </div>
+      )}
     </div>
   );
 }

@@ -236,11 +236,60 @@ function setupRoutes(app, broadcast) {
 
   // ==================== CHAT ====================
   
+  // Helper: Check if user can access chat
+  async function canAccessChat(taskId, userId) {
+    // Try DB first, then memory
+    let task = await db.getTaskById(taskId);
+    if (!task) task = marketplace.tasks.get(taskId);
+    if (!task) return { allowed: false, reason: 'Task not found' };
+    
+    // Normalize field names (DB uses snake_case, memory uses camelCase)
+    const state = task.state || task.status || 'open';
+    const requesterId = task.requester_id || task.requesterId || task.requester;
+    const assignedAgent = task.assigned_agent || task.assignedAgent;
+    
+    // Chat opens after bid accepted (assigned, in_progress, submitted, completed)
+    const chatStates = ['assigned', 'in_progress', 'submitted', 'completed'];
+    if (!chatStates.includes(state)) {
+      return { allowed: false, reason: 'Chat opens after bid is accepted', task, state };
+    }
+    
+    // Only task creator or assigned agent can access
+    const isCreator = requesterId === userId;
+    const isAgent = assignedAgent === userId;
+    
+    if (!isCreator && !isAgent) {
+      return { allowed: false, reason: 'Only task creator and assigned agent can chat', task, state };
+    }
+    
+    // Can only send messages if task is active (not completed)
+    const canSend = ['assigned', 'in_progress', 'submitted'].includes(state);
+    
+    return { allowed: true, task, state, canSend };
+  }
+  
   // Get messages for a task
   app.get("/api/v2/tasks/:taskId/messages", async (req, res) => {
     try {
+      const userId = req.query.userId;
+      const access = await canAccessChat(req.params.taskId, userId);
+      
+      if (!access.allowed) {
+        return res.json({ 
+          messages: [], 
+          locked: true, 
+          reason: access.reason,
+          status: access.task?.status 
+        });
+      }
+      
       const messages = await db.getMessages(req.params.taskId);
-      res.json({ messages });
+      res.json({ 
+        messages, 
+        locked: false,
+        readOnly: !access.canSend,
+        status: access.task?.status
+      });
     } catch (e) {
       res.status(500).json({ error: e.message });
     }
@@ -253,6 +302,17 @@ function setupRoutes(app, broadcast) {
       
       if (!senderId || !message) {
         return res.status(400).json({ error: "senderId and message required" });
+      }
+      
+      // Check access
+      const access = await canAccessChat(req.params.taskId, senderId);
+      
+      if (!access.allowed) {
+        return res.status(403).json({ error: access.reason });
+      }
+      
+      if (!access.canSend) {
+        return res.status(403).json({ error: "Chat is closed - task completed" });
       }
       
       const saved = await db.saveMessage(
