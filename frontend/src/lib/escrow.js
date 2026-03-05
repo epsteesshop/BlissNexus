@@ -45,6 +45,18 @@ function getDiscriminator(name) {
   return bytes.slice(0, 8);
 }
 
+// Concatenate Uint8Arrays (browser-compatible Buffer.concat replacement)
+function concatBytes(...arrays) {
+  const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const arr of arrays) {
+    result.set(arr, offset);
+    offset += arr.length;
+  }
+  return result;
+}
+
 // Get escrow PDA
 export function getEscrowPDA(taskId) {
   const taskBytes = taskIdToBytes(taskId);
@@ -97,14 +109,11 @@ export async function buildCreateEscrowTransaction(requesterWallet, taskId, solA
   // Build instruction data: discriminator + task_id (32 bytes) + amount (8 bytes LE)
   const discriminator = getDiscriminator('create_escrow');
   const taskBytes = taskIdToBytes(taskId);
-  const amountBytes = new ArrayBuffer(8);
-  new DataView(amountBytes).setBigUint64(0, BigInt(Math.floor(solAmount * LAMPORTS_PER_SOL)), true);
+  const amountBytes = new Uint8Array(8);
+  const view = new DataView(amountBytes.buffer);
+  view.setBigUint64(0, BigInt(Math.floor(solAmount * LAMPORTS_PER_SOL)), true);
   
-  const data = Buffer.concat([
-    Buffer.from(discriminator),
-    Buffer.from(taskBytes),
-    Buffer.from(new Uint8Array(amountBytes))
-  ]);
+  const data = concatBytes(discriminator, taskBytes, amountBytes);
   
   const instruction = new TransactionInstruction({
     keys: [
@@ -148,7 +157,7 @@ export async function buildReleaseTransaction(requesterWallet, taskId, agentWall
       { pubkey: escrowPDA, isSigner: false, isWritable: true },
     ],
     programId,
-    data: Buffer.from(discriminator),
+    data: discriminator,
   });
   
   const transaction = new Transaction().add(instruction);
@@ -171,13 +180,11 @@ export async function buildDisputeTransaction(requesterWallet, taskId, reason = 
   
   // Reason is 64 bytes
   const reasonBytes = new Uint8Array(64);
-  new TextEncoder().encode(reason).forEach((b, i) => { if (i < 64) reasonBytes[i] = b; });
+  const encoded = new TextEncoder().encode(reason);
+  reasonBytes.set(encoded.slice(0, 64));
   
   const discriminator = getDiscriminator('dispute');
-  const data = Buffer.concat([
-    Buffer.from(discriminator),
-    Buffer.from(reasonBytes)
-  ]);
+  const data = concatBytes(discriminator, reasonBytes);
   
   const instruction = new TransactionInstruction({
     keys: [
@@ -214,7 +221,7 @@ export async function buildCancelTransaction(requesterWallet, taskId) {
       { pubkey: escrowPDA, isSigner: false, isWritable: true },
     ],
     programId,
-    data: Buffer.from(discriminator),
+    data: discriminator,
   });
   
   const transaction = new Transaction().add(instruction);
@@ -276,7 +283,8 @@ export async function getEscrowData(taskId) {
     // requester: Pubkey (32), agent: Pubkey (32), task_id: [u8;32], amount: u64, state: u8, bump: u8, dispute_reason: [u8;64]
     const requester = new PublicKey(data.slice(0, 32)).toBase58();
     const agent = new PublicKey(data.slice(32, 64)).toBase58();
-    const amount = Number(new DataView(data.buffer, data.byteOffset + 96, 8).getBigUint64(0, true)) / LAMPORTS_PER_SOL;
+    const view = new DataView(data.buffer, data.byteOffset + 96, 8);
+    const amount = Number(view.getBigUint64(0, true)) / LAMPORTS_PER_SOL;
     const state = data[104];
     
     const stateNames = ['Funded', 'Assigned', 'Released', 'Refunded', 'Disputed', 'Cancelled'];
