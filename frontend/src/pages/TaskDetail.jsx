@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
@@ -18,32 +18,6 @@ function TaskDetail() {
   const [task, setTask] = useState(null);
   const [bids, setBids] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [cancelling, setCancelling] = useState(false);
-  const cancelBtnRef = useRef(null);
-  
-  // Attach native click handler for mobile
-  useEffect(() => {
-    const btn = cancelBtnRef.current;
-    if (btn) {
-      const handler = () => {
-        alert('Native click!');
-        if (window.confirm('Cancel this task?')) {
-          fetch(`${API}/api/v2/tasks/${taskId}/cancel`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requester: wallet }),
-          }).then(() => window.location.href = '/my-tasks')
-            .catch(e => alert('Error: ' + e.message));
-        }
-      };
-      btn.addEventListener('click', handler);
-      btn.addEventListener('touchend', handler);
-      return () => {
-        btn.removeEventListener('click', handler);
-        btn.removeEventListener('touchend', handler);
-      };
-    }
-  }, [taskId, wallet]);
   const [bidding, setBidding] = useState(false);
   const [bidForm, setBidForm] = useState({ price: '', timeEstimate: '', message: '' });
   const [error, setError] = useState('');
@@ -163,13 +137,10 @@ function TaskDetail() {
   };
 
   const cancelTask = async () => {
-    // Debug: immediate feedback
-    alert('Cancel button clicked!');
     
-    const confirmed = window.confirm('Are you sure you want to cancel this task?');
-    if (!confirmed) return;
+    if (!window.confirm('Cancel this task? This cannot be undone.')) return;
     
-    setCancelling(true);
+    setLoading(true);
     setError('');
     try {
       const res = await fetch(`${API}/api/v2/tasks/${taskId}/cancel`, {
@@ -178,16 +149,37 @@ function TaskDetail() {
         body: JSON.stringify({ requester: wallet }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to cancel');
-      navigate('/my-tasks');
+      if (!res.ok) throw new Error(data.error || 'Cancel failed');
+      setSuccess('Task cancelled.');
+      fetchTask();
     } catch (e) {
-      alert('Error: ' + e.message);
-      setError(e.message);
-      setCancelling(false);
+      console.error('Cancel error:', e);
+      setError(e.message || 'Failed to cancel task');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const acceptBid = (bid) => {
+  const handleCancel = () => {
+    if (!window.confirm('Are you sure you want to cancel this task?')) return;
+    
+    fetch(`${API}/api/v2/tasks/${taskId}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requester: wallet }),
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        window.location.href = '/my-tasks';
+      } else {
+        alert('Error: ' + (data.error || 'Failed to cancel'));
+      }
+    })
+    .catch(e => alert('Error: ' + e.message));
+  };
+
+    const acceptBid = (bid) => {
     setSelectedBid(bid);
     setShowEscrow(true);
   };
@@ -247,8 +239,17 @@ function TaskDetail() {
               <button 
                 type="button"
                 className="btn btn-secondary btn-sm" 
-                ref={cancelBtnRef}
-                
+                onClick={handleCancel}
+                style={{marginLeft: 12}}
+              >
+                ❌ Cancel
+              </button>
+            )}
+            {task.state === 'open' && isOwner && (
+              <button 
+                className="btn btn-secondary btn-sm" 
+                onClick={cancelTask}
+                disabled={loading}
                 style={{marginLeft: 12}}
               >
                 ❌ Cancel Task
