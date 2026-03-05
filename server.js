@@ -208,12 +208,19 @@ function getAgentsWithCapability(capabilityName, minReputation = 0) {
 
 function registerAgent(agentId, info, ws) {
   // Check if agent already exists (reconnecting)
+// Check if a name looks like a wallet address (ignore those)
+function isWalletLikeName(name) {
+  if (!name || typeof name !== 'string') return true;
+  // Wallet addresses are base58, 32-44 chars, alphanumeric
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(name);
+}
+
   let agent = agents.get(agentId);
   
   if (agent) {
     // Reconnecting - update info
     agent.publicKey = info.publicKey || info.wallet || agent.publicKey;
-    agent.name = info.name || agent.name;
+    agent.name = (!isWalletLikeName(info.name) ? info.name : null) || agent.name;
     agent.description = info.description || agent.description;
     agent.lastSeen = Date.now();
     agent.online = true;
@@ -231,7 +238,7 @@ function registerAgent(agentId, info, ws) {
     agent = {
       agentId,
       publicKey: info.publicKey || info.wallet,
-      name: info.name || agentId,
+      name: (!isWalletLikeName(info.name) ? info.name : null) || 'Agent ' + agentId.slice(0, 6),
       description: info.description || '',
       capabilities: info.capabilities || [],
       reputation: 0.5,
