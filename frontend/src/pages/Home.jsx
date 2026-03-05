@@ -30,7 +30,7 @@ function Home() {
     try {
       const endpoints = [
         fetch(`${API}/api/v2/tasks/open`).then(r => r.json()).catch(() => ({ tasks: [], count: 0 })),
-        fetch(`${API}/health`).then(r => r.json()).catch(() => ({ agents: { online: 0 } })),
+        fetch(`${API}/api/v2/agents`).then(r => r.json()).catch(() => ({ agents: [], count: 0 })),
         fetch(`${API}/monitor`).then(r => r.json()).catch(() => ({ tasks: { completed: 0 }, payments: { totalSol: '0' } })),
       ];
 
@@ -42,11 +42,11 @@ function Home() {
       }
 
       const results = await Promise.all(endpoints);
-      const [openData, healthData, monitorData, myTasksData] = results;
+      const [openData, agentsData, monitorData, myTasksData] = results;
 
       setStats({
         openTasks: openData.count || openData.tasks?.length || 0,
-        agents: healthData.agents?.online || 0,
+        agents: agentsData.count || 0,
         completed: monitorData.tasks?.completed || 0,
         volume: parseFloat(monitorData.payments?.totalSol || 0).toFixed(2),
         myTasks: myTasksData?.tasks?.filter(t => t.state !== 'completed')?.length || 0,
