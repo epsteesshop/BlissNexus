@@ -1,21 +1,28 @@
 /**
- * BlissNexus Escrow Integration
- * Uses the deployed Anchor escrow program on Solana Devnet
+ * BlissNexus Escrow - Anchor Program Integration
  * Program ID: 64korfZTbv6sZQyuxa5FandZsLBkdKMPHR39bnaPeAxc
  */
 
-import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { 
+  Connection, 
+  PublicKey, 
+  Transaction, 
+  TransactionInstruction,
+  SystemProgram, 
+  LAMPORTS_PER_SOL 
+} from '@solana/web3.js';
+import { sha256 } from 'js-sha256';
 
-// Devnet RPCs with fallback
+// Config
 const DEVNET_RPCS = [
   'https://api.devnet.solana.com',
   'https://mango.devnet.rpcpool.com',
 ];
-
 export const DEVNET_RPC = DEVNET_RPCS[0];
 export const ESCROW_PROGRAM_ID = '64korfZTbv6sZQyuxa5FandZsLBkdKMPHR39bnaPeAxc';
+export const ARBITRATOR = '14jEkruEqbG1pS8YaKhXeS5xBQFzgfXqy2GinLwcwz8q';
 
-// Get connection with fallback
+// Get connection
 export function getConnection() {
   return new Connection(DEVNET_RPCS[0], 'confirmed');
 }
@@ -26,12 +33,21 @@ export function taskIdToBytes(taskId) {
   const bytes = encoder.encode(taskId);
   const buffer = new Uint8Array(32);
   buffer.set(bytes.slice(0, 32));
-  return Array.from(buffer);
+  return buffer;
 }
 
-// Get escrow PDA for a task
-export async function getEscrowPDA(taskId) {
-  const taskBytes = new Uint8Array(taskIdToBytes(taskId));
+// Get Anchor instruction discriminator
+function getDiscriminator(name) {
+  const preimage = `global:${name}`;
+  const hashHex = sha256(preimage);
+  // Convert hex to bytes
+  const bytes = new Uint8Array(hashHex.match(/.{2}/g).map(byte => parseInt(byte, 16)));
+  return bytes.slice(0, 8);
+}
+
+// Get escrow PDA
+export function getEscrowPDA(taskId) {
+  const taskBytes = taskIdToBytes(taskId);
   const [pda, bump] = PublicKey.findProgramAddressSync(
     [new TextEncoder().encode('escrow'), taskBytes],
     new PublicKey(ESCROW_PROGRAM_ID)
@@ -39,59 +55,68 @@ export async function getEscrowPDA(taskId) {
   return { pda, bump };
 }
 
-// Get wallet balance with retry
+// Get wallet balance
 export async function getBalance(walletAddress) {
-  for (let i = 0; i < DEVNET_RPCS.length; i++) {
+  for (const rpc of DEVNET_RPCS) {
     try {
-      const connection = new Connection(DEVNET_RPCS[i], 'confirmed');
-      const pubkey = new PublicKey(walletAddress);
-      const balance = await connection.getBalance(pubkey);
+      const connection = new Connection(rpc, 'confirmed');
+      const balance = await connection.getBalance(new PublicKey(walletAddress));
       return balance / LAMPORTS_PER_SOL;
     } catch (e) {
-      console.warn(`[Escrow] RPC ${i} failed:`, e.message);
+      console.warn('[Escrow] RPC failed:', e.message);
     }
   }
   return 0;
 }
 
-// Request devnet airdrop
+// Request airdrop
 export async function requestAirdrop(walletAddress, solAmount = 1) {
-  for (let i = 0; i < DEVNET_RPCS.length; i++) {
-    try {
-      const connection = new Connection(DEVNET_RPCS[i], 'confirmed');
-      const pubkey = new PublicKey(walletAddress);
-      const signature = await connection.requestAirdrop(pubkey, solAmount * LAMPORTS_PER_SOL);
-      
-      const latestBlockhash = await connection.getLatestBlockhash();
-      await connection.confirmTransaction({ signature, ...latestBlockhash });
-      
-      return { success: true, signature };
-    } catch (e) {
-      console.warn(`[Escrow] Airdrop via RPC ${i} failed:`, e.message);
-    }
+  try {
+    const connection = new Connection('https://mango.devnet.rpcpool.com', 'confirmed');
+    const signature = await connection.requestAirdrop(
+      new PublicKey(walletAddress), 
+      solAmount * LAMPORTS_PER_SOL
+    );
+    await connection.confirmTransaction(signature);
+    return { success: true, signature };
+  } catch (e) {
+    return { success: false, error: e.message };
   }
-  return { success: false, error: 'All faucets rate-limited. Try https://faucet.solana.com' };
 }
 
 /**
- * Build fund escrow transaction
- * Transfers SOL to the escrow PDA
+ * Build createEscrow transaction
+ * Locks funds in program-owned PDA
  */
-export async function buildFundEscrowTransaction(requesterWallet, taskId, solAmount) {
+export async function buildCreateEscrowTransaction(requesterWallet, taskId, solAmount) {
   const connection = getConnection();
-  const { pda } = await getEscrowPDA(taskId);
+  const programId = new PublicKey(ESCROW_PROGRAM_ID);
   const requesterPubkey = new PublicKey(requesterWallet);
+  const { pda: escrowPDA } = getEscrowPDA(taskId);
   
-  const transaction = new Transaction();
+  // Build instruction data: discriminator + task_id (32 bytes) + amount (8 bytes LE)
+  const discriminator = getDiscriminator('create_escrow');
+  const taskBytes = taskIdToBytes(taskId);
+  const amountBytes = new ArrayBuffer(8);
+  new DataView(amountBytes).setBigUint64(0, BigInt(Math.floor(solAmount * LAMPORTS_PER_SOL)), true);
   
-  transaction.add(
-    SystemProgram.transfer({
-      fromPubkey: requesterPubkey,
-      toPubkey: pda,
-      lamports: Math.floor(solAmount * LAMPORTS_PER_SOL),
-    })
-  );
+  const data = Buffer.concat([
+    Buffer.from(discriminator),
+    Buffer.from(taskBytes),
+    Buffer.from(new Uint8Array(amountBytes))
+  ]);
   
+  const instruction = new TransactionInstruction({
+    keys: [
+      { pubkey: requesterPubkey, isSigner: true, isWritable: true },
+      { pubkey: escrowPDA, isSigner: false, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    programId,
+    data,
+  });
+  
+  const transaction = new Transaction().add(instruction);
   const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
   transaction.recentBlockhash = blockhash;
   transaction.lastValidBlockHeight = lastValidBlockHeight;
@@ -99,108 +124,190 @@ export async function buildFundEscrowTransaction(requesterWallet, taskId, solAmo
   
   return {
     transaction,
-    escrowPDA: pda.toBase58(),
+    escrowPDA: escrowPDA.toBase58(),
     amount: solAmount,
   };
 }
 
 /**
- * Check escrow funding status
+ * Build release transaction (approve and pay agent)
  */
-export async function checkEscrowFunding(taskId) {
-  for (let i = 0; i < DEVNET_RPCS.length; i++) {
-    try {
-      const connection = new Connection(DEVNET_RPCS[i], 'confirmed');
-      const { pda } = await getEscrowPDA(taskId);
-      const balance = await connection.getBalance(pda);
-      return {
-        funded: balance > 0,
-        balance: balance / LAMPORTS_PER_SOL,
-        escrowPDA: pda.toBase58(),
-      };
-    } catch (e) {
-      console.warn(`[Escrow] Check funding via RPC ${i} failed`);
-    }
-  }
-  return { funded: false, balance: 0, error: 'RPC unavailable' };
+export async function buildReleaseTransaction(requesterWallet, taskId, agentWallet) {
+  const connection = getConnection();
+  const programId = new PublicKey(ESCROW_PROGRAM_ID);
+  const requesterPubkey = new PublicKey(requesterWallet);
+  const agentPubkey = new PublicKey(agentWallet);
+  const { pda: escrowPDA } = getEscrowPDA(taskId);
+  
+  const discriminator = getDiscriminator('release');
+  
+  const instruction = new TransactionInstruction({
+    keys: [
+      { pubkey: requesterPubkey, isSigner: true, isWritable: true },
+      { pubkey: agentPubkey, isSigner: false, isWritable: true },
+      { pubkey: escrowPDA, isSigner: false, isWritable: true },
+    ],
+    programId,
+    data: Buffer.from(discriminator),
+  });
+  
+  const transaction = new Transaction().add(instruction);
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+  transaction.recentBlockhash = blockhash;
+  transaction.lastValidBlockHeight = lastValidBlockHeight;
+  transaction.feePayer = requesterPubkey;
+  
+  return { transaction, escrowPDA: escrowPDA.toBase58() };
 }
 
 /**
- * Verify transaction confirmation
+ * Build dispute transaction
  */
-export async function verifyTransaction(signature) {
+export async function buildDisputeTransaction(requesterWallet, taskId, reason = '') {
   const connection = getConnection();
+  const programId = new PublicKey(ESCROW_PROGRAM_ID);
+  const requesterPubkey = new PublicKey(requesterWallet);
+  const { pda: escrowPDA } = getEscrowPDA(taskId);
+  
+  // Reason is 64 bytes
+  const reasonBytes = new Uint8Array(64);
+  new TextEncoder().encode(reason).forEach((b, i) => { if (i < 64) reasonBytes[i] = b; });
+  
+  const discriminator = getDiscriminator('dispute');
+  const data = Buffer.concat([
+    Buffer.from(discriminator),
+    Buffer.from(reasonBytes)
+  ]);
+  
+  const instruction = new TransactionInstruction({
+    keys: [
+      { pubkey: requesterPubkey, isSigner: true, isWritable: true },
+      { pubkey: escrowPDA, isSigner: false, isWritable: true },
+    ],
+    programId,
+    data,
+  });
+  
+  const transaction = new Transaction().add(instruction);
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+  transaction.recentBlockhash = blockhash;
+  transaction.lastValidBlockHeight = lastValidBlockHeight;
+  transaction.feePayer = requesterPubkey;
+  
+  return { transaction, escrowPDA: escrowPDA.toBase58() };
+}
+
+/**
+ * Build cancel transaction (refund before agent assigned)
+ */
+export async function buildCancelTransaction(requesterWallet, taskId) {
+  const connection = getConnection();
+  const programId = new PublicKey(ESCROW_PROGRAM_ID);
+  const requesterPubkey = new PublicKey(requesterWallet);
+  const { pda: escrowPDA } = getEscrowPDA(taskId);
+  
+  const discriminator = getDiscriminator('cancel');
+  
+  const instruction = new TransactionInstruction({
+    keys: [
+      { pubkey: requesterPubkey, isSigner: true, isWritable: true },
+      { pubkey: escrowPDA, isSigner: false, isWritable: true },
+    ],
+    programId,
+    data: Buffer.from(discriminator),
+  });
+  
+  const transaction = new Transaction().add(instruction);
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+  transaction.recentBlockhash = blockhash;
+  transaction.lastValidBlockHeight = lastValidBlockHeight;
+  transaction.feePayer = requesterPubkey;
+  
+  return { transaction, escrowPDA: escrowPDA.toBase58() };
+}
+
+/**
+ * Check escrow status
+ */
+export async function checkEscrowFunding(taskId) {
+  const connection = getConnection();
+  const { pda } = getEscrowPDA(taskId);
+  
   try {
-    const result = await connection.getSignatureStatus(signature);
+    const accountInfo = await connection.getAccountInfo(pda);
+    
+    if (!accountInfo) {
+      return { funded: false, balance: 0, exists: false };
+    }
+    
+    const balance = accountInfo.lamports / LAMPORTS_PER_SOL;
+    const isProgramOwned = accountInfo.owner.toBase58() === ESCROW_PROGRAM_ID;
+    
     return {
-      confirmed: result?.value?.confirmationStatus === 'confirmed' || 
-                 result?.value?.confirmationStatus === 'finalized',
-      status: result?.value?.confirmationStatus,
-      error: result?.value?.err,
+      funded: balance > 0,
+      balance,
+      exists: true,
+      escrowPDA: pda.toBase58(),
+      isProgramOwned,
+      owner: accountInfo.owner.toBase58(),
     };
   } catch (e) {
-    return { confirmed: false, error: e.message };
+    return { funded: false, balance: 0, error: e.message };
+  }
+}
+
+/**
+ * Get escrow account data (parsed)
+ */
+export async function getEscrowData(taskId) {
+  const connection = getConnection();
+  const { pda } = getEscrowPDA(taskId);
+  
+  try {
+    const accountInfo = await connection.getAccountInfo(pda);
+    if (!accountInfo || accountInfo.data.length < 8) {
+      return null;
+    }
+    
+    // Parse escrow account data
+    // Skip 8-byte discriminator
+    const data = accountInfo.data.slice(8);
+    
+    // requester: Pubkey (32), agent: Pubkey (32), task_id: [u8;32], amount: u64, state: u8, bump: u8, dispute_reason: [u8;64]
+    const requester = new PublicKey(data.slice(0, 32)).toBase58();
+    const agent = new PublicKey(data.slice(32, 64)).toBase58();
+    const amount = Number(new DataView(data.buffer, data.byteOffset + 96, 8).getBigUint64(0, true)) / LAMPORTS_PER_SOL;
+    const state = data[104];
+    
+    const stateNames = ['Funded', 'Assigned', 'Released', 'Refunded', 'Disputed', 'Cancelled'];
+    
+    return {
+      requester,
+      agent,
+      amount,
+      state: stateNames[state] || 'Unknown',
+      stateCode: state,
+      escrowPDA: pda.toBase58(),
+    };
+  } catch (e) {
+    console.error('[Escrow] Failed to parse:', e);
+    return null;
   }
 }
 
 export default {
   DEVNET_RPC,
   ESCROW_PROGRAM_ID,
+  ARBITRATOR,
   getConnection,
   getBalance,
   requestAirdrop,
-  buildFundEscrowTransaction,
-  checkEscrowFunding,
-  verifyTransaction,
   getEscrowPDA,
   taskIdToBytes,
+  buildCreateEscrowTransaction,
+  buildReleaseTransaction,
+  buildDisputeTransaction,
+  buildCancelTransaction,
+  checkEscrowFunding,
+  getEscrowData,
 };
-
-/**
- * Build refund transaction for disputed tasks
- * Calls the on-chain escrow program's refund instruction
- */
-export async function buildRefundTransaction(requesterWallet, taskId) {
-  const connection = getConnection();
-  const { pda } = await getEscrowPDA(taskId);
-  const requesterPubkey = new PublicKey(requesterWallet);
-  const programId = new PublicKey(ESCROW_PROGRAM_ID);
-  
-  // Check escrow has funds
-  const balance = await connection.getBalance(pda);
-  if (balance === 0) {
-    throw new Error('Escrow is empty - nothing to refund');
-  }
-  
-  // For now, use a simple transfer instruction
-  // The on-chain program would need to be called via Anchor
-  // But since PDA is owned by System Program (not our program), 
-  // we actually need the program to sign
-  
-  return {
-    escrowPDA: pda.toBase58(),
-    balance: balance / LAMPORTS_PER_SOL,
-    programId: ESCROW_PROGRAM_ID,
-    // Note: Full refund requires calling the Anchor program
-    // For now, return info for manual handling
-  };
-}
-
-/**
- * Get escrow info for a task
- */
-export async function getEscrowInfo(taskId) {
-  const connection = getConnection();
-  const { pda } = await getEscrowPDA(taskId);
-  
-  try {
-    const balance = await connection.getBalance(pda);
-    return {
-      escrowPDA: pda.toBase58(),
-      balance: balance / LAMPORTS_PER_SOL,
-      hasBalance: balance > 0
-    };
-  } catch (e) {
-    return { escrowPDA: pda.toBase58(), balance: 0, hasBalance: false, error: e.message };
-  }
-}

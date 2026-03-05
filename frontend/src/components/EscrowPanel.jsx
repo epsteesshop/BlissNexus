@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import escrow from '../lib/escrow';
 
-function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
+function EscrowPanel({ taskId, amount, state, onFunded }) {
   const { publicKey, sendTransaction } = useWallet();
   const { connection } = useConnection();
   
   const [balance, setBalance] = useState(0);
   const [escrowStatus, setEscrowStatus] = useState(null);
+  const [escrowData, setEscrowData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [txSignature, setTxSignature] = useState('');
@@ -15,29 +16,30 @@ function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
   const wallet = publicKey?.toBase58();
 
   useEffect(() => {
-    if (wallet) {
+    if (wallet && taskId) {
       loadData();
     }
   }, [wallet, taskId]);
 
   const loadData = async () => {
-    const [bal, status] = await Promise.all([
+    const [bal, status, data] = await Promise.all([
       escrow.getBalance(wallet),
       escrow.checkEscrowFunding(taskId),
+      escrow.getEscrowData(taskId),
     ]);
     setBalance(bal);
     setEscrowStatus(status);
+    setEscrowData(data);
   };
 
   const requestAirdrop = async () => {
     setLoading(true);
     setError('');
-    const result = await escrow.requestAirdrop(wallet, 2);
+    const result = await escrow.requestAirdrop(wallet, 1);
     if (result.success) {
-      setError('');
       await loadData();
     } else {
-      setError(result.error);
+      setError(result.error || 'Airdrop failed');
     }
     setLoading(false);
   };
@@ -50,16 +52,17 @@ function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
     setError('');
     
     try {
-      const { transaction, escrowPDA } = await escrow.buildFundEscrowTransaction(
+      // Build createEscrow transaction (proper Anchor instruction)
+      const { transaction, escrowPDA } = await escrow.buildCreateEscrowTransaction(
         wallet,
         taskId,
         amount
       );
       
+      // Send and confirm
       const signature = await sendTransaction(transaction, connection);
       setTxSignature(signature);
       
-      // Wait for confirmation
       const latestBlockhash = await connection.getLatestBlockhash();
       await connection.confirmTransaction({
         signature,
@@ -69,7 +72,8 @@ function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
       await loadData();
       if (onFunded) onFunded(signature, escrowPDA);
     } catch (e) {
-      setError(e.message);
+      console.error('[Escrow] Fund failed:', e);
+      setError(e.message || 'Transaction failed');
     } finally {
       setLoading(false);
     }
@@ -92,6 +96,22 @@ function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
         <span style={{fontSize: 12, padding: '2px 8px', background: 'var(--accent-light)', color: 'var(--accent)', borderRadius: 100}}>
           Devnet
         </span>
+        {escrowData && (
+          <span style={{
+            fontSize: 11, 
+            padding: '2px 8px', 
+            background: escrowData.state === 'Funded' ? '#dcfce7' : 
+                       escrowData.state === 'Disputed' ? '#fef3c7' :
+                       escrowData.state === 'Released' ? '#dbeafe' : '#f3f4f6',
+            color: escrowData.state === 'Funded' ? '#166534' :
+                   escrowData.state === 'Disputed' ? '#92400e' :
+                   escrowData.state === 'Released' ? '#1e40af' : '#374151',
+            borderRadius: 100,
+            marginLeft: 'auto'
+          }}>
+            {escrowData.state}
+          </span>
+        )}
       </h3>
 
       {error && <div className="alert alert-error" style={{marginBottom: 16}}>{error}</div>}
@@ -107,11 +127,31 @@ function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
         </div>
       </div>
 
-      {escrowStatus?.funded ? (
+      {escrowStatus?.funded && escrowStatus?.isProgramOwned ? (
         <div style={{background: 'var(--success-light)', color: 'var(--success)', padding: 16, borderRadius: 8, marginBottom: 16}}>
-          <div style={{fontWeight: 600, marginBottom: 4}}>✅ Escrow Funded</div>
+          <div style={{fontWeight: 600, marginBottom: 4}}>✅ Escrow Funded (Program-Owned)</div>
           <div style={{fontSize: 13}}>
-            {escrowStatus.balance} SOL locked at {escrowStatus.escrowPDA?.slice(0, 8)}...
+            {escrowStatus.balance.toFixed(4)} SOL locked at{' '}
+            <a 
+              href={`https://explorer.solana.com/address/${escrowStatus.escrowPDA}?cluster=devnet`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{color: 'inherit', textDecoration: 'underline'}}
+            >
+              {escrowStatus.escrowPDA?.slice(0, 12)}...
+            </a>
+          </div>
+          {escrowData && (
+            <div style={{fontSize: 12, marginTop: 8, opacity: 0.8}}>
+              State: {escrowData.state} | Amount: {escrowData.amount} SOL
+            </div>
+          )}
+        </div>
+      ) : escrowStatus?.funded && !escrowStatus?.isProgramOwned ? (
+        <div style={{background: '#fef3c7', color: '#92400e', padding: 16, borderRadius: 8, marginBottom: 16}}>
+          <div style={{fontWeight: 600, marginBottom: 4}}>⚠️ Legacy Escrow (Not Refundable)</div>
+          <div style={{fontSize: 13}}>
+            {escrowStatus.balance.toFixed(4)} SOL stuck at {escrowStatus.escrowPDA?.slice(0, 12)}...
           </div>
         </div>
       ) : (
@@ -153,8 +193,9 @@ function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
       )}
 
       <div style={{marginTop: 16, padding: 12, background: 'var(--bg-tertiary)', borderRadius: 8, fontSize: 13, color: 'var(--text-tertiary)'}}>
-        <strong>How it works:</strong> Funds are locked on-chain until you approve the result. 
-        If approved, payment goes to the agent. If disputed, funds can be refunded.
+        <strong>How it works:</strong> Funds are locked on-chain in a program-owned escrow. 
+        When you approve the result, payment releases to the agent. 
+        If disputed, an arbitrator decides the outcome.
       </div>
     </div>
   );
