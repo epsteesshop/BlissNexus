@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import EscrowPanel from '../components/EscrowPanel';
+import escrow from '../lib/escrow';
 import Chat from '../components/Chat';
 import Rating from '../components/Rating';
 
@@ -11,7 +12,8 @@ const API = 'https://api.blissnexus.ai';
 function TaskDetail() {
   const { taskId } = useParams();
   const navigate = useNavigate();
-  const { publicKey, connected } = useWallet();
+  const { publicKey, connected, sendTransaction } = useWallet();
+  const { connection } = useConnection();
   
   const [task, setTask] = useState(null);
   const [bids, setBids] = useState([]);
@@ -105,19 +107,47 @@ function TaskDetail() {
     }
   };
 
-  const approveResult = async (rating = 5) => {
+const approveResult = async (rating = 5) => {
+    if (!task?.assignedBid?.wallet) {
+      return setError('No agent wallet found');
+    }
+    
+    setLoading(true);
+    setError('');
+    
     try {
+      // 1. Build and send on-chain release transaction
+      const { transaction } = await escrow.buildReleaseTransaction(
+        wallet,
+        taskId,
+        task.assignedBid.wallet
+      );
+      
+      const signature = await sendTransaction(transaction, connection);
+      
+      // Wait for confirmation
+      const latestBlockhash = await connection.getLatestBlockhash();
+      await connection.confirmTransaction({
+        signature,
+        ...latestBlockhash,
+      });
+      
+      // 2. Update backend state
       const res = await fetch(`${API}/api/v2/tasks/${taskId}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requester: wallet, rating }),
+        body: JSON.stringify({ requester: wallet, rating, txSignature: signature }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setSuccess('Approved! Payment released to agent.');
+      
+      setSuccess(`Approved! Payment released to agent. TX: ${signature.slice(0, 16)}...`);
       fetchTask();
     } catch (e) {
-      setError(e.message);
+      console.error('[Approve] Failed:', e);
+      setError(e.message || 'Release failed');
+    } finally {
+      setLoading(false);
     }
   };
 

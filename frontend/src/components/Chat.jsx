@@ -35,8 +35,8 @@ export default function Chat({ taskId, task }) {
   useEffect(() => {
     if (chatState.locked) return;
     
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}`);
+    const wsUrl = 'wss://api.blissnexus.ai';
+    const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onmessage = (event) => {
