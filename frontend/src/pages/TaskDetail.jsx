@@ -137,7 +137,7 @@ function TaskDetail() {
   };
 
   const cancelTask = async () => {
-    console.log('[Cancel] Button clicked, wallet:', wallet, 'taskId:', taskId);
+    
     if (!window.confirm('Cancel this task? This cannot be undone.')) return;
     
     setLoading(true);
