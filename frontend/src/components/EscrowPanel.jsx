@@ -53,6 +53,10 @@ function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
     
     try {
       // Build createEscrow transaction (proper Anchor instruction)
+      console.log('[EscrowPanel] Creating escrow:', { wallet, taskId, amount, workerWallet });
+      if (!workerWallet) {
+        throw new Error('Worker wallet not provided. Please refresh and try again.');
+      }
       const { transaction, escrowPDA } = await escrow.buildCreateEscrowTransaction(
         wallet,
         taskId,

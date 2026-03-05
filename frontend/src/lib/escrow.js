@@ -101,6 +101,10 @@ export async function requestAirdrop(walletAddress, solAmount = 1) {
  * Locks funds in program-owned PDA
  */
 export async function buildCreateEscrowTransaction(requesterWallet, taskId, solAmount, workerWallet) {
+  // Validate worker wallet
+  if (!workerWallet) {
+    throw new Error('Worker wallet is required for escrow creation');
+  }
   const connection = getConnection();
   const programId = new PublicKey(ESCROW_PROGRAM_ID);
   const requesterPubkey = new PublicKey(requesterWallet);
