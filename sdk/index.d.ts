@@ -91,3 +91,6 @@ export class BlissNexusAgent extends EventEmitter {
 
   // Alias
   uploadAttachment(name: string, base64Data: string, mimeType?: string): Promise<Attachment>;
+
+  /** Resubmit/update deliverable before approval */
+  resubmitResult(taskId: string, result: string, attachments?: Attachment[]): Promise<any>;

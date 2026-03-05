@@ -22,6 +22,10 @@ function TaskDetail() {
   const [bidForm, setBidForm] = useState({ price: '', timeEstimate: '', message: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showSubmitForm, setShowSubmitForm] = useState(false);
+  const [submitText, setSubmitText] = useState('');
+  const [submitFiles, setSubmitFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const [showEscrow, setShowEscrow] = useState(false);
   const [selectedBid, setSelectedBid] = useState(null);
 
@@ -29,6 +33,7 @@ function TaskDetail() {
   // Check multiple possible field names for requester
   const taskRequester = task?.requester || task?.requester_id || task?.requesterId;
   const isOwner = wallet && taskRequester === wallet;
+  const isAssignedAgent = wallet && task?.assignedAgent === wallet;
 
   const fetchTask = async () => {
     try {
@@ -238,7 +243,76 @@ function TaskDetail() {
     return <div className="empty-state"><div className="empty-title">Task not found</div></div>;
   }
 
-  const stateColors = {
+  // File upload handler
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    setUploading(true);
+    
+    try {
+      const uploaded = [];
+      for (const file of files) {
+        const reader = new FileReader();
+        const base64 = await new Promise((resolve) => {
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.readAsDataURL(file);
+        });
+        
+        const res = await fetch(`${API}/api/v2/attachments/upload`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: file.name,
+            data: base64,
+            type: file.type,
+            agentId: wallet,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          uploaded.push({ id: data.id, name: data.name, url: data.url });
+        }
+      }
+      setSubmitFiles(prev => [...prev, ...uploaded]);
+    } catch (e) {
+      setError('Upload failed: ' + e.message);
+    }
+    setUploading(false);
+  };
+
+  // Submit/resubmit deliverable
+  const handleSubmitDeliverable = async () => {
+    if (submitFiles.length === 0) {
+      return setError('Please upload at least one file');
+    }
+    
+    setLoading(true);
+    setError('');
+    
+    try {
+      const res = await fetch(`${API}/api/v2/tasks/${taskId}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentId: wallet,
+          result: submitText,
+          attachments: submitFiles,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      setSuccess('Deliverable submitted!');
+      setShowSubmitForm(false);
+      setSubmitText('');
+      setSubmitFiles([]);
+      fetchTask();
+    } catch (e) {
+      setError(e.message);
+    }
+    setLoading(false);
+  };
+
+    const stateColors = {
     open: 'badge-open',
     assigned: 'badge-assigned',
     in_progress: 'badge-in-progress',
@@ -327,6 +401,61 @@ function TaskDetail() {
               <button className="btn btn-danger" onClick={disputeResult}>
                 ⚠️ Dispute
               </button>
+            </div>
+          )}
+          
+          {task.state === 'submitted' && isAssignedAgent && !showSubmitForm && (
+            <div style={{marginTop: 16, padding: 12, background: 'var(--bg-secondary)', borderRadius: 8}}>
+              <p style={{margin: '0 0 8px 0', fontSize: 14, color: 'var(--text-secondary)'}}>
+                Need to make corrections? You can resubmit before approval.
+              </p>
+              <button className="btn btn-secondary" onClick={() => setShowSubmitForm(true)}>
+                ✏️ Resubmit Deliverable
+              </button>
+            </div>
+          )}
+          
+          {showSubmitForm && isAssignedAgent && (
+            <div style={{marginTop: 16, padding: 16, background: 'var(--bg-secondary)', borderRadius: 8}}>
+              <h3 style={{margin: '0 0 12px 0', fontSize: 16}}>
+                {task.state === 'submitted' ? '✏️ Resubmit Deliverable' : '📤 Submit Deliverable'}
+              </h3>
+              
+              <div style={{marginBottom: 12}}>
+                <label style={{display: 'block', marginBottom: 4, fontSize: 14}}>Files (required)</label>
+                <input type="file" multiple onChange={handleFileUpload} disabled={uploading} />
+                {uploading && <span style={{marginLeft: 8, color: 'var(--text-secondary)'}}>Uploading...</span>}
+                {submitFiles.length > 0 && (
+                  <div style={{marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8}}>
+                    {submitFiles.map((f, i) => (
+                      <span key={i} className="badge" style={{background: 'var(--accent-light)'}}>
+                        📄 {f.name}
+                        <button onClick={() => setSubmitFiles(prev => prev.filter((_, j) => j !== i))} 
+                          style={{marginLeft: 6, background: 'none', border: 'none', cursor: 'pointer'}}>×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div style={{marginBottom: 12}}>
+                <label style={{display: 'block', marginBottom: 4, fontSize: 14}}>Notes (optional)</label>
+                <textarea 
+                  value={submitText}
+                  onChange={(e) => setSubmitText(e.target.value)}
+                  placeholder="Any notes about the deliverable..."
+                  style={{width: '100%', padding: 8, borderRadius: 6, border: '1px solid var(--border)', minHeight: 80}}
+                />
+              </div>
+              
+              <div style={{display: 'flex', gap: 8}}>
+                <button className="btn btn-primary" onClick={handleSubmitDeliverable} disabled={loading || submitFiles.length === 0}>
+                  {loading ? '⏳ Submitting...' : '📤 Submit'}
+                </button>
+                <button className="btn btn-secondary" onClick={() => { setShowSubmitForm(false); setSubmitFiles([]); setSubmitText(''); }}>
+                  Cancel
+                </button>
+              </div>
             </div>
           )}
         </div>

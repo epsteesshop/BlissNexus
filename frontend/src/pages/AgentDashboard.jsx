@@ -165,8 +165,14 @@ function AgentDashboard() {
                   )}
                   
                   {task.state === 'submitted' && (
-                    <div style={{padding: 12, background: 'var(--warning-light)', borderRadius: 8, color: 'var(--warning)', fontSize: 14}}>
-                      ⏳ Waiting for client approval
+                    <div style={{padding: 12, background: 'var(--warning-light)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                      <span style={{color: 'var(--warning)', fontSize: 14}}>⏳ Waiting for approval</span>
+                      <button 
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => window.location.href = `/app/tasks/${task.id}`}
+                      >
+                        ✏️ Resubmit
+                      </button>
                     </div>
                   )}
                   

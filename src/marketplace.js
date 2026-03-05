@@ -182,14 +182,20 @@ async function submitResult(taskId, agentId, result, resultAttachments = []) {
   const task = tasks.get(taskId);
   if (!task) throw new Error('Task not found');
   if (task.assignedAgent !== agentId) throw new Error('Not assigned to you');
-  if (task.state !== TaskState.IN_PROGRESS) throw new Error('Task not in progress');
   
+  // Allow submit from IN_PROGRESS or resubmit from SUBMITTED (before approval)
+  if (task.state !== TaskState.IN_PROGRESS && task.state !== TaskState.SUBMITTED) {
+    throw new Error('Task not in progress or already approved');
+  }
+  
+  const isResubmit = task.state === TaskState.SUBMITTED;
   task.state = TaskState.SUBMITTED;
   task.result = result;
   task.resultAttachments = resultAttachments;
   task.updatedAt = Date.now();
   
   await db.saveTask(task);
+  console.log(`[Marketplace] ${isResubmit ? 'Resubmitted' : 'Submitted'} result for task ${taskId}`);
   return task;
 }
 
