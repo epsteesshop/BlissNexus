@@ -233,9 +233,6 @@ function setupRoutes(app, broadcast) {
       DB_URL_IN_USE: db.getConnectionUrl()
     });
   });
-}
-
-module.exports = { setupRoutes };
 
   // ==================== CHAT ====================
   
@@ -279,3 +276,6 @@ module.exports = { setupRoutes };
       res.status(500).json({ error: e.message });
     }
   });
+}
+
+module.exports = { setupRoutes };
