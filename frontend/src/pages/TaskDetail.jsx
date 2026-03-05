@@ -137,8 +137,8 @@ function TaskDetail() {
   };
 
   const cancelTask = async () => {
-    
-    if (!window.confirm('Cancel this task? This cannot be undone.')) return;
+    const confirmed = window.confirm('Are you sure you want to cancel this task? This cannot be undone.');
+    if (!confirmed) return;
     
     setLoading(true);
     setError('');
@@ -149,13 +149,13 @@ function TaskDetail() {
         body: JSON.stringify({ requester: wallet }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Cancel failed');
-      setSuccess('Task cancelled.');
-      fetchTask();
+      if (!res.ok) throw new Error(data.error || 'Failed to cancel task');
+      
+      // Navigate to my tasks page after successful cancel
+      navigate('/my-tasks');
     } catch (e) {
       console.error('Cancel error:', e);
       setError(e.message || 'Failed to cancel task');
-    } finally {
       setLoading(false);
     }
   };
@@ -218,8 +218,9 @@ function TaskDetail() {
             </span>
             {task.state === 'open' && isOwner && (
               <button 
+                type="button"
                 className="btn btn-secondary btn-sm" 
-                onClick={cancelTask}
+                onClick={(e) => { e.stopPropagation(); cancelTask(); }}
                 disabled={loading}
                 style={{marginLeft: 12}}
               >
