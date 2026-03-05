@@ -775,6 +775,31 @@ app.get('/health', (req, res) => {
   }
 });
 
+// Backup endpoint - exports all data
+app.get('/api/backup', async (req, res) => {
+  try {
+    // Get all data from DB
+    const agents = await db.getAllAgents();
+    const tasks = await db.getAllTasks();
+    const bids = await db.getAllBids();
+    const messages = await db.getAllMessages();
+    
+    const backup = {
+      timestamp: new Date().toISOString(),
+      version: '2.0.0',
+      agents: agents || [],
+      tasks: tasks || [],
+      bids: bids || [],
+      messages: messages || [],
+    };
+    
+    res.json(backup);
+  } catch (e) {
+    console.error('[Backup] Error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 
 
 // Storage debug (admin only)

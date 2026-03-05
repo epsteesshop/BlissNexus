@@ -325,3 +325,19 @@ async function getAgent(agentId) {
     return result.rows[0] || null;
   } catch (e) { return null; }
 }
+
+// Backup helpers
+async function getAllBids() {
+  if (!pool) return [];
+  const result = await query('SELECT * FROM marketplace_bids ORDER BY created_at DESC');
+  return result.rows;
+}
+
+async function getAllMessages() {
+  if (!pool) return [];
+  const result = await query('SELECT * FROM task_messages ORDER BY created_at ASC LIMIT 10000');
+  return result.rows;
+}
+
+module.exports.getAllBids = getAllBids;
+module.exports.getAllMessages = getAllMessages;
