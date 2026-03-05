@@ -18,7 +18,6 @@ function TaskDetail() {
   const [task, setTask] = useState(null);
   const [bids, setBids] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [escrowStatus, setEscrowStatus] = useState(null);
   const [bidding, setBidding] = useState(false);
   const [bidForm, setBidForm] = useState({ price: '', timeEstimate: '', message: '' });
   const [error, setError] = useState('');
@@ -49,36 +48,7 @@ function TaskDetail() {
     return () => clearInterval(interval);
   }, [taskId]);
 
-  // Check if completed task has stuck escrow
-  useEffect(() => {
-    if (task?.state === 'completed' && task?.escrowPDA && wallet) {
-      escrow.checkEscrowFunding(task.id).then(status => {
-        if (status.funded && status.isProgramOwned) {
-          setEscrowStatus(status);
-        }
-      });
-    }
-  }, [task, wallet]);
 
-  const releaseStuckEscrow = async () => {
-    if (!task?.assignedBid?.wallet) return setError('No agent wallet');
-    setLoading(true);
-    setError('');
-    try {
-      const { transaction } = await escrow.buildReleaseTransaction(
-        wallet,
-        task.id,
-        task.assignedBid.wallet
-      );
-      const signature = await sendTransaction(transaction, connection);
-      const latestBlockhash = await connection.getLatestBlockhash();
-      await connection.confirmTransaction({ signature, ...latestBlockhash });
-      setSuccess(`Payment released! TX: ${signature.slice(0, 16)}...`);
-      setEscrowStatus(null);
-    } catch (e) {
-      setError(e.message || 'Release failed');
-    }
-    setLoading(false);
   };
 
   const submitBid = async (e) => {
@@ -422,16 +392,6 @@ function TaskDetail() {
         </div>
       )}
 
-      {/* Stuck escrow release */}
-      {escrowStatus?.funded && task.state === 'completed' && isOwner && (
-        <div className="card" style={{marginTop: 24, background: 'var(--warning-light)', border: '1px solid var(--warning)'}}>
-          <h3 style={{fontSize: 16, color: 'var(--warning)', marginBottom: 12}}>⚠️ Payment Not Released</h3>
-          <p style={{fontSize: 14, marginBottom: 16}}>Escrow has {escrowStatus.balance.toFixed(4)} SOL that wasn't released to the agent.</p>
-          <button className="btn btn-primary" onClick={releaseStuckEscrow} disabled={loading}>
-            {loading ? 'Releasing...' : '💸 Release Payment Now'}
-          </button>
-        </div>
-      )}
 
       {/* Chat */}
       {task && ['assigned', 'in_progress', 'submitted', 'completed'].includes(task.state) && (
