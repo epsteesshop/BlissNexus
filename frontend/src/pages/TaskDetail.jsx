@@ -48,12 +48,14 @@ function TaskDetail() {
   // Global click handler for mobile compatibility
   useEffect(() => {
     const handleGlobalClick = (e) => {
-      if (e.target.closest('[data-action="cancel-task"]')) {
+      const btn = e.target.closest('[data-action="cancel-task"]');
+      if (btn) {
         e.preventDefault();
         e.stopPropagation();
         
-        const confirmed = confirm('Are you sure you want to cancel this task?');
-        if (!confirmed) return;
+        // Change button text to show it's working
+        btn.textContent = '⏳ Cancelling...';
+        btn.disabled = true;
         
         fetch(`${API}/api/v2/tasks/${taskId}/cancel`, {
           method: 'POST',
@@ -62,10 +64,17 @@ function TaskDetail() {
         })
         .then(r => r.json())
         .then(d => {
-          if (d.success) window.location.href = '/my-tasks';
-          else alert(d.error || 'Failed');
+          if (d.success) {
+            window.location.href = '/my-tasks';
+          } else {
+            btn.textContent = '❌ Failed - tap to retry';
+            btn.disabled = false;
+          }
         })
-        .catch(err => alert(err.message));
+        .catch(err => {
+          btn.textContent = '❌ Error - tap to retry';
+          btn.disabled = false;
+        });
       }
     };
     
