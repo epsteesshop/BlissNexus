@@ -48,9 +48,6 @@ function TaskDetail() {
     return () => clearInterval(interval);
   }, [taskId]);
 
-
-  };
-
   const submitBid = async (e) => {
     e.preventDefault();
     if (!connected || !wallet) return setError('Connect wallet to bid');
@@ -91,7 +88,6 @@ function TaskDetail() {
     setError('');
     
     try {
-      // 1. Build and send on-chain release transaction
       const { transaction } = await escrow.buildReleaseTransaction(
         wallet,
         taskId,
@@ -99,15 +95,9 @@ function TaskDetail() {
       );
       
       const signature = await sendTransaction(transaction, connection);
-      
-      // Wait for confirmation
       const latestBlockhash = await connection.getLatestBlockhash();
-      await connection.confirmTransaction({
-        signature,
-        ...latestBlockhash,
-      });
+      await connection.confirmTransaction({ signature, ...latestBlockhash });
       
-      // 2. Update backend state
       const res = await fetch(`${API}/api/v2/tasks/${taskId}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -116,10 +106,9 @@ function TaskDetail() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       
-      setSuccess(`Approved! Payment released to agent. TX: ${signature.slice(0, 16)}...`);
+      setSuccess(`Approved! Payment released. TX: ${signature.slice(0, 16)}...`);
       fetchTask();
     } catch (e) {
-      console.error('[Approve] Failed:', e);
       setError(e.message || 'Release failed');
     } finally {
       setLoading(false);
@@ -138,7 +127,7 @@ function TaskDetail() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setSuccess('Dispute filed. An arbitrator will review.');
+      setSuccess('Dispute filed.');
       fetchTask();
     } catch (e) {
       setError(e.message);
@@ -164,7 +153,7 @@ function TaskDetail() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setSuccess('Bid accepted! Agent has been notified.');
+      setSuccess('Bid accepted!');
       setShowEscrow(false);
       fetchTask();
     } catch (e) {
@@ -173,7 +162,7 @@ function TaskDetail() {
   };
 
   if (loading && !task) {
-    return <div className="loading"><div className="spinner"></div> Loading task...</div>;
+    return <div className="loading"><div className="spinner"></div> Loading...</div>;
   }
 
   if (!task) {
@@ -183,7 +172,7 @@ function TaskDetail() {
   const stateColors = {
     open: 'badge-open',
     assigned: 'badge-assigned',
-    'in_progress': 'badge-in-progress',
+    in_progress: 'badge-in-progress',
     submitted: 'badge-submitted',
     completed: 'badge-completed',
     disputed: 'badge-disputed',
@@ -202,10 +191,7 @@ function TaskDetail() {
               {task.state?.replace('_', ' ')}
             </span>
           </div>
-          <div className="task-budget">
-            {task.maxBudget} SOL
-            <span> max</span>
-          </div>
+          <div className="task-budget">{task.maxBudget} SOL<span> max</span></div>
         </div>
 
         <p style={{color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 20}}>
@@ -217,23 +203,8 @@ function TaskDetail() {
             <span key={cap} className="capability-tag">{cap}</span>
           ))}
         </div>
-
-        {task.escrowPDA && (
-          <div style={{marginTop: 16, padding: 12, background: 'var(--bg-tertiary)', borderRadius: 8, fontSize: 13}}>
-            <strong>Escrow:</strong>{' '}
-            <a 
-              href={`https://explorer.solana.com/address/${task.escrowPDA}?cluster=devnet`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{color: 'var(--accent)'}}
-            >
-              {task.escrowPDA.slice(0, 16)}...
-            </a>
-          </div>
-        )}
       </div>
 
-      {/* Result section for submitted/completed tasks */}
       {task.result && (
         <div className="card" style={{marginBottom: 24}}>
           <h2 style={{fontSize: 18, fontWeight: 600, marginBottom: 16}}>
@@ -256,39 +227,24 @@ function TaskDetail() {
         </div>
       )}
 
-      {/* Escrow funding panel */}
       {showEscrow && selectedBid && (
         <div className="card" style={{marginBottom: 24}}>
-          <div className="card" style={{marginBottom: 12, background: 'var(--accent-light)'}}>
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-              <div>
-                <strong>Selected Bid:</strong> {selectedBid.agentName} - {selectedBid.price} SOL
-              </div>
-              <button className="btn btn-secondary btn-sm" onClick={() => setShowEscrow(false)}>Cancel</button>
-            </div>
+          <div style={{marginBottom: 12, background: 'var(--accent-light)', padding: 12, borderRadius: 8}}>
+            <strong>Selected:</strong> {selectedBid.agentName} - {selectedBid.price} SOL
+            <button className="btn btn-secondary btn-sm" style={{float: 'right'}} onClick={() => setShowEscrow(false)}>Cancel</button>
           </div>
-          <EscrowPanel
-            taskId={taskId}
-            amount={selectedBid.price}
-            workerWallet={selectedBid.wallet}
-            state={task.state}
-            onFunded={onEscrowFunded}
-          />
+          <EscrowPanel taskId={taskId} amount={selectedBid.price} onFunded={onEscrowFunded} />
         </div>
       )}
 
-      {/* Bids section */}
       {task.state === 'open' && (
         <div className="bids-section">
-          <div className="bids-header">
-            <h2 className="bids-title">Bids</h2>
-            <span className="bids-count">{bids.length} bid{bids.length !== 1 ? 's' : ''}</span>
-          </div>
+          <h2 className="bids-title">Bids ({bids.length})</h2>
 
           {bids.length === 0 ? (
             <div className="empty-state" style={{padding: 40}}>
               <div className="empty-icon">🤖</div>
-              <div className="empty-text">No bids yet. Agents are reviewing...</div>
+              <div className="empty-text">No bids yet</div>
             </div>
           ) : (
             <div className="bids-list">
@@ -299,9 +255,6 @@ function TaskDetail() {
                       <div className="bid-avatar">{bid.agentName?.[0] || '🤖'}</div>
                       <div>
                         <div className="bid-agent-name">{bid.agentName}</div>
-                        <div className="bid-agent-stats">
-                          <span>✓ {bid.agentStats?.completed || 0} jobs</span>
-                        </div>
                       </div>
                     </div>
                     <div className="bid-price">
@@ -313,7 +266,7 @@ function TaskDetail() {
                   {isOwner && (
                     <div className="bid-actions">
                       <button className="btn btn-primary btn-sm" onClick={() => acceptBid(bid)}>
-                        🔒 Accept & Fund Escrow
+                        🔒 Accept & Fund
                       </button>
                     </div>
                   )}
@@ -322,45 +275,26 @@ function TaskDetail() {
             </div>
           )}
 
-          {/* Submit bid form */}
           {!isOwner && connected && (
             <div className="card" style={{marginTop: 24}}>
               <h3 style={{fontSize: 16, fontWeight: 600, marginBottom: 16}}>Submit a Bid</h3>
               <form onSubmit={submitBid}>
                 <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">Your Price (SOL)</label>
-                    <input
-                      type="number"
-                      step="0.001"
-                      className="form-input"
-                      value={bidForm.price}
-                      onChange={e => setBidForm({...bidForm, price: e.target.value})}
-                      placeholder="0.05"
-                      max={task.maxBudget}
-                      required
-                    />
+                    <label className="form-label">Price (SOL)</label>
+                    <input type="number" step="0.001" className="form-input" value={bidForm.price}
+                      onChange={e => setBidForm({...bidForm, price: e.target.value})} required />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Time Estimate</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={bidForm.timeEstimate}
-                      onChange={e => setBidForm({...bidForm, timeEstimate: e.target.value})}
-                      placeholder="2 hours"
-                    />
+                    <label className="form-label">Time</label>
+                    <input type="text" className="form-input" value={bidForm.timeEstimate}
+                      onChange={e => setBidForm({...bidForm, timeEstimate: e.target.value})} placeholder="2 hours" />
                   </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Message</label>
-                  <textarea
-                    className="form-textarea"
-                    value={bidForm.message}
-                    onChange={e => setBidForm({...bidForm, message: e.target.value})}
-                    placeholder="Why you're the best agent for this task..."
-                    rows={3}
-                  />
+                  <textarea className="form-textarea" value={bidForm.message}
+                    onChange={e => setBidForm({...bidForm, message: e.target.value})} rows={3} />
                 </div>
                 <button type="submit" className="btn btn-primary" disabled={bidding}>
                   {bidding ? 'Submitting...' : 'Submit Bid'}
@@ -371,29 +305,21 @@ function TaskDetail() {
 
           {!connected && (
             <div className="card" style={{marginTop: 24, textAlign: 'center', padding: 32}}>
-              <p style={{marginBottom: 16, color: 'var(--text-tertiary)'}}>
-                Connect your wallet to submit a bid
-              </p>
+              <p style={{marginBottom: 16, color: 'var(--text-tertiary)'}}>Connect wallet to bid</p>
               <WalletMultiButton />
             </div>
           )}
         </div>
       )}
 
-      {/* Assigned task info */}
       {task.assignedBid && task.state !== 'open' && (
         <div className="card" style={{marginBottom: 24, background: 'var(--accent-light)'}}>
-          <div style={{fontWeight: 600, marginBottom: 8}}>
+          <div style={{fontWeight: 600}}>
             Assigned to: {task.assignedBid?.agentName} | {task.assignedBid?.price} SOL
-          </div>
-          <div style={{fontSize: 13, color: 'var(--text-secondary)'}}>
-            {task.assignedBid?.message}
           </div>
         </div>
       )}
 
-
-      {/* Chat */}
       {task && ['assigned', 'in_progress', 'submitted', 'completed'].includes(task.state) && (
         <div style={{ marginTop: 24 }}>
           <Chat taskId={taskId} task={task} />
