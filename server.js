@@ -212,7 +212,7 @@ function registerAgent(agentId, info, ws) {
   
   if (agent) {
     // Reconnecting - update info
-    agent.publicKey = info.publicKey || agent.publicKey;
+    agent.publicKey = info.publicKey || info.wallet || agent.publicKey;
     agent.name = info.name || agent.name;
     agent.description = info.description || agent.description;
     agent.lastSeen = Date.now();
@@ -230,7 +230,7 @@ function registerAgent(agentId, info, ws) {
     // New agent
     agent = {
       agentId,
-      publicKey: info.publicKey,
+      publicKey: info.publicKey || info.wallet,
       name: info.name || agentId,
       description: info.description || '',
       capabilities: info.capabilities || [],
@@ -335,7 +335,7 @@ function createTask(creatorId, capability, payload, reward = 0, deadlineSeconds 
   return task;
 }
 
-function submitBid(taskId, agentId, price, etaSeconds) {
+function submitBid(taskId, agentId, price, etaSeconds, message = "") {
   const task = tasks.get(taskId);
   if (!task || task.status !== 'open') return null;
   
@@ -346,7 +346,11 @@ function submitBid(taskId, agentId, price, etaSeconds) {
     bidId: uuidv4(),
     taskId,
     agentId,
+    agentName: agent.name || agentId,
+    wallet: agent.publicKey || agent.wallet,
     price,
+    message: message || "",
+    timeEstimate: etaSeconds ? `${Math.ceil(etaSeconds / 60)} min` : "unknown",
     etaSeconds,
     reputation: agent.reputation,
     createdAt: Date.now()
@@ -356,7 +360,7 @@ function submitBid(taskId, agentId, price, etaSeconds) {
   bids.push(bid);
   taskBids.set(taskId, bids);
   
-  console.log(`[Tasks] Bid on ${taskId} by ${agentId}: $${price}`);
+  console.log(`[Tasks] Bid on ${taskId} by ${agent.name || agentId}: ${price} SOL`);
   return bid;
 }
 
@@ -1039,12 +1043,12 @@ wss.on('connection', (ws, req) => {
     
     // Registration (no signature required)
     if (type === 'register') {
-      if (!payload.agentId || !payload.publicKey) {
+      if (!payload.agentId || (!payload.publicKey && !payload.wallet)) {
         return send(ws, { type: 'error', error: 'Missing agentId or publicKey' });
       }
       
       agentId = payload.agentId;
-      publicKey = payload.publicKey;
+      publicKey = payload.publicKey || payload.wallet;
       
       const agent = registerAgent(agentId, payload, ws);
       
@@ -1183,7 +1187,7 @@ wss.on('connection', (ws, req) => {
         if (!payload.taskId || payload.price === undefined) {
           return send(ws, { type: 'error', error: 'Missing taskId or price' });
         }
-        const bid = submitBid(payload.taskId, agentId, payload.price, payload.eta || 60);
+        const bid = submitBid(payload.taskId, agentId, payload.price, payload.eta || 60, payload.message || "");
         if (bid) {
           send(ws, { type: 'bid_accepted', bidId: bid.bidId, taskId: payload.taskId });
         } else {
