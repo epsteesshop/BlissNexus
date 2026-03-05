@@ -336,6 +336,96 @@ function setupRoutes(app, broadcast) {
       res.status(500).json({ error: e.message });
     }
   });
+
+  // ==================== RATINGS ====================
+  
+  // Submit a rating for a completed task
+  app.post("/api/v2/tasks/:taskId/rate", async (req, res) => {
+    try {
+      const { raterId, rating, review } = req.body;
+      const taskId = req.params.taskId;
+      
+      if (!raterId || !rating) {
+        return res.status(400).json({ error: "raterId and rating required" });
+      }
+      
+      if (rating < 1 || rating > 5) {
+        return res.status(400).json({ error: "Rating must be 1-5" });
+      }
+      
+      // Get task to validate
+      let task = await db.getTaskById(taskId);
+      if (!task) task = marketplace.tasks.get(taskId);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      
+      const state = task.state || task.status;
+      if (state !== 'completed') {
+        return res.status(400).json({ error: "Can only rate completed tasks" });
+      }
+      
+      // Determine rater role and ratee
+      const requesterId = task.requester_id || task.requesterId || task.requester;
+      const assignedAgent = task.assigned_agent || task.assignedAgent;
+      
+      let rateeId, raterRole;
+      if (raterId === requesterId) {
+        // Requester rating the agent
+        rateeId = assignedAgent;
+        raterRole = 'requester';
+      } else if (raterId === assignedAgent) {
+        // Agent rating the requester
+        rateeId = requesterId;
+        raterRole = 'agent';
+      } else {
+        return res.status(403).json({ error: "Only task participants can rate" });
+      }
+      
+      // Check if already rated
+      const alreadyRated = await db.hasUserRatedTask(taskId, raterId);
+      if (alreadyRated) {
+        return res.status(400).json({ error: "You have already rated this task" });
+      }
+      
+      const saved = await db.saveRating(taskId, raterId, rateeId, rating, review || null, raterRole);
+      
+      res.json({ success: true, rating: saved });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+  
+  // Get ratings for a task
+  app.get("/api/v2/tasks/:taskId/ratings", async (req, res) => {
+    try {
+      const ratings = await db.getRatingsForTask(req.params.taskId);
+      res.json({ ratings });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+  
+  // Get ratings for a user/agent
+  app.get("/api/v2/users/:userId/ratings", async (req, res) => {
+    try {
+      const ratings = await db.getRatingsForUser(req.params.userId);
+      const stats = await db.getAverageRating(req.params.userId);
+      res.json({ ratings, stats });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+  
+  // Get average rating for a user (lightweight)
+  app.get("/api/v2/users/:userId/rating", async (req, res) => {
+    try {
+      const stats = await db.getAverageRating(req.params.userId);
+      res.json(stats);
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
 }
 
 module.exports = { setupRoutes };

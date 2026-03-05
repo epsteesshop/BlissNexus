@@ -100,3 +100,19 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 
 CREATE INDEX IF NOT EXISTS idx_chat_task ON chat_messages(task_id);
 CREATE INDEX IF NOT EXISTS idx_chat_created ON chat_messages(created_at);
+
+-- Ratings table
+CREATE TABLE IF NOT EXISTS ratings (
+  id SERIAL PRIMARY KEY,
+  task_id TEXT NOT NULL,
+  rater_id TEXT NOT NULL,
+  ratee_id TEXT NOT NULL,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  review TEXT,
+  rater_role TEXT NOT NULL CHECK (rater_role IN ('requester', 'agent')),
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(task_id, rater_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ratings_ratee ON ratings(ratee_id);
+CREATE INDEX IF NOT EXISTS idx_ratings_task ON ratings(task_id);

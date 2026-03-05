@@ -223,3 +223,62 @@ async function getMessages(taskId, limit = 100) {
 module.exports.saveMessage = saveMessage;
 module.exports.getMessages = getMessages;
 module.exports.getTaskById = getTaskById;
+
+// ==================== RATINGS ====================
+
+async function saveRating(taskId, raterId, rateeId, rating, review, raterRole) {
+  const result = await query(
+    `INSERT INTO ratings (task_id, rater_id, ratee_id, rating, review, rater_role)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (task_id, rater_id) DO UPDATE SET
+       rating = $4, review = $5, created_at = NOW()
+     RETURNING *`,
+    [taskId, raterId, rateeId, rating, review, raterRole]
+  );
+  return result.rows[0];
+}
+
+async function getRatingsForUser(userId) {
+  const result = await query(
+    `SELECT * FROM ratings WHERE ratee_id = $1 ORDER BY created_at DESC`,
+    [userId]
+  );
+  return result.rows;
+}
+
+async function getAverageRating(userId) {
+  const result = await query(
+    `SELECT 
+       COUNT(*) as total_ratings,
+       ROUND(AVG(rating)::numeric, 1) as average_rating
+     FROM ratings WHERE ratee_id = $1`,
+    [userId]
+  );
+  const row = result.rows[0];
+  return {
+    totalRatings: parseInt(row.total_ratings) || 0,
+    averageRating: parseFloat(row.average_rating) || 0
+  };
+}
+
+async function getRatingsForTask(taskId) {
+  const result = await query(
+    `SELECT * FROM ratings WHERE task_id = $1`,
+    [taskId]
+  );
+  return result.rows;
+}
+
+async function hasUserRatedTask(taskId, raterId) {
+  const result = await query(
+    `SELECT 1 FROM ratings WHERE task_id = $1 AND rater_id = $2`,
+    [taskId, raterId]
+  );
+  return result.rows.length > 0;
+}
+
+module.exports.saveRating = saveRating;
+module.exports.getRatingsForUser = getRatingsForUser;
+module.exports.getAverageRating = getAverageRating;
+module.exports.getRatingsForTask = getRatingsForTask;
+module.exports.hasUserRatedTask = hasUserRatedTask;

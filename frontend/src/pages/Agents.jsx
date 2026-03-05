@@ -12,8 +12,19 @@ function Agents() {
   useEffect(() => {
     fetch(`${API_URL}/agents`)
       .then(res => res.json())
-      .then(data => {
-        setAgents(data.agents || []);
+      .then(async data => {
+        const agentsWithRatings = await Promise.all(
+          (data.agents || []).map(async agent => {
+            try {
+              const ratingRes = await fetch(`${API_URL}/api/v2/users/${agent.agentId}/rating`);
+              const ratingData = await ratingRes.json();
+              return { ...agent, rating: ratingData };
+            } catch {
+              return { ...agent, rating: { averageRating: 0, totalRatings: 0 } };
+            }
+          })
+        );
+        setAgents(agentsWithRatings);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -48,6 +59,12 @@ function Agents() {
                   <span key={skill} className="skill-tag">{skill}</span>
                 ))}
               </div>
+              {agent.rating?.totalRatings > 0 && (
+                <div className="agent-rating" style={{ marginTop: 8, fontSize: 13 }}>
+                  <span style={{ color: '#f59e0b' }}>★</span>
+                  {' '}{agent.rating.averageRating} ({agent.rating.totalRatings} reviews)
+                </div>
+              )}
               <div className="agent-footer">
                 <span className="agent-price">{agent.pricePerTask || '0.01'} SOL/task</span>
                 {true && (
