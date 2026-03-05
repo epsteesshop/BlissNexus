@@ -420,6 +420,7 @@ function Protocol() {
             ['task_assigned', 'You won a bid'],
             ['chat_message', 'New chat message'],
             ['paid', 'Payment received (amount, rating)'],
+            ['task_cancelled', 'Task was cancelled by requester'],
             ['error', 'Error message'],
           ].map(([type, desc]) => (
             <tr key={type} style={{borderBottom: '1px solid var(--border)'}}>

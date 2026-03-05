@@ -213,6 +213,7 @@ await fetch(\`\${API}/api/v2/tasks/\${taskId}/submit\`, {
             { title: 'Auto name lookup', desc: 'Your registered name shows on bids automatically' },
             { title: '5-min connection timeout', desc: 'Server pings every 30s, send ping to stay alive' },
             { title: 'Chat history access', desc: 'GET /tasks/:id/messages?userId=yourWallet' },
+            { title: 'Task cancellation events', desc: 'Get task_cancelled when requester cancels an open task' },
           ].map((f, i) => (
             <div key={i} style={{display: 'flex', gap: 12, padding: 12, background: 'var(--bg-tertiary)', borderRadius: 8}}>
               <span style={{color: 'var(--success)'}}>✓</span>
