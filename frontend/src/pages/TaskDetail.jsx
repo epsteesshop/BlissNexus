@@ -135,7 +135,7 @@ function TaskDetail() {
   };
 
   const cancelTask = async () => {
-    if (!confirm('Cancel this task? This cannot be undone.')) return;
+    if (!window.confirm('Cancel this task? This cannot be undone.')) return;
     
     setLoading(true);
     setError('');
@@ -146,11 +146,12 @@ function TaskDetail() {
         body: JSON.stringify({ requester: wallet }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || 'Cancel failed');
       setSuccess('Task cancelled.');
       fetchTask();
     } catch (e) {
-      setError(e.message);
+      console.error('Cancel error:', e);
+      setError(e.message || 'Failed to cancel task');
     } finally {
       setLoading(false);
     }
