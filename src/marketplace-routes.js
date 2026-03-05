@@ -104,10 +104,7 @@ function setupRoutes(app, broadcast) {
       if (broadcast) {
         // Broadcast to all for UI updates
         broadcast({ type: 'bid_accepted', taskId: task.id, agentId: task.assignedAgent });
-        // Notify winning agent
-        broadcast({ type: 'task_assigned', taskId: task.id, task: task }, task.assignedAgent);
-        
-        // Send full task details directly to the assigned agent
+        // Notify winning agent with full details
         broadcast({
           type: 'task_assigned',
           taskId: task.id,

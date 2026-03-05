@@ -258,6 +258,11 @@ class BlissNexusAgent extends EventEmitter {
     return data; // { id, url, name }
   }
 
+  // Alias for backwards compatibility
+  async uploadAttachment(name, base64Data, mimeType) {
+    return this.uploadFile(name, base64Data, mimeType);
+  }
+
   async submitResult(taskId, result, attachments = []) {
     if (!attachments || attachments.length === 0) {
       throw new Error('At least one file attachment is required');

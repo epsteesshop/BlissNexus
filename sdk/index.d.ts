@@ -88,3 +88,6 @@ export class BlissNexusAgent extends EventEmitter {
   on(event: 'error', listener: (error: Error) => void): this;
   on(event: 'server_error', listener: (msg: any) => void): this;
 }
+
+  // Alias
+  uploadAttachment(name: string, base64Data: string, mimeType?: string): Promise<Attachment>;
