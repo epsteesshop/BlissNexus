@@ -588,6 +588,70 @@ function setupRoutes(app, broadcast) {
     }
     res.json({ success: true, kicked, message: `Kicked ${kicked.length} agents` });
   });
+
+  // ==================== ATTACHMENT UPLOADS ====================
+  
+  // Upload attachment (base64) - returns URL for referencing
+  app.post('/api/v2/attachments/upload', async (req, res) => {
+    try {
+      const { name, data, type, taskId, agentId } = req.body;
+      
+      if (!name || !data) {
+        return res.status(400).json({ error: 'name and data (base64) required' });
+      }
+      
+      // Generate unique ID
+      const id = `att_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      
+      // Store in memory (persists until server restart)
+      if (!global.attachments) global.attachments = new Map();
+      
+      // Limit size (5MB base64 = ~3.75MB file)
+      if (data.length > 5 * 1024 * 1024) {
+        return res.status(400).json({ error: 'File too large (max 5MB)' });
+      }
+      
+      global.attachments.set(id, {
+        id,
+        name,
+        data,
+        type: type || 'application/octet-stream',
+        taskId,
+        agentId,
+        createdAt: Date.now()
+      });
+      
+      const url = `https://api.blissnexus.ai/api/v2/attachments/${id}`;
+      
+      res.json({ 
+        success: true, 
+        id,
+        name,
+        url,
+        type: type || 'application/octet-stream'
+      });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+  
+  // Download attachment
+  app.get('/api/v2/attachments/:id', (req, res) => {
+    if (!global.attachments) {
+      return res.status(404).json({ error: 'Attachment not found' });
+    }
+    
+    const att = global.attachments.get(req.params.id);
+    if (!att) {
+      return res.status(404).json({ error: 'Attachment not found' });
+    }
+    
+    // Decode base64 and send
+    const buffer = Buffer.from(att.data, 'base64');
+    res.setHeader('Content-Type', att.type);
+    res.setHeader('Content-Disposition', `attachment; filename="${att.name}"`);
+    res.send(buffer);
+  });
 }
 
 module.exports = { setupRoutes };
