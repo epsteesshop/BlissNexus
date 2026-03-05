@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="200" height="200">
+  <defs>
+    <linearGradient id="birdGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <!-- Super minimal bird - just key shapes -->
+  <!-- Body + head as one flowing shape -->
+  <path d="M70 25 L85 35 L50 55 L15 35 L30 25 L50 40 Z" fill="url(#birdGrad)"/>
+  <!-- Beak -->
+  <polygon points="85,35 98,38 88,42" fill="#4f46e5"/>
+  <!-- Tail -->
+  <polygon points="15,35 5,50 10,42 5,55 20,45" fill="#7c3aed"/>
+</svg>

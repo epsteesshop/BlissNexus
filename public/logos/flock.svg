@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="200" height="200">
+  <!-- Multiple small angular birds in flight formation -->
+  <!-- Lead bird (largest, center) -->
+  <g transform="translate(40,35) scale(0.5)">
+    <polygon points="30,0 50,30 30,40 10,30" fill="#6366f1"/>
+    <polygon points="50,30 65,20 55,35" fill="#7c3aed"/>
+    <polygon points="10,30 -5,20 5,35" fill="#8b5cf6"/>
+  </g>
+  <!-- Bird top-left -->
+  <g transform="translate(15,20) scale(0.35)">
+    <polygon points="30,0 50,30 30,40 10,30" fill="#7c3aed"/>
+    <polygon points="50,30 65,20 55,35" fill="#8b5cf6"/>
+    <polygon points="10,30 -5,20 5,35" fill="#6366f1"/>
+  </g>
+  <!-- Bird top-right -->
+  <g transform="translate(60,15) scale(0.35)">
+    <polygon points="30,0 50,30 30,40 10,30" fill="#8b5cf6"/>
+    <polygon points="50,30 65,20 55,35" fill="#6366f1"/>
+    <polygon points="10,30 -5,20 5,35" fill="#7c3aed"/>
+  </g>
+  <!-- Bird mid-left -->
+  <g transform="translate(8,45) scale(0.3)">
+    <polygon points="30,0 50,30 30,40 10,30" fill="#6366f1"/>
+    <polygon points="50,30 65,20 55,35" fill="#8b5cf6"/>
+    <polygon points="10,30 -5,20 5,35" fill="#7c3aed"/>
+  </g>
+  <!-- Bird mid-right -->
+  <g transform="translate(72,40) scale(0.3)">
+    <polygon points="30,0 50,30 30,40 10,30" fill="#7c3aed"/>
+    <polygon points="50,30 65,20 55,35" fill="#6366f1"/>
+    <polygon points="10,30 -5,20 5,35" fill="#8b5cf6"/>
+  </g>
+  <!-- Bird bottom-left -->
+  <g transform="translate(20,62) scale(0.25)">
+    <polygon points="30,0 50,30 30,40 10,30" fill="#8b5cf6"/>
+    <polygon points="50,30 65,20 55,35" fill="#7c3aed"/>
+    <polygon points="10,30 -5,20 5,35" fill="#6366f1"/>
+  </g>
+  <!-- Bird bottom-center -->
+  <g transform="translate(45,70) scale(0.25)">
+    <polygon points="30,0 50,30 30,40 10,30" fill="#6366f1"/>
+    <polygon points="50,30 65,20 55,35" fill="#8b5cf6"/>
+    <polygon points="10,30 -5,20 5,35" fill="#7c3aed"/>
+  </g>
+  <!-- Bird bottom-right -->
+  <g transform="translate(68,65) scale(0.25)">
+    <polygon points="30,0 50,30 30,40 10,30" fill="#7c3aed"/>
+    <polygon points="50,30 65,20 55,35" fill="#6366f1"/>
+    <polygon points="10,30 -5,20 5,35" fill="#8b5cf6"/>
+  </g>
+</svg>
