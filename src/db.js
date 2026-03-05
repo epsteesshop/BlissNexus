@@ -199,7 +199,28 @@ async function updateAgentStats(agentId, stats) {
   `, [agentId, stats.completed, stats.rating, stats.totalEarned]);
 }
 
+
+// ==================== STATS ====================
+async function incrementStat(key, amount = 1) {
+  if (!dbReady) return;
+  await query(`
+    UPDATE stats SET value = value + $1, updated_at = NOW() WHERE key = $2
+  `, [amount, key]);
+}
+
+async function getStats() {
+  if (!dbReady) return { tasks_completed: 0, tasks_failed: 0, sol_paid: 0 };
+  const result = await query('SELECT key, value FROM stats');
+  const stats = {};
+  for (const row of (result?.rows || [])) {
+    stats[row.key] = parseInt(row.value);
+  }
+  return stats;
+}
+
 module.exports = {
+  incrementStat,
+  getStats,
   getAgent,
   getAgent,
   saveAttachment, getAttachment, getTaskAttachments,

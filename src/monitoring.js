@@ -1,51 +1,81 @@
 /**
  * BlissNexus Advanced Monitoring
+ * Now with persistent stats via database
  */
 
-const stats = {
+const db = require('./db');
+
+// In-memory stats (for request tracking - resets on restart)
+const memStats = {
   startedAt: Date.now(),
   requests: 0,
   errors: 0,
   wsConnections: 0,
   peakWs: 0,
-  tasksCompleted: 0,
-  tasksFailed: 0,
-  solPaid: 0,
-  endpoints: {}
+  endpoints: {},
+  lastError: null
 };
 
+// Cached persistent stats (loaded from DB)
+let persistentStats = {
+  tasksCompleted: 0,
+  tasksFailed: 0,
+  solPaid: 0
+};
+
+// Load stats from DB on startup
+async function loadStats() {
+  try {
+    const stats = await db.getStats();
+    persistentStats.tasksCompleted = stats.tasks_completed || 0;
+    persistentStats.tasksFailed = stats.tasks_failed || 0;
+    persistentStats.solPaid = stats.sol_paid || 0;
+    console.log('[Monitor] Loaded persistent stats:', persistentStats);
+  } catch (e) {
+    console.error('[Monitor] Failed to load stats:', e.message);
+  }
+}
+
 function track(req, res, next) {
-  stats.requests++;
+  memStats.requests++;
   const key = `${req.method} ${req.path}`;
-  stats.endpoints[key] = (stats.endpoints[key] || 0) + 1;
+  memStats.endpoints[key] = (memStats.endpoints[key] || 0) + 1;
   next();
 }
 
 function trackError(err) {
-  stats.errors++;
-  stats.lastError = { msg: err.message, time: Date.now() };
+  memStats.errors++;
+  memStats.lastError = { msg: err.message, time: Date.now() };
 }
 
 function trackWsConnect() {
-  stats.wsConnections++;
-  if (stats.wsConnections > stats.peakWs) stats.peakWs = stats.wsConnections;
+  memStats.wsConnections++;
+  if (memStats.wsConnections > memStats.peakWs) memStats.peakWs = memStats.wsConnections;
 }
 
 function trackWsDisconnect() {
-  stats.wsConnections = Math.max(0, stats.wsConnections - 1);
+  memStats.wsConnections = Math.max(0, memStats.wsConnections - 1);
 }
 
-function trackTask(success) {
-  if (success) stats.tasksCompleted++;
-  else stats.tasksFailed++;
+async function trackTask(success) {
+  if (success) {
+    persistentStats.tasksCompleted++;
+    await db.incrementStat('tasks_completed', 1);
+  } else {
+    persistentStats.tasksFailed++;
+    await db.incrementStat('tasks_failed', 1);
+  }
 }
 
-function trackPayment(amount) {
-  stats.solPaid += amount;
+async function trackPayment(amount) {
+  // Store as micro-SOL (multiply by 1M) to avoid float precision issues
+  const microSol = Math.round(amount * 1000000);
+  persistentStats.solPaid += microSol;
+  await db.incrementStat('sol_paid', microSol);
 }
 
 function getUptime() {
-  const s = Math.floor((Date.now() - stats.startedAt) / 1000);
+  const s = Math.floor((Date.now() - memStats.startedAt) / 1000);
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   return `${h}h ${m}m ${s % 60}s`;
@@ -55,42 +85,49 @@ function getStatus() {
   return {
     uptime: getUptime(),
     requests: {
-      total: stats.requests,
-      errors: stats.errors,
-      errorRate: stats.requests ? (stats.errors / stats.requests * 100).toFixed(2) + '%' : '0%'
+      total: memStats.requests,
+      errors: memStats.errors,
+      errorRate: memStats.requests ? (memStats.errors / memStats.requests * 100).toFixed(2) + '%' : '0%'
     },
     websockets: {
-      current: stats.wsConnections,
-      peak: stats.peakWs
+      current: memStats.wsConnections,
+      peak: memStats.peakWs
     },
     tasks: {
-      completed: stats.tasksCompleted,
-      failed: stats.tasksFailed
+      completed: persistentStats.tasksCompleted,
+      failed: persistentStats.tasksFailed
     },
     payments: {
-      totalSol: stats.solPaid.toFixed(6)
+      totalSol: (persistentStats.solPaid / 1000000).toFixed(6)
     },
-    topEndpoints: Object.entries(stats.endpoints)
+    topEndpoints: Object.entries(memStats.endpoints)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5),
-    lastError: stats.lastError || null
+    lastError: memStats.lastError
   };
 }
 
 function healthCheck() {
-  const errorRate = stats.requests ? stats.errors / stats.requests : 0;
+  const errorRate = memStats.requests ? memStats.errors / memStats.requests : 0;
   const healthy = errorRate < 0.1;
   return {
     healthy,
     status: healthy ? 'All systems operational' : 'Issues detected',
     checks: {
       errorRate: errorRate < 0.1 ? 'OK' : 'HIGH',
-      wsConnections: stats.wsConnections < 1000 ? 'OK' : 'HIGH'
+      wsConnections: memStats.wsConnections < 1000 ? 'OK' : 'HIGH'
     }
   };
 }
 
 module.exports = { 
-  track, trackError, trackWsConnect, trackWsDisconnect, 
-  trackTask, trackPayment, getStatus, healthCheck 
+  loadStats,
+  track, 
+  trackError, 
+  trackWsConnect, 
+  trackWsDisconnect, 
+  trackTask, 
+  trackPayment, 
+  getStatus, 
+  healthCheck 
 };

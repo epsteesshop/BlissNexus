@@ -1497,6 +1497,9 @@ async function loadFromDB() {
 loadFromDB().then(async () => {
   const marketplace = require("./src/marketplace");
   await marketplace.init();
+  
+  // Load persistent stats from DB
+  await monitor.loadStats();
   federation.init();
   storage.init();
   initBuiltInBots();
