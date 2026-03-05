@@ -100,20 +100,22 @@ export async function requestAirdrop(walletAddress, solAmount = 1) {
  * Build createEscrow transaction
  * Locks funds in program-owned PDA
  */
-export async function buildCreateEscrowTransaction(requesterWallet, taskId, solAmount) {
+export async function buildCreateEscrowTransaction(requesterWallet, taskId, solAmount, workerWallet) {
   const connection = getConnection();
   const programId = new PublicKey(ESCROW_PROGRAM_ID);
   const requesterPubkey = new PublicKey(requesterWallet);
+  const workerPubkey = new PublicKey(workerWallet);
   const { pda: escrowPDA } = getEscrowPDA(taskId);
   
-  // Build instruction data: discriminator + task_id (32 bytes) + amount (8 bytes LE)
+  // Build instruction data: discriminator + task_id (32) + amount (8) + worker (32)
   const discriminator = getDiscriminator('create_escrow');
   const taskBytes = taskIdToBytes(taskId);
   const amountBytes = new Uint8Array(8);
   const view = new DataView(amountBytes.buffer);
   view.setBigUint64(0, BigInt(Math.floor(solAmount * LAMPORTS_PER_SOL)), true);
+  const workerBytes = workerPubkey.toBytes();
   
-  const data = concatBytes(discriminator, taskBytes, amountBytes);
+  const data = concatBytes(discriminator, taskBytes, amountBytes, workerBytes);
   
   const instruction = new TransactionInstruction({
     keys: [

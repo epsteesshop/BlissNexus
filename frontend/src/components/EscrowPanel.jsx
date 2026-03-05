@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import escrow from '../lib/escrow';
 
-function EscrowPanel({ taskId, amount, state, onFunded }) {
+function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
   const { publicKey, sendTransaction } = useWallet();
   const { connection } = useConnection();
   
@@ -56,7 +56,8 @@ function EscrowPanel({ taskId, amount, state, onFunded }) {
       const { transaction, escrowPDA } = await escrow.buildCreateEscrowTransaction(
         wallet,
         taskId,
-        amount
+        amount,
+        workerWallet
       );
       
       // Send and confirm

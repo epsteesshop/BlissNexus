@@ -338,7 +338,7 @@ function TaskDetail() {
             <strong>Selected:</strong> {selectedBid.agentName} - {selectedBid.price} SOL
             <button className="btn btn-secondary btn-sm" style={{float: 'right'}} onClick={() => setShowEscrow(false)}>Cancel</button>
           </div>
-          <EscrowPanel taskId={taskId} amount={selectedBid.price} onFunded={onEscrowFunded} />
+          <EscrowPanel taskId={taskId} amount={selectedBid.price} workerWallet={selectedBid.wallet} onFunded={onEscrowFunded} />
         </div>
       )}
 
