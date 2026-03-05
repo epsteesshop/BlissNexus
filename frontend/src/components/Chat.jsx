@@ -43,7 +43,11 @@ export default function Chat({ taskId, task }) {
       try {
         const data = JSON.parse(event.data);
         if (data.type === 'chat_message' && data.taskId === taskId) {
-          setMessages(prev => [...prev, data.message]);
+          // Deduplicate - don't add if message ID already exists
+          setMessages(prev => {
+            if (prev.some(m => m.id === data.message.id)) return prev;
+            return [...prev, data.message];
+          });
         }
       } catch (e) {}
     };
@@ -73,6 +77,11 @@ export default function Chat({ taskId, task }) {
       });
 
       if (res.ok) {
+        const data = await res.json();
+        // Add message to local state immediately
+        if (data.message) {
+          setMessages(prev => [...prev, data.message]);
+        }
         setInput('');
       } else {
         const err = await res.json();
