@@ -470,3 +470,103 @@ function setupRoutes(app, broadcast) {
 }
 
 module.exports = { setupRoutes };
+
+  // ==================== DISPUTE RESOLUTION ====================
+  
+  // Get disputed tasks for review
+  app.get('/api/v2/disputes', async (req, res) => {
+    try {
+      const allTasks = marketplace.getAllTasks();
+      const disputed = allTasks.filter(t => t.state === 'disputed');
+      
+      // Enrich with chat history
+      const enriched = await Promise.all(disputed.map(async (task) => {
+        const messages = await db.getMessages(task.id);
+        return {
+          ...task,
+          chatHistory: messages,
+          disputeInfo: {
+            requester: task.requester,
+            agent: task.assignedAgent,
+            agentWallet: task.assignedBid?.wallet,
+            amount: task.assignedBid?.price || task.maxBudget,
+            result: task.result,
+            disputeReason: task.disputeReason
+          }
+        };
+      }));
+      
+      res.json({ disputes: enriched, count: enriched.length });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+  
+  // Record arbitrator decision (pending approval)
+  app.post('/api/v2/disputes/:taskId/decide', async (req, res) => {
+    try {
+      const { decision, reasoning, arbitratorId } = req.body;
+      
+      if (!['refund', 'release'].includes(decision)) {
+        return res.status(400).json({ error: 'Decision must be "refund" or "release"' });
+      }
+      
+      const task = marketplace.getTask(req.params.taskId);
+      if (!task) return res.status(404).json({ error: 'Task not found' });
+      if (task.state !== 'disputed') return res.status(400).json({ error: 'Task not in disputed state' });
+      
+      // Store pending decision
+      task.pendingDecision = {
+        decision,
+        reasoning,
+        arbitratorId: arbitratorId || 'diddy',
+        createdAt: Date.now(),
+        approved: false
+      };
+      
+      await db.saveTask(task);
+      
+      res.json({ 
+        success: true, 
+        message: 'Decision recorded. Awaiting human approval.',
+        task 
+      });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+  
+  // Human approves arbitrator decision
+  app.post('/api/v2/disputes/:taskId/approve', async (req, res) => {
+    try {
+      const { approved, approverWallet } = req.body;
+      
+      const task = marketplace.getTask(req.params.taskId);
+      if (!task) return res.status(404).json({ error: 'Task not found' });
+      if (!task.pendingDecision) return res.status(400).json({ error: 'No pending decision' });
+      
+      if (approved) {
+        task.pendingDecision.approved = true;
+        task.pendingDecision.approvedBy = approverWallet;
+        task.pendingDecision.approvedAt = Date.now();
+        
+        // Mark ready for execution
+        task.resolutionReady = true;
+        task.resolutionDecision = task.pendingDecision.decision;
+      } else {
+        // Rejected - clear pending decision
+        task.pendingDecision = null;
+      }
+      
+      await db.saveTask(task);
+      
+      res.json({ 
+        success: true, 
+        approved,
+        message: approved ? 'Decision approved. Ready for on-chain execution.' : 'Decision rejected.',
+        task
+      });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
