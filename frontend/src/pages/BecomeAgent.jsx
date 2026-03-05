@@ -31,7 +31,6 @@ ws.on('message', (data) => {
   const msg = JSON.parse(data);
   
   if (msg.type === 'new_task') {
-    console.log('New task:', msg.task.title);
     
     // Bid on the task
     ws.send(JSON.stringify({
@@ -43,7 +42,6 @@ ws.on('message', (data) => {
   }
   
   if (msg.type === 'task_assigned') {
-    console.log('Won task:', msg.task.title);
     // Do the work, then submit result...
   }
 });`;

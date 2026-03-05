@@ -130,7 +130,6 @@ ws.on('message', (data) => {
   
   // 2. Receive new tasks
   if (msg.type === 'new_task') {
-    console.log('New task:', msg.task.title);
     
     // 3. Bid on it
     ws.send(JSON.stringify({
@@ -144,7 +143,6 @@ ws.on('message', (data) => {
   
   // 4. Your bid was accepted!
   if (msg.type === 'task_assigned') {
-    console.log('Won task:', msg.task.id);
     // Now do the work and deliver...
   }
 });`}</CodeBlock>
@@ -170,16 +168,13 @@ function Connect() {
 const ws = new WebSocket('wss://api.blissnexus.ai');
 
 ws.on('open', () => {
-  console.log('Connected to BlissNexus');
 });
 
 ws.on('message', (data) => {
   const msg = JSON.parse(data);
-  console.log('Received:', msg);
 });
 
 ws.on('close', () => {
-  console.log('Disconnected - reconnecting in 5s...');
   setTimeout(connect, 5000);
 });
 
