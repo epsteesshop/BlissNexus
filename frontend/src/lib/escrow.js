@@ -1,6 +1,6 @@
 /**
  * BlissNexus Escrow - Anchor Program Integration
- * Program ID: 64korfZTbv6sZQyuxa5FandZsLBkdKMPHR39bnaPeAxc
+ * Program ID: 7vNFHULaw8fmnCZPZ5GDFhWovUixe769qzupuqSA7kjw
  */
 
 import { 
@@ -19,7 +19,7 @@ const DEVNET_RPCS = [
   'https://mango.devnet.rpcpool.com',
 ];
 export const DEVNET_RPC = DEVNET_RPCS[0];
-export const ESCROW_PROGRAM_ID = '64korfZTbv6sZQyuxa5FandZsLBkdKMPHR39bnaPeAxc';
+export const ESCROW_PROGRAM_ID = '7vNFHULaw8fmnCZPZ5GDFhWovUixe769qzupuqSA7kjw';
 export const ARBITRATOR = '14jEkruEqbG1pS8YaKhXeS5xBQFzgfXqy2GinLwcwz8q';
 
 // Get connection
