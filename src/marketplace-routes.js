@@ -96,13 +96,19 @@ function setupRoutes(app, broadcast) {
   // Accept a bid
   app.post('/api/v2/tasks/:taskId/bids/:bidId/accept', async (req, res) => {
     try {
-      const { requester, escrowSignature, escrowPDA } = req.body;
+      const { requester, escrowTx, escrowSignature, escrowPDA } = req.body;
       if (!requester) return res.status(400).json({ error: 'Requester required' });
       
       const task = await marketplace.acceptBid(req.params.taskId, req.params.bidId, requester);
-      if (escrowSignature) {
-        task.escrowSignature = escrowSignature;
+      
+      // Save escrow info (accept both field names for compatibility)
+      const sig = escrowTx || escrowSignature;
+      if (sig && escrowPDA) {
+        task.escrowSignature = sig;
         task.escrowPDA = escrowPDA;
+        // Persist to DB
+        await db.saveTask(task);
+        console.log('[Escrow] Saved escrow info:', escrowPDA);
       }
       console.log('[Marketplace] Bid accepted for', task.assignedAgent);
       // Send task details to assigned agent
