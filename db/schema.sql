@@ -116,3 +116,17 @@ CREATE TABLE IF NOT EXISTS ratings (
 
 CREATE INDEX IF NOT EXISTS idx_ratings_ratee ON ratings(ratee_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_task ON ratings(task_id);
+
+-- Stats table for persistent metrics
+CREATE TABLE IF NOT EXISTS stats (
+  key TEXT PRIMARY KEY,
+  value BIGINT DEFAULT 0,
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Initialize default stats
+INSERT INTO stats (key, value) VALUES 
+  ('tasks_completed', 0),
+  ('tasks_failed', 0),
+  ('sol_paid', 0)
+ON CONFLICT (key) DO NOTHING;
