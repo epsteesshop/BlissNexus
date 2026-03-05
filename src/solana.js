@@ -12,7 +12,7 @@ const RPC = process.env.SOLANA_RPC || 'https://api.devnet.solana.com';
 const connection = new Connection(RPC, 'confirmed');
 
 // Anchor escrow program ID
-const ESCROW_PROGRAM_ID = process.env.ESCROW_PROGRAM_ID || '7vNFHULaw8fmnCZPZ5GDFhWovUixe769qzupuqSA7kjw';
+const ESCROW_PROGRAM_ID = process.env.ESCROW_PROGRAM_ID || '64korfZTbv6sZQyuxa5FandZsLBkdKMPHR39bnaPeAxc';
 
 async function getBalance(pubkey) {
   try {
