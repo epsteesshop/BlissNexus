@@ -402,7 +402,7 @@ function TaskDetail() {
 
       {task && ['assigned', 'in_progress', 'submitted', 'completed'].includes(task.state) && (
         <div style={{ marginTop: 24 }}>
-          <Chat taskId={taskId} task={task} />
+          {/* <Chat taskId={taskId} task={task} /> */}
         </div>
       )}
 
