@@ -3,147 +3,147 @@
   
   <!-- Main cluster - center-right -->
   <g transform="translate(700,300)">
-    <polygon points="24,0 48,20 24,30 0,20" fill="#6366f1" opacity="0.30"/>
-    <polygon points="48,20 60,14 54,24" fill="#4f46e5" opacity="0.24"/>
+    <polygon points="24,0 48,20 24,30 0,20" fill="#6366f1" opacity="0.50"/>
+    <polygon points="48,20 60,14 54,24" fill="#4f46e5" opacity="0.40"/>
   </g>
   <g transform="translate(650,340)">
-    <polygon points="20,0 40,16 20,24 0,16" fill="#7c3aed" opacity="0.28"/>
-    <polygon points="40,16 50,12 44,20" fill="#6366f1" opacity="0.22"/>
+    <polygon points="20,0 40,16 20,24 0,16" fill="#7c3aed" opacity="0.45"/>
+    <polygon points="40,16 50,12 44,20" fill="#6366f1" opacity="0.38"/>
   </g>
   <g transform="translate(750,320)">
-    <polygon points="20,0 40,16 20,24 0,16" fill="#8b5cf6" opacity="0.26"/>
-    <polygon points="40,16 50,12 44,20" fill="#7c3aed" opacity="0.20"/>
+    <polygon points="20,0 40,16 20,24 0,16" fill="#8b5cf6" opacity="0.42"/>
+    <polygon points="40,16 50,12 44,20" fill="#7c3aed" opacity="0.35"/>
   </g>
   <g transform="translate(680,380)">
-    <polygon points="18,0 36,14 18,20 0,14" fill="#7c3aed" opacity="0.24"/>
+    <polygon points="18,0 36,14 18,20 0,14" fill="#7c3aed" opacity="0.40"/>
   </g>
   <g transform="translate(720,360)">
-    <polygon points="16,0 32,12 16,18 0,12" fill="#6366f1" opacity="0.22"/>
+    <polygon points="16,0 32,12 16,18 0,12" fill="#6366f1" opacity="0.38"/>
   </g>
   
   <!-- Secondary cluster - upper left -->
   <g transform="translate(200,150)">
-    <polygon points="18,0 36,14 18,20 0,14" fill="#8b5cf6" opacity="0.20"/>
-    <polygon points="36,14 44,10 40,16" fill="#6366f1" opacity="0.16"/>
+    <polygon points="18,0 36,14 18,20 0,14" fill="#8b5cf6" opacity="0.35"/>
+    <polygon points="36,14 44,10 40,16" fill="#6366f1" opacity="0.30"/>
   </g>
   <g transform="translate(250,130)">
-    <polygon points="14,0 28,11 14,16 0,11" fill="#6366f1" opacity="0.18"/>
+    <polygon points="14,0 28,11 14,16 0,11" fill="#6366f1" opacity="0.32"/>
   </g>
   <g transform="translate(180,180)">
-    <polygon points="14,0 28,11 14,16 0,11" fill="#7c3aed" opacity="0.16"/>
+    <polygon points="14,0 28,11 14,16 0,11" fill="#7c3aed" opacity="0.30"/>
   </g>
   <g transform="translate(230,170)">
-    <polygon points="12,0 24,9 12,14 0,9" fill="#a78bfa" opacity="0.14"/>
+    <polygon points="12,0 24,9 12,14 0,9" fill="#a78bfa" opacity="0.28"/>
   </g>
   
   <!-- Scattered individuals - top -->
-  <g transform="translate(100,80)" opacity="0.12">
+  <g transform="translate(100,80)" opacity="0.25">
     <polygon points="10,0 20,8 10,12 0,8" fill="#c4b5fd"/>
   </g>
-  <g transform="translate(400,60)" opacity="0.14">
+  <g transform="translate(400,60)" opacity="0.28">
     <polygon points="12,0 24,9 12,14 0,9" fill="#8b5cf6"/>
   </g>
-  <g transform="translate(550,100)" opacity="0.12">
+  <g transform="translate(550,100)" opacity="0.25">
     <polygon points="10,0 20,8 10,12 0,8" fill="#a78bfa"/>
   </g>
-  <g transform="translate(900,90)" opacity="0.16">
+  <g transform="translate(900,90)" opacity="0.30">
     <polygon points="14,0 28,11 14,16 0,11" fill="#6366f1"/>
   </g>
-  <g transform="translate(1050,120)" opacity="0.10">
+  <g transform="translate(1050,120)" opacity="0.22">
     <polygon points="10,0 20,8 10,12 0,8" fill="#c4b5fd"/>
   </g>
   
   <!-- Scattered - middle band -->
-  <g transform="translate(50,300)" opacity="0.14">
+  <g transform="translate(50,300)" opacity="0.28">
     <polygon points="12,0 24,9 12,14 0,9" fill="#7c3aed"/>
   </g>
-  <g transform="translate(150,350)" opacity="0.12">
+  <g transform="translate(150,350)" opacity="0.25">
     <polygon points="10,0 20,8 10,12 0,8" fill="#8b5cf6"/>
   </g>
-  <g transform="translate(350,280)" opacity="0.16">
+  <g transform="translate(350,280)" opacity="0.30">
     <polygon points="14,0 28,11 14,16 0,11" fill="#6366f1"/>
   </g>
-  <g transform="translate(500,320)" opacity="0.14">
+  <g transform="translate(500,320)" opacity="0.28">
     <polygon points="12,0 24,9 12,14 0,9" fill="#a78bfa"/>
   </g>
-  <g transform="translate(850,280)" opacity="0.18">
+  <g transform="translate(850,280)" opacity="0.32">
     <polygon points="16,0 32,12 16,18 0,12" fill="#7c3aed"/>
   </g>
-  <g transform="translate(950,340)" opacity="0.14">
+  <g transform="translate(950,340)" opacity="0.28">
     <polygon points="12,0 24,9 12,14 0,9" fill="#8b5cf6"/>
   </g>
-  <g transform="translate(1100,300)" opacity="0.12">
+  <g transform="translate(1100,300)" opacity="0.25">
     <polygon points="10,0 20,8 10,12 0,8" fill="#c4b5fd"/>
   </g>
   
   <!-- Lower cluster -->
   <g transform="translate(400,500)">
-    <polygon points="16,0 32,12 16,18 0,12" fill="#6366f1" opacity="0.22"/>
+    <polygon points="16,0 32,12 16,18 0,12" fill="#6366f1" opacity="0.38"/>
   </g>
   <g transform="translate(450,520)">
-    <polygon points="14,0 28,11 14,16 0,11" fill="#8b5cf6" opacity="0.20"/>
+    <polygon points="14,0 28,11 14,16 0,11" fill="#8b5cf6" opacity="0.35"/>
   </g>
   <g transform="translate(380,540)">
-    <polygon points="12,0 24,9 12,14 0,9" fill="#7c3aed" opacity="0.18"/>
+    <polygon points="12,0 24,9 12,14 0,9" fill="#7c3aed" opacity="0.32"/>
   </g>
   <g transform="translate(420,560)">
-    <polygon points="10,0 20,8 10,12 0,8" fill="#a78bfa" opacity="0.16"/>
+    <polygon points="10,0 20,8 10,12 0,8" fill="#a78bfa" opacity="0.30"/>
   </g>
   
   <!-- Scattered - bottom -->
-  <g transform="translate(80,550)" opacity="0.10">
+  <g transform="translate(80,550)" opacity="0.22">
     <polygon points="10,0 20,8 10,12 0,8" fill="#c4b5fd"/>
   </g>
-  <g transform="translate(200,600)" opacity="0.12">
+  <g transform="translate(200,600)" opacity="0.25">
     <polygon points="12,0 24,9 12,14 0,9" fill="#8b5cf6"/>
   </g>
-  <g transform="translate(600,580)" opacity="0.14">
+  <g transform="translate(600,580)" opacity="0.28">
     <polygon points="14,0 28,11 14,16 0,11" fill="#6366f1"/>
   </g>
-  <g transform="translate(800,550)" opacity="0.16">
+  <g transform="translate(800,550)" opacity="0.30">
     <polygon points="12,0 24,9 12,14 0,9" fill="#7c3aed"/>
   </g>
-  <g transform="translate(950,600)" opacity="0.12">
+  <g transform="translate(950,600)" opacity="0.25">
     <polygon points="10,0 20,8 10,12 0,8" fill="#a78bfa"/>
   </g>
-  <g transform="translate(1100,580)" opacity="0.10">
+  <g transform="translate(1100,580)" opacity="0.22">
     <polygon points="8,0 16,6 8,10 0,6" fill="#c4b5fd"/>
   </g>
   
   <!-- Extra scattered for density -->
-  <g transform="translate(300,400)" opacity="0.12">
+  <g transform="translate(300,400)" opacity="0.25">
     <polygon points="10,0 20,8 10,12 0,8" fill="#6366f1"/>
   </g>
-  <g transform="translate(580,450)" opacity="0.14">
+  <g transform="translate(580,450)" opacity="0.28">
     <polygon points="12,0 24,9 12,14 0,9" fill="#8b5cf6"/>
   </g>
-  <g transform="translate(1000,450)" opacity="0.16">
+  <g transform="translate(1000,450)" opacity="0.30">
     <polygon points="14,0 28,11 14,16 0,11" fill="#7c3aed"/>
   </g>
-  <g transform="translate(120,450)" opacity="0.10">
+  <g transform="translate(120,450)" opacity="0.22">
     <polygon points="8,0 16,6 8,10 0,6" fill="#a78bfa"/>
   </g>
-  <g transform="translate(750,500)" opacity="0.14">
+  <g transform="translate(750,500)" opacity="0.28">
     <polygon points="12,0 24,9 12,14 0,9" fill="#6366f1"/>
   </g>
-  <g transform="translate(900,480)" opacity="0.12">
+  <g transform="translate(900,480)" opacity="0.25">
     <polygon points="10,0 20,8 10,12 0,8" fill="#8b5cf6"/>
   </g>
   
   <!-- Tiny distant birds -->
-  <g transform="translate(50,200)" opacity="0.08">
+  <g transform="translate(50,200)" opacity="0.18">
     <polygon points="6,0 12,5 6,7 0,5" fill="#c4b5fd"/>
   </g>
-  <g transform="translate(1150,250)" opacity="0.08">
+  <g transform="translate(1150,250)" opacity="0.18">
     <polygon points="6,0 12,5 6,7 0,5" fill="#c4b5fd"/>
   </g>
-  <g transform="translate(600,700)" opacity="0.08">
+  <g transform="translate(600,700)" opacity="0.18">
     <polygon points="6,0 12,5 6,7 0,5" fill="#c4b5fd"/>
   </g>
-  <g transform="translate(300,700)" opacity="0.06">
+  <g transform="translate(300,700)" opacity="0.15">
     <polygon points="5,0 10,4 5,6 0,4" fill="#e0d8fd"/>
   </g>
-  <g transform="translate(1000,700)" opacity="0.06">
+  <g transform="translate(1000,700)" opacity="0.15">
     <polygon points="5,0 10,4 5,6 0,4" fill="#e0d8fd"/>
   </g>
 </svg>
