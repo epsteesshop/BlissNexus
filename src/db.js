@@ -190,6 +190,7 @@ async function updateAgentStats(agentId, stats) {
 }
 
 module.exports = {
+  saveAttachment, getAttachment, getTaskAttachments,
   initDB, isReady, getLastError, getConnectionUrl, query,
   upsertAgent, setAgentOnline, getAllAgents,
   saveTask, getAllTasks, getOpenTasks,
@@ -282,3 +283,27 @@ module.exports.getRatingsForUser = getRatingsForUser;
 module.exports.getAverageRating = getAverageRating;
 module.exports.getRatingsForTask = getRatingsForTask;
 module.exports.hasUserRatedTask = hasUserRatedTask;
+
+// ATTACHMENTS
+async function saveAttachment(attachment) {
+  const result = await query(`
+    INSERT INTO attachments (id, name, type, size, data, task_id, agent_id, created_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    ON CONFLICT (id) DO UPDATE SET
+      name = EXCLUDED.name,
+      data = EXCLUDED.data
+    RETURNING *
+  `, [attachment.id, attachment.name, attachment.type, attachment.size, 
+      attachment.data, attachment.taskId, attachment.agentId, attachment.createdAt]);
+  return result?.rows?.[0] || null;
+}
+
+async function getAttachment(id) {
+  const result = await query('SELECT * FROM attachments WHERE id = $1', [id]);
+  return result?.rows?.[0] || null;
+}
+
+async function getTaskAttachments(taskId) {
+  const result = await query('SELECT id, name, type, size, created_at FROM attachments WHERE task_id = $1', [taskId]);
+  return result?.rows || [];
+}

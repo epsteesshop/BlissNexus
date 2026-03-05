@@ -12,6 +12,7 @@ dns.setDefaultResultOrder('ipv4first');
 const express = require('express');
 const helmet = require('helmet');
 const { apiLimiter } = require('./src/ratelimit');
+const { sanitizeMiddleware } = require('./src/sanitize');
 const monitor = require('./src/monitoring');
 const solana = require('./src/solana');
 const bots = require('./src/bots');
@@ -422,6 +423,8 @@ app.use(helmet({
 }));
 
 app.use(express.json());
+app.use('/api', apiLimiter);
+app.use(sanitizeMiddleware);
 
 // Bot detection - serve API info to AI agents (must be before static)
 const { botMiddleware } = require('./src/bot-detect');
@@ -1389,6 +1392,17 @@ loadFromDB().then(async () => {
   initBuiltInBots();
   setInterval(cleanupStaleAgents, CLEANUP_INTERVAL);
 });
+// Global error handlers
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught Exception:', err);
+  // Give time to log, then exit
+  setTimeout(() => process.exit(1), 1000);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[ERROR] Unhandled Rejection:', reason);
+});
+
 
 server.listen(PORT, () => {
   console.log(`
@@ -1416,3 +1430,28 @@ server.listen(PORT, () => {
 });
 // Build 1772594348
 // Fresh start Wed Mar  4 21:17:17 CST 2026
+
+// Graceful shutdown
+const shutdown = async (signal) => {
+  console.log(`\n[Server] ${signal} received, shutting down gracefully...`);
+  
+  // Close WebSocket connections
+  if (wss) {
+    wss.clients.forEach(ws => ws.close(1001, 'Server shutting down'));
+  }
+  
+  // Close HTTP server
+  server.close(() => {
+    console.log('[Server] HTTP server closed');
+    process.exit(0);
+  });
+  
+  // Force exit after 10s
+  setTimeout(() => {
+    console.error('[Server] Forcing exit after timeout');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

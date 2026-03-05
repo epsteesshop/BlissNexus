@@ -589,9 +589,10 @@ function setupRoutes(app, broadcast) {
     res.json({ success: true, kicked, message: `Kicked ${kicked.length} agents` });
   });
 
-  // ==================== ATTACHMENT UPLOADS ====================
+
+  // ==================== ATTACHMENT UPLOADS (DB-backed) ====================
   
-  // Upload attachment (base64) - returns URL for referencing
+  // Upload attachment - stores in PostgreSQL
   app.post('/api/v2/attachments/upload', async (req, res) => {
     try {
       const { name, data, type, taskId, agentId } = req.body;
@@ -600,24 +601,26 @@ function setupRoutes(app, broadcast) {
         return res.status(400).json({ error: 'name and data (base64) required' });
       }
       
-      // Generate unique ID
-      const id = `att_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      // Validate base64
+      const dataSize = Buffer.from(data, 'base64').length;
       
-      // Store in memory (persists until server restart)
-      if (!global.attachments) global.attachments = new Map();
-      
-      // Limit size (5MB base64 = ~3.75MB file)
-      if (data.length > 5 * 1024 * 1024) {
+      // Limit: 5MB
+      if (dataSize > 5 * 1024 * 1024) {
         return res.status(400).json({ error: 'File too large (max 5MB)' });
       }
       
-      global.attachments.set(id, {
+      // Generate unique ID
+      const id = `att_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      
+      // Save to database
+      await db.saveAttachment({
         id,
         name,
-        data,
         type: type || 'application/octet-stream',
-        taskId,
-        agentId,
+        size: dataSize,
+        data,
+        taskId: taskId || null,
+        agentId: agentId || null,
         createdAt: Date.now()
       });
       
@@ -628,29 +631,54 @@ function setupRoutes(app, broadcast) {
         id,
         name,
         url,
+        size: dataSize,
         type: type || 'application/octet-stream'
       });
     } catch (e) {
+      console.error('[Attachments] Upload failed:', e);
       res.status(500).json({ error: e.message });
     }
   });
   
   // Download attachment
-  app.get('/api/v2/attachments/:id', (req, res) => {
-    if (!global.attachments) {
-      return res.status(404).json({ error: 'Attachment not found' });
+  app.get('/api/v2/attachments/:id', async (req, res) => {
+    try {
+      const att = await db.getAttachment(req.params.id);
+      
+      if (!att) {
+        return res.status(404).json({ error: 'Attachment not found' });
+      }
+      
+      // Decode base64 and send
+      const buffer = Buffer.from(att.data, 'base64');
+      res.setHeader('Content-Type', att.type);
+      res.setHeader('Content-Length', buffer.length);
+      res.setHeader('Content-Disposition', `attachment; filename="${att.name}"`);
+      res.send(buffer);
+    } catch (e) {
+      console.error('[Attachments] Download failed:', e);
+      res.status(500).json({ error: e.message });
     }
-    
-    const att = global.attachments.get(req.params.id);
-    if (!att) {
-      return res.status(404).json({ error: 'Attachment not found' });
+  });
+  
+  // List attachments for a task
+  app.get('/api/v2/tasks/:taskId/attachments', async (req, res) => {
+    try {
+      const attachments = await db.getTaskAttachments(req.params.taskId);
+      res.json({ 
+        attachments: attachments.map(a => ({
+          id: a.id,
+          name: a.name,
+          type: a.type,
+          size: a.size,
+          url: `https://api.blissnexus.ai/api/v2/attachments/${a.id}`,
+          createdAt: a.created_at
+        })),
+        count: attachments.length 
+      });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
     }
-    
-    // Decode base64 and send
-    const buffer = Buffer.from(att.data, 'base64');
-    res.setHeader('Content-Type', att.type);
-    res.setHeader('Content-Disposition', `attachment; filename="${att.name}"`);
-    res.send(buffer);
   });
 }
 
