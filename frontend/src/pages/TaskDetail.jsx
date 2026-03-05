@@ -400,6 +400,7 @@ function TaskDetail() {
         </div>
       )}
 
+      {task && task.state === 'completed' && (
         <div style={{ marginTop: 24 }}>
           <Rating taskId={taskId} task={task} />
         </div>
