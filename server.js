@@ -750,14 +750,14 @@ app.get('/app/*', (req, res) => res.sendFile(__dirname + '/public/app/index.html
 
 app.get('/health', (req, res) => {
   try {
-    const onlineAgents = Array.from(agents.values()).filter(a => a.online).length;
+    const onlineAgents = Array.from(agents.values()).filter(a => a.online && !a.isBuiltIn).length;
     const openTasks = marketplace.getOpenTasks();
     const allTasks = marketplace.getAllTasks();
     res.json({
       ok: true,
       service: 'BlissNexus Beacon',
       version: '2.0.0',
-      agents: { total: agents.size, online: onlineAgents },
+      agents: { total: Array.from(agents.values()).filter(a => !a.isBuiltIn).length, online: onlineAgents },
       tasks: { total: allTasks.length, open: openTasks.length },
       capabilities: capabilities.size
     });
