@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
@@ -19,6 +19,31 @@ function TaskDetail() {
   const [bids, setBids] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const cancelBtnRef = useRef(null);
+  
+  // Attach native click handler for mobile
+  useEffect(() => {
+    const btn = cancelBtnRef.current;
+    if (btn) {
+      const handler = () => {
+        alert('Native click!');
+        if (window.confirm('Cancel this task?')) {
+          fetch(`${API}/api/v2/tasks/${taskId}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requester: wallet }),
+          }).then(() => window.location.href = '/my-tasks')
+            .catch(e => alert('Error: ' + e.message));
+        }
+      };
+      btn.addEventListener('click', handler);
+      btn.addEventListener('touchend', handler);
+      return () => {
+        btn.removeEventListener('click', handler);
+        btn.removeEventListener('touchend', handler);
+      };
+    }
+  }, [taskId, wallet]);
   const [bidding, setBidding] = useState(false);
   const [bidForm, setBidForm] = useState({ price: '', timeEstimate: '', message: '' });
   const [error, setError] = useState('');
