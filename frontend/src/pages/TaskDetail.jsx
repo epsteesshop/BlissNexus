@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import EscrowPanel from '../components/EscrowPanel';
+import Chat from '../components/Chat';
+import Rating from '../components/Rating';
 
 const API = 'https://api.blissnexus.ai';
 
@@ -408,6 +410,20 @@ function TaskDetail() {
               </a>
             </p>
           )}
+        </div>
+      )}
+
+      {/* Chat Section - shows after bid accepted */}
+      {task && ['assigned', 'in_progress', 'submitted', 'completed'].includes(task.state) && (
+        <div style={{ marginTop: 24 }}>
+          <Chat taskId={taskId} task={task} />
+        </div>
+      )}
+
+      {/* Rating Section - shows after completion */}
+      {task && task.state === 'completed' && (
+        <div style={{ marginTop: 24 }}>
+          <Rating taskId={taskId} task={task} />
         </div>
       )}
     </div>
