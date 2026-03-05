@@ -3,6 +3,10 @@ use anchor_lang::system_program;
 
 declare_id!("64korfZTbv6sZQyuxa5FandZsLBkdKMPHR39bnaPeAxc");
 
+// Arbitrator wallet - can resolve disputes
+// In production, this could be a multisig or DAO
+pub const ARBITRATOR: &str = "14jEkruEqbG1pS8YaKhXeS5xBQFzgfXqy2GinLwcwz8q";
+
 #[program]
 pub mod blissnexus_escrow {
     use super::*;
@@ -20,6 +24,7 @@ pub mod blissnexus_escrow {
         escrow.agent = Pubkey::default();
         escrow.state = EscrowState::Funded;
         escrow.bump = ctx.bumps.escrow;
+        escrow.dispute_reason = [0u8; 64];
 
         // Transfer SOL to escrow PDA
         system_program::transfer(
@@ -75,16 +80,30 @@ pub mod blissnexus_escrow {
         Ok(())
     }
 
-    /// Refund to requester (dispute or cancellation)
-    pub fn refund(ctx: Context<Refund>) -> Result<()> {
+    /// Requester initiates dispute
+    pub fn dispute(ctx: Context<Dispute>, reason: [u8; 64]) -> Result<()> {
         let escrow = &mut ctx.accounts.escrow;
         require!(
-            escrow.state == EscrowState::Funded || 
-            escrow.state == EscrowState::Assigned ||
-            escrow.state == EscrowState::Disputed,
+            escrow.state == EscrowState::Assigned,
             EscrowError::InvalidState
         );
         require!(escrow.requester == ctx.accounts.requester.key(), EscrowError::Unauthorized);
+
+        escrow.state = EscrowState::Disputed;
+        escrow.dispute_reason = reason;
+        
+        msg!("Escrow disputed by requester");
+        Ok(())
+    }
+
+    /// Arbitrator resolves dispute - refund to requester
+    pub fn resolve_refund(ctx: Context<ArbitratorResolve>) -> Result<()> {
+        let escrow = &mut ctx.accounts.escrow;
+        require!(escrow.state == EscrowState::Disputed, EscrowError::InvalidState);
+        
+        // Verify arbitrator
+        let arbitrator_key = ARBITRATOR.parse::<Pubkey>().unwrap();
+        require!(ctx.accounts.arbitrator.key() == arbitrator_key, EscrowError::NotArbitrator);
 
         let amount = escrow.amount;
         escrow.state = EscrowState::Refunded;
@@ -94,18 +113,47 @@ pub mod blissnexus_escrow {
         **ctx.accounts.escrow.to_account_info().try_borrow_mut_lamports()? -= amount;
         **ctx.accounts.requester.to_account_info().try_borrow_mut_lamports()? += amount;
 
-        msg!("Refunded {} lamports to requester", amount);
+        msg!("Arbitrator refunded {} lamports to requester", amount);
         Ok(())
     }
 
-    /// Mark escrow as disputed
-    pub fn dispute(ctx: Context<Dispute>) -> Result<()> {
+    /// Arbitrator resolves dispute - release to agent
+    pub fn resolve_release(ctx: Context<ArbitratorResolve>) -> Result<()> {
         let escrow = &mut ctx.accounts.escrow;
-        require!(escrow.state == EscrowState::Assigned, EscrowError::InvalidState);
-        require!(escrow.requester == ctx.accounts.requester.key(), EscrowError::Unauthorized);
+        require!(escrow.state == EscrowState::Disputed, EscrowError::InvalidState);
+        
+        // Verify arbitrator
+        let arbitrator_key = ARBITRATOR.parse::<Pubkey>().unwrap();
+        require!(ctx.accounts.arbitrator.key() == arbitrator_key, EscrowError::NotArbitrator);
 
-        escrow.state = EscrowState::Disputed;
-        msg!("Escrow disputed");
+        let amount = escrow.amount;
+        escrow.state = EscrowState::Released;
+        escrow.amount = 0;
+
+        // Transfer from escrow PDA to agent
+        **ctx.accounts.escrow.to_account_info().try_borrow_mut_lamports()? -= amount;
+        **ctx.accounts.agent.to_account_info().try_borrow_mut_lamports()? += amount;
+
+        msg!("Arbitrator released {} lamports to agent", amount);
+        Ok(())
+    }
+
+    /// Cancel escrow before agent assigned (requester can self-refund)
+    pub fn cancel(ctx: Context<Cancel>) -> Result<()> {
+        let escrow = &mut ctx.accounts.escrow;
+        require!(escrow.state == EscrowState::Funded, EscrowError::InvalidState);
+        require!(escrow.requester == ctx.accounts.requester.key(), EscrowError::Unauthorized);
+        require!(escrow.agent == Pubkey::default(), EscrowError::AgentAlreadyAssigned);
+
+        let amount = escrow.amount;
+        escrow.state = EscrowState::Cancelled;
+        escrow.amount = 0;
+
+        // Transfer from escrow PDA back to requester
+        **ctx.accounts.escrow.to_account_info().try_borrow_mut_lamports()? -= amount;
+        **ctx.accounts.requester.to_account_info().try_borrow_mut_lamports()? += amount;
+
+        msg!("Escrow cancelled, {} lamports returned", amount);
         Ok(())
     }
 }
@@ -151,7 +199,7 @@ pub struct Release<'info> {
 }
 
 #[derive(Accounts)]
-pub struct Refund<'info> {
+pub struct Dispute<'info> {
     #[account(mut)]
     pub requester: Signer<'info>,
     
@@ -160,7 +208,24 @@ pub struct Refund<'info> {
 }
 
 #[derive(Accounts)]
-pub struct Dispute<'info> {
+pub struct ArbitratorResolve<'info> {
+    #[account(mut)]
+    pub arbitrator: Signer<'info>,
+    
+    /// CHECK: Requester receives refund
+    #[account(mut)]
+    pub requester: AccountInfo<'info>,
+    
+    /// CHECK: Agent receives payment if resolved in their favor
+    #[account(mut)]
+    pub agent: AccountInfo<'info>,
+    
+    #[account(mut)]
+    pub escrow: Account<'info, Escrow>,
+}
+
+#[derive(Accounts)]
+pub struct Cancel<'info> {
     #[account(mut)]
     pub requester: Signer<'info>,
     
@@ -177,6 +242,7 @@ pub struct Escrow {
     pub amount: u64,
     pub state: EscrowState,
     pub bump: u8,
+    pub dispute_reason: [u8; 64],
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, InitSpace)]
@@ -186,6 +252,7 @@ pub enum EscrowState {
     Released,
     Refunded,
     Disputed,
+    Cancelled,
 }
 
 #[error_code]
@@ -196,4 +263,8 @@ pub enum EscrowError {
     Unauthorized,
     #[msg("Wrong agent")]
     WrongAgent,
+    #[msg("Not the arbitrator")]
+    NotArbitrator,
+    #[msg("Agent already assigned, cannot cancel")]
+    AgentAlreadyAssigned,
 }
