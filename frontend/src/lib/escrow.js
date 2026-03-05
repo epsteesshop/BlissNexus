@@ -5,18 +5,28 @@
 
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
-// Devnet configuration  
-export const DEVNET_RPC = 'https://api.devnet.solana.com';
+// Devnet RPCs with fallback
+const DEVNET_RPCS = [
+  'https://api.devnet.solana.com',
+  'https://mango.devnet.rpcpool.com',
+];
+
+export const DEVNET_RPC = DEVNET_RPCS[0];
 export const ESCROW_PROGRAM_ID = '7vNFHULaw8fmnCZPZ5GDFhWovUixe769qzupuqSA7kjw';
 
-// Get connection
+// Get connection with fallback
+let connectionIndex = 0;
 export function getConnection() {
-  return new Connection(DEVNET_RPC, 'confirmed');
+  return new Connection(DEVNET_RPCS[connectionIndex], 'confirmed');
+}
+
+function rotateRpc() {
+  connectionIndex = (connectionIndex + 1) % DEVNET_RPCS.length;
+  console.log('[Escrow] Rotated to RPC:', DEVNET_RPCS[connectionIndex]);
 }
 
 // Convert task ID to bytes for PDA derivation
 export function taskIdToBuffer(taskId) {
-  // Pad or truncate to 32 bytes
   const encoder = new TextEncoder();
   const bytes = encoder.encode(taskId);
   const buffer = new Uint8Array(32);
@@ -34,42 +44,47 @@ export async function getEscrowPDA(taskId) {
   return { pda, bump };
 }
 
-// Get wallet balance
+// Get wallet balance with retry
 export async function getBalance(walletAddress) {
-  const connection = getConnection();
-  try {
-    const pubkey = new PublicKey(walletAddress);
-    const balance = await connection.getBalance(pubkey);
-    return balance / LAMPORTS_PER_SOL;
-  } catch (e) {
-    console.error('Balance check failed:', e);
-    return 0;
+  for (let i = 0; i < DEVNET_RPCS.length; i++) {
+    try {
+      const connection = new Connection(DEVNET_RPCS[i], 'confirmed');
+      const pubkey = new PublicKey(walletAddress);
+      const balance = await connection.getBalance(pubkey);
+      console.log(`[Escrow] Balance from ${DEVNET_RPCS[i].split('//')[1].split('/')[0]}: ${balance / LAMPORTS_PER_SOL} SOL`);
+      return balance / LAMPORTS_PER_SOL;
+    } catch (e) {
+      console.warn(`[Escrow] RPC ${i} failed:`, e.message);
+      if (i === DEVNET_RPCS.length - 1) {
+        console.error('[Escrow] All RPCs failed');
+        return 0;
+      }
+    }
   }
+  return 0;
 }
 
-// Request devnet airdrop (for testing)
+// Request devnet airdrop
 export async function requestAirdrop(walletAddress, solAmount = 1) {
-  const connection = getConnection();
-  try {
-    const pubkey = new PublicKey(walletAddress);
-    const signature = await connection.requestAirdrop(pubkey, solAmount * LAMPORTS_PER_SOL);
-    
-    // Wait for confirmation
-    const latestBlockhash = await connection.getLatestBlockhash();
-    await connection.confirmTransaction({
-      signature,
-      ...latestBlockhash,
-    });
-    
-    return { success: true, signature };
-  } catch (e) {
-    return { success: false, error: e.message };
+  for (let i = 0; i < DEVNET_RPCS.length; i++) {
+    try {
+      const connection = new Connection(DEVNET_RPCS[i], 'confirmed');
+      const pubkey = new PublicKey(walletAddress);
+      const signature = await connection.requestAirdrop(pubkey, solAmount * LAMPORTS_PER_SOL);
+      
+      const latestBlockhash = await connection.getLatestBlockhash();
+      await connection.confirmTransaction({ signature, ...latestBlockhash });
+      
+      return { success: true, signature };
+    } catch (e) {
+      console.warn(`[Escrow] Airdrop via RPC ${i} failed:`, e.message);
+    }
   }
+  return { success: false, error: 'All faucets rate-limited. Try https://faucet.solana.com' };
 }
 
 /**
  * Build escrow funding transaction
- * User signs this to lock funds for a task
  */
 export async function buildFundEscrowTransaction(requesterWallet, taskId, solAmount) {
   const connection = getConnection();
@@ -77,7 +92,6 @@ export async function buildFundEscrowTransaction(requesterWallet, taskId, solAmo
   
   const transaction = new Transaction();
   
-  // Transfer SOL to escrow PDA
   transaction.add(
     SystemProgram.transfer({
       fromPubkey: new PublicKey(requesterWallet),
@@ -86,7 +100,6 @@ export async function buildFundEscrowTransaction(requesterWallet, taskId, solAmo
     })
   );
   
-  // Set transaction details
   const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
   transaction.recentBlockhash = blockhash;
   transaction.lastValidBlockHeight = lastValidBlockHeight;
@@ -103,19 +116,21 @@ export async function buildFundEscrowTransaction(requesterWallet, taskId, solAmo
  * Check escrow funding status
  */
 export async function checkEscrowFunding(taskId) {
-  const connection = getConnection();
-  const { pda } = await getEscrowPDA(taskId);
-  
-  try {
-    const balance = await connection.getBalance(pda);
-    return {
-      funded: balance > 0,
-      balance: balance / LAMPORTS_PER_SOL,
-      escrowPDA: pda.toBase58(),
-    };
-  } catch (e) {
-    return { funded: false, balance: 0, error: e.message };
+  for (let i = 0; i < DEVNET_RPCS.length; i++) {
+    try {
+      const connection = new Connection(DEVNET_RPCS[i], 'confirmed');
+      const { pda } = await getEscrowPDA(taskId);
+      const balance = await connection.getBalance(pda);
+      return {
+        funded: balance > 0,
+        balance: balance / LAMPORTS_PER_SOL,
+        escrowPDA: pda.toBase58(),
+      };
+    } catch (e) {
+      console.warn(`[Escrow] Check funding via RPC ${i} failed`);
+    }
   }
+  return { funded: false, balance: 0, error: 'RPC unavailable' };
 }
 
 /**
