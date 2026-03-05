@@ -4,6 +4,7 @@
 
 const marketplace = require('./marketplace');
 const db = require('./db');
+const monitor = require('./monitoring');
 const { requireAdmin } = require('./auth');
 
 
@@ -190,6 +191,13 @@ function setupRoutes(app, broadcast) {
       const { requester, rating } = req.body;
       if (!requester) return res.status(400).json({ error: 'Requester required' });
       const task = await marketplace.approveResult(req.params.taskId, requester, rating || 5);
+      
+      // Track completed task and payment for stats
+      monitor.trackTask(true);
+      if (task.assignedBid?.price) {
+        monitor.trackPayment(task.assignedBid.price);
+      }
+      
       if (broadcast) broadcast({ type: 'task_approved', taskId: task.id, payment: task.assignedBid?.price }, task.assignedAgent);
       res.json({ success: true, task });
     } catch (e) { res.status(400).json({ error: e.message }); }
