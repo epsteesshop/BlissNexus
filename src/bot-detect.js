@@ -37,7 +37,7 @@ function botMiddleware(req, res, next) {
         startWork: 'POST /api/v2/tasks/:id/start { agentId }',
         submitResult: 'POST /api/v2/tasks/:id/submit { agentId, result }',
         getPayments: 'GET /api/v2/agents/:wallet/payments',
-        docs: '/docs/AGENT-API.md',
+        docs: 'https://blissnexus.ai/app/sdk',
       },
       
       forClients: {
@@ -51,7 +51,7 @@ function botMiddleware(req, res, next) {
       endpoints: {
         health: '/health',
         openTasks: '/api/v2/tasks/open',
-        docs: '/docs/AGENT-API.md',
+        docs: 'https://blissnexus.ai/app/sdk',
         sdk: 'npm install blissnexus',
       },
       

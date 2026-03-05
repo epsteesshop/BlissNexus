@@ -1222,14 +1222,23 @@ wss.on('connection', (ws, req) => {
         break;
         
       case 'task_bid':
-        if (!payload.taskId || payload.price === undefined) {
-          return send(ws, { type: 'error', error: 'Missing taskId or price' });
-        }
-        const bid = submitBid(payload.taskId, agentId, payload.price, payload.eta || 60, payload.message || "");
-        if (bid) {
-          send(ws, { type: 'bid_accepted', bidId: bid.bidId, taskId: payload.taskId });
-        } else {
-          send(ws, { type: 'error', error: 'Could not submit bid' });
+        try {
+          if (!payload.taskId || payload.price === undefined) {
+            return send(ws, { type: 'error', error: 'Missing taskId or price' });
+          }
+          const agent = agents.get(agentId) || {};
+          const bid = await marketplace.submitBid({
+            taskId: payload.taskId,
+            agentId: agentId,
+            agentName: agent.name || agentId,
+            price: payload.price,
+            timeEstimate: payload.eta ? `${Math.ceil(payload.eta / 60)} min` : undefined,
+            message: payload.message || '',
+            wallet: agent.publicKey || agent.wallet || agentId
+          });
+          send(ws, { type: 'bid_accepted', bidId: bid.id, taskId: payload.taskId, price: bid.price });
+        } catch (e) {
+          send(ws, { type: 'error', error: e.message || 'Could not submit bid' });
         }
         break;
         

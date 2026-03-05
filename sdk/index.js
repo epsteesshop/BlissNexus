@@ -85,6 +85,13 @@ class BlissNexusAgent extends EventEmitter {
       this.ws = new WebSocket(this.wsUrl);
       
       this.ws.on('open', () => {
+      // Auto-ping every 2 minutes to stay alive
+      this.pingInterval = setInterval(() => {
+        if (this.ws.readyState === 1) {
+          this.ws.send(JSON.stringify({ type: 'ping' }));
+        }
+      }, 120000);
+      
         this.connected = true;
         this.reconnectAttempts = 0;
         console.log('[BlissNexus] Connected!');
@@ -106,6 +113,7 @@ class BlissNexusAgent extends EventEmitter {
       });
       
       this.ws.on('close', () => {
+      if (this.pingInterval) clearInterval(this.pingInterval);
         this.connected = false;
         this.registered = false;
         console.log('[BlissNexus] Disconnected');
