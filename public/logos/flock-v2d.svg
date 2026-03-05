@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="200" height="200">
+  <!-- Dense swarm - more birds, tighter grouping -->
+  
+  <!-- Core cluster -->
+  <g transform="translate(40,38)">
+    <polygon points="12,0 24,10 12,15 0,10" fill="#6366f1"/>
+    <polygon points="24,10 30,7 27,12" fill="#4f46e5"/>
+  </g>
+  <g transform="translate(28,45)">
+    <polygon points="10,0 20,8 10,12 0,8" fill="#7c3aed"/>
+    <polygon points="20,8 25,6 22,10" fill="#6366f1"/>
+  </g>
+  <g transform="translate(52,42)">
+    <polygon points="10,0 20,8 10,12 0,8" fill="#8b5cf6"/>
+    <polygon points="20,8 25,6 22,10" fill="#7c3aed"/>
+  </g>
+  <g transform="translate(38,52)">
+    <polygon points="9,0 18,7 9,10 0,7" fill="#7c3aed"/>
+  </g>
+  
+  <!-- Middle ring -->
+  <g transform="translate(18,30)">
+    <polygon points="9,0 18,7 9,10 0,7" fill="#8b5cf6"/>
+    <polygon points="18,7 22,5 20,8" fill="#6366f1"/>
+  </g>
+  <g transform="translate(58,28)">
+    <polygon points="9,0 18,7 9,10 0,7" fill="#6366f1"/>
+    <polygon points="18,7 22,5 20,8" fill="#8b5cf6"/>
+  </g>
+  <g transform="translate(15,55)">
+    <polygon points="9,0 18,7 9,10 0,7" fill="#6366f1"/>
+  </g>
+  <g transform="translate(62,52)">
+    <polygon points="9,0 18,7 9,10 0,7" fill="#8b5cf6"/>
+  </g>
+  <g transform="translate(35,25)">
+    <polygon points="8,0 16,6 8,9 0,6" fill="#7c3aed"/>
+  </g>
+  <g transform="translate(50,58)">
+    <polygon points="8,0 16,6 8,9 0,6" fill="#7c3aed"/>
+  </g>
+  
+  <!-- Outer scattered -->
+  <g transform="translate(8,20)" opacity="0.8">
+    <polygon points="7,0 14,5 7,8 0,5" fill="#a78bfa"/>
+  </g>
+  <g transform="translate(72,18)" opacity="0.8">
+    <polygon points="7,0 14,5 7,8 0,5" fill="#a78bfa"/>
+  </g>
+  <g transform="translate(5,45)" opacity="0.7">
+    <polygon points="6,0 12,4 6,6 0,4" fill="#c4b5fd"/>
+  </g>
+  <g transform="translate(78,42)" opacity="0.7">
+    <polygon points="6,0 12,4 6,6 0,4" fill="#c4b5fd"/>
+  </g>
+  <g transform="translate(25,68)" opacity="0.75">
+    <polygon points="7,0 14,5 7,8 0,5" fill="#8b5cf6"/>
+  </g>
+  <g transform="translate(60,70)" opacity="0.75">
+    <polygon points="7,0 14,5 7,8 0,5" fill="#6366f1"/>
+  </g>
+  <g transform="translate(45,75)" opacity="0.6">
+    <polygon points="6,0 12,4 6,6 0,4" fill="#a78bfa"/>
+  </g>
+  <g transform="translate(12,65)" opacity="0.5">
+    <polygon points="5,0 10,4 5,5 0,4" fill="#c4b5fd"/>
+  </g>
+  <g transform="translate(75,62)" opacity="0.5">
+    <polygon points="5,0 10,4 5,5 0,4" fill="#c4b5fd"/>
+  </g>
+</svg>
