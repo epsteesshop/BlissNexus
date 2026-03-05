@@ -131,6 +131,11 @@ async function getOpenTasks() {
   return result?.rows?.map(dbRowToTask) || [];
 }
 
+async function getTaskById(taskId) {
+  const result = await query("SELECT * FROM marketplace_tasks WHERE id = $1", [taskId]);
+  return result?.rows?.[0] ? dbRowToTask(result.rows[0]) : null;
+}
+
 function dbRowToTask(row) {
   return {
     id: row.id, title: row.title, description: row.description,
@@ -217,3 +222,4 @@ async function getMessages(taskId, limit = 100) {
 
 module.exports.saveMessage = saveMessage;
 module.exports.getMessages = getMessages;
+module.exports.getTaskById = getTaskById;
