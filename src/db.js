@@ -97,8 +97,13 @@ async function setAgentOnline(agentId, online) {
 }
 
 async function getAllAgents() {
-  const result = await query('SELECT * FROM agents ORDER BY reputation DESC');
-  return result?.rows || [];
+  try {
+    const result = await query('SELECT * FROM agents ORDER BY reputation DESC');
+    return result?.rows || [];
+  } catch (e) {
+    console.error('[DB] getAllAgents error:', e.message);
+    return [];
+  }
 }
 
 // MARKETPLACE TASKS
@@ -122,8 +127,13 @@ async function saveTask(task) {
 }
 
 async function getAllTasks() {
-  const result = await query('SELECT * FROM marketplace_tasks ORDER BY created_at DESC');
-  return result?.rows?.map(dbRowToTask) || [];
+  try {
+    const result = await query('SELECT * FROM marketplace_tasks ORDER BY created_at DESC');
+    return result?.rows?.map(dbRowToTask) || [];
+  } catch (e) {
+    console.error('[DB] getAllTasks error:', e.message);
+    return [];
+  }
 }
 
 async function getOpenTasks() {
@@ -319,18 +329,14 @@ async function getAgent(agentId) {
   }
 }
 
-async function getAgent(agentId) {
-  try {
-    const result = await pool.query('SELECT * FROM agents WHERE agent_id = $1', [agentId]);
-    return result.rows[0] || null;
-  } catch (e) { return null; }
-}
+
+
 // Backup helpers
 async function getAllBids() {
   if (!pool) return [];
   try {
     const result = await pool.query('SELECT * FROM marketplace_bids ORDER BY created_at DESC');
-    return result.rows || [];
+    return result?.rows || [];
   } catch (e) {
     console.error('[DB] getAllBids error:', e.message);
     return [];
@@ -341,7 +347,7 @@ async function getAllMessages() {
   if (!pool) return [];
   try {
     const result = await pool.query('SELECT * FROM task_messages ORDER BY created_at ASC LIMIT 10000');
-    return result.rows || [];
+    return result?.rows || [];
   } catch (e) {
     console.error('[DB] getAllMessages error:', e.message);
     return [];
