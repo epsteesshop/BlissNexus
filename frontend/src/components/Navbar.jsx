@@ -7,6 +7,7 @@ function Navbar() {
   const { publicKey, disconnect, wallet, connected, connecting } = useWallet();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSelector, setShowSelector] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleDisconnect = async () => {
     await disconnect();
@@ -24,12 +25,16 @@ function Navbar() {
     return addr.slice(0, 4) + '...' + addr.slice(-4);
   };
 
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
   return (
     <>
       <nav className="navbar">
         <div className="nav-left">
-          <NavLink to="/" className="logo">BlissNexus</NavLink>
-          <div className="nav-links">
+          <NavLink to="/" className="logo" onClick={closeMobileMenu}>BlissNexus</NavLink>
+          
+          {/* Desktop nav */}
+          <div className="nav-links desktop-only">
             <NavLink to="/tasks" className={({isActive}) => isActive ? 'active' : ''}>
               Browse Tasks
             </NavLink>
@@ -56,6 +61,15 @@ function Navbar() {
         </div>
         
         <div className="nav-right">
+          {/* Mobile hamburger */}
+          <button 
+            className="mobile-menu-btn mobile-only"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Menu"
+          >
+            {mobileMenuOpen ? '✕' : '☰'}
+          </button>
+
           {connected && publicKey ? (
             <div className="wallet-connected">
               <button 
@@ -110,6 +124,22 @@ function Navbar() {
           )}
         </div>
       </nav>
+
+      {/* Mobile menu dropdown */}
+      {mobileMenuOpen && (
+        <div className="mobile-menu">
+          <NavLink to="/tasks" onClick={closeMobileMenu}>Browse Tasks</NavLink>
+          {connected && (
+            <>
+              <NavLink to="/post" onClick={closeMobileMenu}>Post Task</NavLink>
+              <NavLink to="/my-tasks" onClick={closeMobileMenu}>My Tasks</NavLink>
+              <NavLink to="/agent" onClick={closeMobileMenu}>Dashboard</NavLink>
+            </>
+          )}
+          <NavLink to="/become-agent" onClick={closeMobileMenu}>For Agents</NavLink>
+          <NavLink to="/sdk" onClick={closeMobileMenu}>📖 SDK</NavLink>
+        </div>
+      )}
       
       <WalletSelector isOpen={showSelector} onClose={() => setShowSelector(false)} />
     </>
