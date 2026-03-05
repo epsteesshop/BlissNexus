@@ -20,6 +20,12 @@ class BlissNexusAgent extends EventEmitter {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = options.maxReconnectAttempts || 10;
     this.reconnectDelay = options.reconnectDelay || 5000;
+    
+    // Task handler function - set via onTask()
+    this._taskHandler = null;
+    
+    // Auto-handle tasks when assigned
+    this.autoHandle = options.autoHandle !== false;
   }
 
   // Connect to the marketplace
@@ -71,8 +77,14 @@ class BlissNexusAgent extends EventEmitter {
     });
   }
 
+  // Set task handler - called when assigned a task
+  onTask(handler) {
+    this._taskHandler = handler;
+    return this;
+  }
+
   // Handle incoming messages
-  _handleMessage(msg) {
+  async _handleMessage(msg) {
     switch (msg.type) {
       case 'new_task':
         // New task available for bidding
@@ -80,16 +92,19 @@ class BlissNexusAgent extends EventEmitter {
         break;
         
       case 'bid_accepted':
-        // Our bid was accepted (general notification)
-        if (msg.task) {
-          this.emit('assigned', msg.task, msg.bid);
-        }
+        // General notification that a bid was accepted
+        this.emit('bid_accepted', msg.taskId, msg.agentId);
         break;
         
       case 'task_assigned':
-        // Full task details sent directly to us
-        console.log('[BlissNexus] Task assigned:', msg.task?.title);
+        // We've been assigned a task - full details included
+        console.log('[BlissNexus] 📋 Task assigned:', msg.task?.title);
         this.emit('assigned', msg.task);
+        
+        // Auto-handle if configured
+        if (this.autoHandle && this._taskHandler && msg.task) {
+          await this._executeTask(msg.task);
+        }
         break;
         
       case 'task_approved':
@@ -97,8 +112,35 @@ class BlissNexusAgent extends EventEmitter {
         this.emit('paid', msg.taskId, msg.payment, msg.rating);
         break;
         
+      case 'chat_message':
+        // Chat message received
+        this.emit('chat', msg.taskId, msg.message);
+        break;
+        
       default:
         this.emit('message', msg);
+    }
+  }
+
+  // Execute task using the registered handler
+  async _executeTask(task) {
+    try {
+      console.log(`[BlissNexus] 🚀 Starting work on: ${task.title}`);
+      
+      // Start work
+      await this.startWork(task.id);
+      
+      // Call the task handler
+      const result = await this._taskHandler(task);
+      
+      if (result) {
+        // Submit result
+        await this.submitResult(task.id, result);
+        console.log(`[BlissNexus] ✅ Task completed: ${task.id}`);
+      }
+    } catch (e) {
+      console.error(`[BlissNexus] ❌ Task failed:`, e.message);
+      this.emit('error', e);
     }
   }
 
@@ -119,7 +161,7 @@ class BlissNexusAgent extends EventEmitter {
   // Disconnect
   disconnect() {
     if (this.ws) {
-      this.maxReconnectAttempts = 0; // Prevent reconnect
+      this.maxReconnectAttempts = 0;
       this.ws.close();
     }
   }
@@ -175,6 +217,30 @@ class BlissNexusAgent extends EventEmitter {
     if (!res.ok) throw new Error(data.error || 'Failed to submit result');
     console.log(`[BlissNexus] Result submitted for task ${taskId}`);
     return data.task;
+  }
+
+  // Send chat message
+  async chat(taskId, message) {
+    const res = await fetch(`${this.apiUrl}/api/v2/tasks/${taskId}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        senderId: this.agentId,
+        senderName: this.agentName,
+        message,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to send message');
+    return data.message;
+  }
+
+  // Get task details
+  async getTask(taskId) {
+    const res = await fetch(`${this.apiUrl}/api/v2/tasks/${taskId}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Task not found');
+    return data;
   }
 
   // Get my stats
