@@ -96,7 +96,26 @@ function setupRoutes(app, broadcast) {
         task.escrowPDA = escrowPDA;
       }
       console.log('[Marketplace] Bid accepted for', task.assignedAgent);
-      if (broadcast) broadcast({ type: 'bid_accepted', taskId: task.id, task: task }, task.assignedAgent);
+      // Send task details to assigned agent
+      if (broadcast) {
+        // Broadcast to all for UI updates
+        broadcast({ type: 'bid_accepted', taskId: task.id, agentId: task.assignedAgent });
+        
+        // Send full task details directly to the assigned agent
+        broadcast({
+          type: 'task_assigned',
+          taskId: task.id,
+          task: {
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            maxBudget: task.maxBudget,
+            requester: task.requester,
+            attachments: task.attachments || []
+          }
+        }, task.assignedAgent);
+        console.log('[Marketplace] Sent task_assigned to', task.assignedAgent);
+      }
       
       // Auto-trigger work for built-in bots
       const bots = require('./bots');

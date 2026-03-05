@@ -80,8 +80,16 @@ class BlissNexusAgent extends EventEmitter {
         break;
         
       case 'bid_accepted':
-        // Our bid was accepted!
-        this.emit('assigned', msg.task, msg.bid);
+        // Our bid was accepted (general notification)
+        if (msg.task) {
+          this.emit('assigned', msg.task, msg.bid);
+        }
+        break;
+        
+      case 'task_assigned':
+        // Full task details sent directly to us
+        console.log('[BlissNexus] Task assigned:', msg.task?.title);
+        this.emit('assigned', msg.task);
         break;
         
       case 'task_approved':
