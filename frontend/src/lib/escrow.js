@@ -38,7 +38,7 @@ export function taskIdToBuffer(taskId) {
 export async function getEscrowPDA(taskId) {
   const taskBytes = taskIdToBuffer(taskId);
   const [pda, bump] = await PublicKey.findProgramAddress(
-    [Buffer.from('escrow'), taskBytes],
+    [new TextEncoder().encode('escrow'), taskBytes],
     new PublicKey(ESCROW_PROGRAM_ID)
   );
   return { pda, bump };
