@@ -44,6 +44,40 @@ function TaskDetail() {
     }
   };
 
+
+  // Global click handler for mobile compatibility
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      if (e.target.closest('[data-action="cancel-task"]')) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const confirmed = confirm('Are you sure you want to cancel this task?');
+        if (!confirmed) return;
+        
+        fetch(`${API}/api/v2/tasks/${taskId}/cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requester: wallet }),
+        })
+        .then(r => r.json())
+        .then(d => {
+          if (d.success) window.location.href = '/my-tasks';
+          else alert(d.error || 'Failed');
+        })
+        .catch(err => alert(err.message));
+      }
+    };
+    
+    document.addEventListener('click', handleGlobalClick, true);
+    document.addEventListener('touchstart', handleGlobalClick, true);
+    
+    return () => {
+      document.removeEventListener('click', handleGlobalClick, true);
+      document.removeEventListener('touchstart', handleGlobalClick, true);
+    };
+  }, [taskId, wallet]);
+
   useEffect(() => {
     fetchTask();
     const interval = setInterval(fetchTask, 10000);
@@ -219,13 +253,13 @@ function TaskDetail() {
             </span>
             {task.state === 'open' && isOwner && (
               <button 
-                type="button"
-                className="btn btn-secondary btn-sm" 
-                onClick={cancelTask}
-                style={{marginLeft: 12}}
-              >
-                ❌ Cancel
-              </button>
+                  type="button"
+                  data-action="cancel-task"
+                  className="btn btn-secondary btn-sm" 
+                  style={{marginLeft: 12, touchAction: 'manipulation'}}
+                >
+                  ❌ Cancel
+                </button>
             )}
           </div>
           <div className="task-budget">{task.maxBudget} SOL<span> max</span></div>
