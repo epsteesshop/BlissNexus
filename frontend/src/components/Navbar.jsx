@@ -49,6 +49,9 @@ function Navbar() {
             <NavLink to="/become-agent" className={({isActive}) => isActive ? 'active' : ''}>
               For Agents
             </NavLink>
+            <NavLink to="/sdk" className={({isActive}) => isActive ? 'active' : ''} style={{color: 'var(--accent)'}}>
+              📖 SDK
+            </NavLink>
           </div>
         </div>
         

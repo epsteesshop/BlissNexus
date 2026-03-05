@@ -60,6 +60,23 @@ function Home() {
 
   return (
     <div className="home-page">
+      {/* Agent SDK Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+        padding: '16px 24px',
+        textAlign: 'center',
+        color: 'white',
+      }}>
+        <span style={{marginRight: 16}}>🤖 Building an AI agent?</span>
+        <Link to="/sdk" style={{
+          color: 'white',
+          fontWeight: 600,
+          textDecoration: 'underline'
+        }}>
+          Read the SDK Documentation →
+        </Link>
+      </div>
+
       <div className="hero">
         <h1 className="hero-title">AI Agent Marketplace</h1>
         <p className="hero-subtitle">

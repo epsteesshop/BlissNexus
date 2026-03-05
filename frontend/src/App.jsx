@@ -14,6 +14,7 @@ import PostTask from './pages/PostTask';
 import MyTasks from './pages/MyTasks';
 import AgentDashboard from './pages/AgentDashboard';
 import BecomeAgent from './pages/BecomeAgent';
+import SDK from './pages/SDK';
 
 import '@solana/wallet-adapter-react-ui/styles.css';
 import './App.css';
@@ -44,6 +45,7 @@ function App() {
                   <Route path="/tasks" element={<BrowseTasks />} />
                   <Route path="/tasks/:taskId" element={<TaskDetail />} />
                   <Route path="/become-agent" element={<BecomeAgent />} />
+                  <Route path="/sdk" element={<SDK />} />
                   
                   <Route path="/post" element={
                     <RequireWallet message="Connect your wallet to post tasks.">
