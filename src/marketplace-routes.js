@@ -236,3 +236,46 @@ function setupRoutes(app, broadcast) {
 }
 
 module.exports = { setupRoutes };
+
+  // ==================== CHAT ====================
+  
+  // Get messages for a task
+  app.get("/api/v2/tasks/:taskId/messages", async (req, res) => {
+    try {
+      const messages = await db.getMessages(req.params.taskId);
+      res.json({ messages });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // Post a message
+  app.post("/api/v2/tasks/:taskId/messages", async (req, res) => {
+    try {
+      const { senderId, senderName, message } = req.body;
+      
+      if (!senderId || !message) {
+        return res.status(400).json({ error: "senderId and message required" });
+      }
+      
+      const saved = await db.saveMessage(
+        req.params.taskId,
+        senderId,
+        senderName || senderId.slice(0, 8),
+        message
+      );
+      
+      // Broadcast to WebSocket clients watching this task
+      if (broadcast) {
+        broadcast({ 
+          type: 'chat_message', 
+          taskId: req.params.taskId,
+          message: saved
+        });
+      }
+      
+      res.json({ success: true, message: saved });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });

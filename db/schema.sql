@@ -87,3 +87,16 @@ BEGIN
     ALTER TABLE marketplace_tasks ADD COLUMN result_attachments JSONB DEFAULT '[]';
   END IF;
 END $$;
+
+-- Chat messages table
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id SERIAL PRIMARY KEY,
+  task_id TEXT NOT NULL,
+  sender_id TEXT NOT NULL,
+  sender_name TEXT,
+  message TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_task ON chat_messages(task_id);
+CREATE INDEX IF NOT EXISTS idx_chat_created ON chat_messages(created_at);

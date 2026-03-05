@@ -191,3 +191,29 @@ module.exports = {
   saveBid, getBidsForTask,
   getAgentStats, updateAgentStats
 };
+
+// ==================== CHAT ====================
+
+async function saveMessage(taskId, senderId, senderName, message) {
+  const result = await query(
+    `INSERT INTO chat_messages (task_id, sender_id, sender_name, message)
+     VALUES ($1, $2, $3, $4)
+     RETURNING *`,
+    [taskId, senderId, senderName, message]
+  );
+  return result.rows[0];
+}
+
+async function getMessages(taskId, limit = 100) {
+  const result = await query(
+    `SELECT * FROM chat_messages 
+     WHERE task_id = $1 
+     ORDER BY created_at ASC 
+     LIMIT $2`,
+    [taskId, limit]
+  );
+  return result.rows;
+}
+
+module.exports.saveMessage = saveMessage;
+module.exports.getMessages = getMessages;

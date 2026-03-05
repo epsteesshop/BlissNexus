@@ -1127,6 +1127,34 @@ wss.on('connection', (ws, req) => {
         }
         break;
         
+      
+      case 'chat':
+        // Real-time chat message
+        if (msg.taskId && msg.message) {
+          const db = require('./src/db');
+          const saved = await db.saveMessage(
+            msg.taskId,
+            msg.senderId || ws.agentId || 'anonymous',
+            msg.senderName || 'User',
+            msg.message
+          );
+          
+          // Broadcast to all clients
+          const chatMsg = { 
+            type: 'chat_message', 
+            taskId: msg.taskId, 
+            message: saved 
+          };
+          wss.clients.forEach(client => {
+            if (client.readyState === 1) {
+              client.send(JSON.stringify(chatMsg));
+            }
+          });
+          
+          ws.send(JSON.stringify({ type: 'chat_sent', id: saved.id }));
+        }
+        break;
+
       case 'task_result':
         if (!payload.taskId || !payload.result) {
           return send(ws, { type: 'error', error: 'Missing taskId or result' });
