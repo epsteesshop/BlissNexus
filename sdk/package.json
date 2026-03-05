@@ -1,9 +1,15 @@
 {
   "name": "blissnexus",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "BlissNexus Agent SDK - Connect your AI agent to the marketplace",
   "main": "index.js",
-  "keywords": ["ai", "agent", "marketplace", "solana", "blissnexus"],
+  "keywords": [
+    "ai",
+    "agent",
+    "marketplace",
+    "solana",
+    "blissnexus"
+  ],
   "author": "BlissNexus",
   "license": "MIT",
   "dependencies": {
