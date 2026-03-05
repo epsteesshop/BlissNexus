@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import escrow from '../lib/escrow';
 
-function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
+const API = 'https://api.blissnexus.ai';
+
+function EscrowPanel({ taskId, amount, workerWallet: workerWalletProp, onFunded }) {
   const { publicKey, sendTransaction } = useWallet();
   const { connection } = useConnection();
   
@@ -12,8 +14,40 @@ function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [txSignature, setTxSignature] = useState('');
+  const [workerWallet, setWorkerWallet] = useState(workerWalletProp);
 
   const wallet = publicKey?.toBase58();
+
+  // Fetch worker wallet from task if not provided as prop
+  useEffect(() => {
+    async function fetchWorkerWallet() {
+      if (workerWalletProp) {
+        setWorkerWallet(workerWalletProp);
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${API}/api/v2/tasks/${taskId}`);
+        const task = await res.json();
+        
+        // Try multiple sources for worker wallet
+        const acceptedBid = task.bids?.find(b => b.status === 'accepted');
+        const worker = acceptedBid?.wallet || task.assignedBid?.wallet || task.assignedAgent;
+        
+        if (worker) {
+          console.log('[EscrowPanel] Fetched worker wallet from task:', worker);
+          setWorkerWallet(worker);
+        } else {
+          console.error('[EscrowPanel] Could not find worker wallet in task:', task);
+          setError('Could not determine agent wallet. Please refresh.');
+        }
+      } catch (e) {
+        console.error('[EscrowPanel] Failed to fetch task:', e);
+      }
+    }
+    
+    fetchWorkerWallet();
+  }, [taskId, workerWalletProp]);
 
   useEffect(() => {
     if (wallet && taskId) {
@@ -48,15 +82,34 @@ function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
     if (!publicKey) return setError('Connect wallet first');
     if (balance < amount) return setError('Insufficient balance');
     
+    // Validate worker wallet
+    if (!workerWallet) {
+      setError('Worker wallet not available. Please refresh the page.');
+      console.error('[EscrowPanel] workerWallet is undefined');
+      return;
+    }
+    
+    // Validate it's a proper Solana address
+    try {
+      const { PublicKey } = await import('@solana/web3.js');
+      new PublicKey(workerWallet);
+    } catch (e) {
+      setError('Invalid worker wallet address: ' + workerWallet);
+      console.error('[EscrowPanel] Invalid workerWallet:', workerWallet, e);
+      return;
+    }
+    
     setLoading(true);
     setError('');
     
+    console.log('[EscrowPanel] Funding escrow with:', {
+      requester: wallet,
+      taskId,
+      amount,
+      workerWallet
+    });
+    
     try {
-      // Build createEscrow transaction (proper Anchor instruction)
-      console.log('[EscrowPanel] Creating escrow:', { wallet, taskId, amount, workerWallet });
-      if (!workerWallet) {
-        throw new Error('Worker wallet not provided. Please refresh and try again.');
-      }
       const { transaction, escrowPDA } = await escrow.buildCreateEscrowTransaction(
         wallet,
         taskId,
@@ -64,9 +117,11 @@ function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
         workerWallet
       );
       
-      // Send and confirm
+      console.log('[EscrowPanel] Transaction built, escrowPDA:', escrowPDA);
+      
       const signature = await sendTransaction(transaction, connection);
       setTxSignature(signature);
+      console.log('[EscrowPanel] Transaction sent:', signature);
       
       const latestBlockhash = await connection.getLatestBlockhash();
       await connection.confirmTransaction({
@@ -74,10 +129,21 @@ function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
         ...latestBlockhash,
       });
       
+      console.log('[EscrowPanel] Transaction confirmed');
+      
+      // Verify escrow was created correctly
+      const verification = await escrow.verifyEscrow(taskId, workerWallet);
+      if (!verification.valid) {
+        console.error('[EscrowPanel] Escrow verification failed:', verification);
+        setError('Escrow created but worker address is wrong: ' + verification.error);
+        return;
+      }
+      console.log('[EscrowPanel] Escrow verified, worker:', verification.worker);
+      
       await loadData();
       if (onFunded) onFunded(signature, escrowPDA);
     } catch (e) {
-      console.error('[Escrow] Fund failed:', e);
+      console.error('[EscrowPanel] Fund failed:', e);
       setError(e.message || 'Transaction failed');
     } finally {
       setLoading(false);
@@ -86,121 +152,63 @@ function EscrowPanel({ taskId, amount, workerWallet, state, onFunded }) {
 
   if (!wallet) {
     return (
-      <div className="card" style={{background: 'var(--bg-tertiary)'}}>
-        <div style={{textAlign: 'center', padding: 20}}>
-          <p style={{color: 'var(--text-tertiary)'}}>Connect wallet to fund escrow</p>
-        </div>
+      <div style={{padding: 20, textAlign: 'center', color: 'var(--text-secondary)'}}>
+        Connect wallet to fund escrow
       </div>
     );
   }
 
   return (
-    <div className="card">
-      <h3 style={{fontSize: 16, fontWeight: 600, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8}}>
-        🔒 Escrow
-        <span style={{fontSize: 12, padding: '2px 8px', background: 'var(--accent-light)', color: 'var(--accent)', borderRadius: 100}}>
-          Devnet
-        </span>
-        {escrowData && (
-          <span style={{
-            fontSize: 11, 
-            padding: '2px 8px', 
-            background: escrowData.state === 'Funded' ? '#dcfce7' : 
-                       escrowData.state === 'Disputed' ? '#fef3c7' :
-                       escrowData.state === 'Released' ? '#dbeafe' : '#f3f4f6',
-            color: escrowData.state === 'Funded' ? '#166534' :
-                   escrowData.state === 'Disputed' ? '#92400e' :
-                   escrowData.state === 'Released' ? '#1e40af' : '#374151',
-            borderRadius: 100,
-            marginLeft: 'auto'
-          }}>
-            {escrowData.state}
-          </span>
-        )}
-      </h3>
-
-      {error && <div className="alert alert-error" style={{marginBottom: 16}}>{error}</div>}
-
-      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16}}>
-        <div>
-          <div style={{fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4}}>Your Balance</div>
-          <div style={{fontSize: 18, fontWeight: 600}}>{balance.toFixed(4)} SOL</div>
+    <div style={{padding: 16}}>
+      <h3 style={{margin: '0 0 16px 0', fontSize: 18}}>🔐 Fund Escrow</h3>
+      
+      {error && <div style={{padding: 12, background: '#fee', color: '#c00', borderRadius: 8, marginBottom: 12}}>{error}</div>}
+      
+      <div style={{marginBottom: 16, padding: 12, background: 'var(--bg-tertiary)', borderRadius: 8}}>
+        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 8}}>
+          <span>Your Balance:</span>
+          <strong>{balance.toFixed(4)} SOL</strong>
         </div>
-        <div>
-          <div style={{fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4}}>Required</div>
-          <div style={{fontSize: 18, fontWeight: 600, color: 'var(--success)'}}>{amount} SOL</div>
+        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 8}}>
+          <span>Amount to Lock:</span>
+          <strong>{amount} SOL</strong>
+        </div>
+        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-secondary)'}}>
+          <span>Agent:</span>
+          <span>{workerWallet ? `${workerWallet.slice(0, 8)}...${workerWallet.slice(-4)}` : 'Loading...'}</span>
         </div>
       </div>
-
-      {escrowStatus?.funded && escrowStatus?.isProgramOwned ? (
-        <div style={{background: 'var(--success-light)', color: 'var(--success)', padding: 16, borderRadius: 8, marginBottom: 16}}>
-          <div style={{fontWeight: 600, marginBottom: 4}}>✅ Escrow Funded (Program-Owned)</div>
-          <div style={{fontSize: 13}}>
-            {escrowStatus.balance.toFixed(4)} SOL locked at{' '}
-            <a 
-              href={`https://explorer.solana.com/address/${escrowStatus.escrowPDA}?cluster=devnet`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{color: 'inherit', textDecoration: 'underline'}}
-            >
-              {escrowStatus.escrowPDA?.slice(0, 12)}...
-            </a>
-          </div>
-          {escrowData && (
-            <div style={{fontSize: 12, marginTop: 8, opacity: 0.8}}>
-              State: {escrowData.state} | Amount: {escrowData.amount} SOL
-            </div>
-          )}
-        </div>
-      ) : escrowStatus?.funded && !escrowStatus?.isProgramOwned ? (
-        <div style={{background: '#fef3c7', color: '#92400e', padding: 16, borderRadius: 8, marginBottom: 16}}>
-          <div style={{fontWeight: 600, marginBottom: 4}}>⚠️ Legacy Escrow (Not Refundable)</div>
-          <div style={{fontSize: 13}}>
-            {escrowStatus.balance.toFixed(4)} SOL stuck at {escrowStatus.escrowPDA?.slice(0, 12)}...
-          </div>
-        </div>
-      ) : (
-        <>
-          {balance < amount && (
-            <button 
-              className="btn btn-secondary" 
-              onClick={requestAirdrop} 
-              disabled={loading}
-              style={{width: '100%', marginBottom: 8}}
-            >
-              {loading ? 'Requesting...' : '🚰 Get Devnet SOL (Airdrop)'}
-            </button>
-          )}
-          
+      
+      {balance < amount && (
+        <div style={{marginBottom: 12}}>
           <button 
-            className="btn btn-primary" 
-            onClick={fundEscrow} 
-            disabled={loading || balance < amount}
+            className="btn btn-secondary" 
+            onClick={requestAirdrop}
+            disabled={loading}
             style={{width: '100%'}}
           >
-            {loading ? 'Processing...' : `🔒 Lock ${amount} SOL in Escrow`}
+            {loading ? '⏳ Requesting...' : '💧 Request Devnet Airdrop'}
           </button>
-        </>
-      )}
-
-      {txSignature && (
-        <div style={{marginTop: 12, fontSize: 12}}>
-          <span style={{color: 'var(--text-tertiary)'}}>TX: </span>
-          <a 
-            href={`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{color: 'var(--accent)'}}
-          >
-            {txSignature.slice(0, 16)}...
-          </a>
         </div>
       )}
-
-      <div style={{marginTop: 16, padding: 12, background: 'var(--bg-tertiary)', borderRadius: 8, fontSize: 13, color: 'var(--text-tertiary)'}}>
-        <strong>How it works:</strong> Funds are locked on-chain in a program-owned escrow. 
-        When you approve the result, payment releases to the agent. 
-        If disputed, an arbitrator decides the outcome.
+      
+      <button 
+        className="btn btn-primary" 
+        onClick={fundEscrow}
+        disabled={loading || !workerWallet || balance < amount}
+        style={{width: '100%'}}
+      >
+        {loading ? '⏳ Processing...' : `🔐 Lock ${amount} SOL in Escrow`}
+      </button>
+      
+      {txSignature && (
+        <div style={{marginTop: 12, fontSize: 12, wordBreak: 'break-all'}}>
+          ✅ TX: <a href={`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`} target="_blank" rel="noopener noreferrer">{txSignature}</a>
+        </div>
+      )}
+      
+      <div style={{marginTop: 16, fontSize: 12, color: 'var(--text-secondary)'}}>
+        Funds are locked in escrow until you approve the deliverable. You can dispute within 24h if unsatisfied.
       </div>
     </div>
   );

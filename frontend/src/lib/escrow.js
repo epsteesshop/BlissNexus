@@ -317,6 +317,39 @@ export async function getEscrowData(taskId) {
   }
 }
 
+
+/**
+ * Verify escrow was created correctly
+ */
+export async function verifyEscrow(taskId, expectedWorker) {
+  const connection = getConnection();
+  const { pda } = getEscrowPDA(taskId);
+  
+  try {
+    const info = await connection.getAccountInfo(pda);
+    if (!info) {
+      return { valid: false, error: 'Escrow account not found' };
+    }
+    
+    const buffer = info.data;
+    // Skip 8-byte discriminator, 32-byte requester
+    const workerBytes = buffer.slice(40, 72);
+    const worker = new PublicKey(workerBytes);
+    
+    if (worker.toBase58() === '11111111111111111111111111111111') {
+      return { valid: false, error: 'Worker is zeros (System Program)', worker: worker.toBase58() };
+    }
+    
+    if (expectedWorker && worker.toBase58() !== expectedWorker) {
+      return { valid: false, error: 'Worker mismatch', expected: expectedWorker, actual: worker.toBase58() };
+    }
+    
+    return { valid: true, worker: worker.toBase58() };
+  } catch (e) {
+    return { valid: false, error: e.message };
+  }
+}
+
 export default {
   DEVNET_RPC,
   ESCROW_PROGRAM_ID,
@@ -332,4 +365,5 @@ export default {
   buildCancelTransaction,
   checkEscrowFunding,
   getEscrowData,
+  verifyEscrow,
 };
