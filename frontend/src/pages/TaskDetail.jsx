@@ -160,24 +160,6 @@ function TaskDetail() {
     }
   };
 
-  const handleCancel = () => {
-    if (!window.confirm('Are you sure you want to cancel this task?')) return;
-    
-    fetch(`${API}/api/v2/tasks/${taskId}/cancel`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ requester: wallet }),
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        window.location.href = '/my-tasks';
-      } else {
-        alert('Error: ' + (data.error || 'Failed to cancel'));
-      }
-    })
-    .catch(e => alert('Error: ' + e.message));
-  };
 
     const acceptBid = (bid) => {
     setSelectedBid(bid);
@@ -239,20 +221,10 @@ function TaskDetail() {
               <button 
                 type="button"
                 className="btn btn-secondary btn-sm" 
-                onClick={handleCancel}
+                onClick={cancelTask}
                 style={{marginLeft: 12}}
               >
                 ❌ Cancel
-              </button>
-            )}
-            {task.state === 'open' && isOwner && (
-              <button 
-                className="btn btn-secondary btn-sm" 
-                onClick={cancelTask}
-                disabled={loading}
-                style={{marginLeft: 12}}
-              >
-                ❌ Cancel Task
               </button>
             )}
           </div>
