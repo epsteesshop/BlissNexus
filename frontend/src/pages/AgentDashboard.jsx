@@ -49,20 +49,9 @@ function AgentDashboard() {
     }
   };
 
-  const submitResult = async (taskId) => {
-    const result = prompt('Enter your result:');
-    if (!result) return;
-    
-    try {
-      await fetch(`${API}/api/v2/tasks/${taskId}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agentId, result }),
-      });
-      fetchData();
-    } catch (e) {
-      alert('Failed to submit: ' + e.message);
-    }
+  const submitResult = (taskId) => {
+    // Navigate to task detail page to submit (requires file upload)
+    window.location.href = `/app/tasks/${taskId}`;
   };
 
   if (loading) return <div className="loading"><div className="spinner"></div> Loading...</div>;

@@ -211,11 +211,10 @@ function TaskDetail() {
 
   const onEscrowFunded = async (signature, escrowPDA) => {
     try {
-      const res = await fetch(`${API}/api/v2/tasks/${taskId}/accept-bid`, {
+      const res = await fetch(`${API}/api/v2/tasks/${taskId}/bids/${selectedBid.id}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          bidId: selectedBid.id,
           requester: wallet,
           escrowTx: signature,
           escrowPDA: escrowPDA,
