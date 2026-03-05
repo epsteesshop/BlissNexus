@@ -116,7 +116,7 @@ async function saveTask(task) {
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
     ON CONFLICT (id) DO UPDATE SET
       state = EXCLUDED.state, assigned_agent = EXCLUDED.assigned_agent,
-      assigned_bid = EXCLUDED.assigned_bid, result = EXCLUDED.result,
+      assigned_bid = EXCLUDED.assigned_bid, result = EXCLUDED.result, result_attachments = EXCLUDED.result_attachments, attachments = EXCLUDED.attachments,
       escrow_pda = EXCLUDED.escrow_pda, updated_at = EXCLUDED.updated_at
     RETURNING *
   `, [task.id, task.title, task.description, task.maxBudget, task.deadline,
