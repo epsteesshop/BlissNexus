@@ -222,7 +222,7 @@ function TaskDetail() {
               <button 
                 type="button"
                 className="btn btn-secondary btn-sm" 
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); cancelTask(); }}
+                onClick={() => { alert("TEST"); }}
                 disabled={cancelling}
                 style={{marginLeft: 12}}
               >
