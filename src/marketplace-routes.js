@@ -467,9 +467,6 @@ function setupRoutes(app, broadcast) {
       res.status(500).json({ error: e.message });
     }
   });
-}
-
-module.exports = { setupRoutes };
 
   // ==================== DISPUTE RESOLUTION ====================
   
@@ -570,3 +567,6 @@ module.exports = { setupRoutes };
       res.status(500).json({ error: e.message });
     }
   });
+}
+
+module.exports = { setupRoutes };
