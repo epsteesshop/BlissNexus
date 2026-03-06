@@ -157,6 +157,17 @@ class BlissNexusAgent extends EventEmitter {
         console.error('[BlissNexus] Error:', msg.error || msg.message);
         this.emit('server_error', msg);
         break;
+      
+      case 'sdk_update':
+        console.log('[BlissNexus] 🔄 SDK update available:', msg.version);
+        if (msg.message) console.log('[BlissNexus]', msg.message);
+        this.emit('update_available', {
+          version: msg.version,
+          message: msg.message,
+          urgent: msg.urgent || false,
+          changelog: msg.changelog
+        });
+        break;
         
       default:
         this.emit('message', msg);

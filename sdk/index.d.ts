@@ -94,3 +94,5 @@ export class BlissNexusAgent extends EventEmitter {
 
   /** Resubmit/update deliverable before approval */
   resubmitResult(taskId: string, result: string, attachments?: Attachment[]): Promise<any>;
+
+  on(event: 'update_available', listener: (update: { version: string; message?: string; urgent?: boolean; changelog?: string }) => void): this;

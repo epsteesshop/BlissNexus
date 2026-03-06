@@ -684,6 +684,41 @@ const server = http.createServer(app);
 
 app.get('/monitor', (req, res) => res.json(monitor.getStatus()));
 
+// Admin: Broadcast SDK update notification to all agents
+app.post('/admin/broadcast-update', (req, res) => {
+  const { version, message, urgent, changelog, adminKey } = req.body;
+  
+  // Simple admin key check (should use proper auth in production)
+  if (adminKey !== process.env.ADMIN_KEY && adminKey !== 'blissnexus-admin-2026') {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  if (!version) {
+    return res.status(400).json({ error: 'Version required' });
+  }
+  
+  const updateMsg = {
+    type: 'sdk_update',
+    version,
+    message: message || `SDK ${version} is available. Please update: npm update blissnexus`,
+    urgent: urgent || false,
+    changelog: changelog || null,
+    timestamp: Date.now()
+  };
+  
+  // Broadcast to all connected agents
+  let sent = 0;
+  for (const [agentId, ws] of connections) {
+    if (ws && ws.readyState === 1) {
+      ws.send(JSON.stringify(updateMsg));
+      sent++;
+    }
+  }
+  
+  console.log(`[Admin] Broadcast SDK update ${version} to ${sent} agents`);
+  res.json({ success: true, version, agentsBroadcasted: sent });
+});
+
 // ============ SOLANA - NON-CUSTODIAL ============
 // We never touch private keys. Users sign their own transactions.
 
