@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Link } from 'react-router-dom';
-import escrow, { buildResolveDisputeTransaction } from '../lib/escrow';
+import escrow from '../lib/escrow';
 
 const API = 'https://api.blissnexus.ai';
 const ADMIN_WALLET = '8M6uxJCeGc7oJ8nVkCt4RpX1URVejnTRFRmKGs5815Kb';
