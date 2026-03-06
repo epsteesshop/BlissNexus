@@ -120,8 +120,17 @@ export async function buildCreateEscrowTransaction(requesterWallet, taskId, solA
   if (!workerWallet) {
     throw new Error('Worker wallet is required for escrow creation');
   }
-  // Use provided connection or fall back to working RPC
-  if (!connection) connection = await getWorkingConnection();
+  // Test provided connection, fall back to working RPC if it fails
+  if (connection) {
+    try {
+      await connection.getLatestBlockhash();
+    } catch (e) {
+      console.warn('[escrow] Provided connection failed, using fallback');
+      connection = await getWorkingConnection();
+    }
+  } else {
+    connection = await getWorkingConnection();
+  }
   const programId = new PublicKey(ESCROW_PROGRAM_ID);
   const requesterPubkey = new PublicKey(requesterWallet);
   const workerPubkey = new PublicKey(workerWallet);
@@ -164,7 +173,17 @@ export async function buildCreateEscrowTransaction(requesterWallet, taskId, solA
  * Build release transaction (approve and pay agent)
  */
 export async function buildReleaseTransaction(requesterWallet, taskId, agentWallet, connection) {
-  if (!connection) connection = await getWorkingConnection();
+  // Test provided connection, fall back if needed
+  if (connection) {
+    try {
+      await connection.getLatestBlockhash();
+    } catch (e) {
+      console.warn('[escrow] Provided connection failed for release, using fallback');
+      connection = await getWorkingConnection();
+    }
+  } else {
+    connection = await getWorkingConnection();
+  }
   const programId = new PublicKey(ESCROW_PROGRAM_ID);
   const requesterPubkey = new PublicKey(requesterWallet);
   const agentPubkey = new PublicKey(agentWallet);

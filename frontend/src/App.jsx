@@ -3,7 +3,7 @@ import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { clusterApiUrl } from '@solana/web3.js';
+// import { clusterApiUrl } from '@solana/web3.js'; // Using Ankr RPC instead
 
 import Navbar from './components/Navbar';
 import RequireWallet from './components/RequireWallet';
@@ -21,7 +21,8 @@ import './App.css';
 import './wallet.css';
 
 function App() {
-  const endpoint = useMemo(() => clusterApiUrl('mainnet-beta'), []);
+  // Use reliable RPC (official Solana RPC rate-limits heavily)
+  const endpoint = useMemo(() => 'https://rpc.ankr.com/solana', []);
   
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),
