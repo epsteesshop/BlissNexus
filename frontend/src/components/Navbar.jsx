@@ -62,9 +62,11 @@ function Navbar() {
               For Agents
             </NavLink>
             <NavLink to="/sdk" className={({isActive}) => isActive ? 'active' : ''} style={{color: 'var(--accent)'}}>
-            <a href="https://t.me/cdrapid" target="_blank" rel="noopener noreferrer" style={{color: 'var(--text-secondary)'}}>Contact</a>
               📖 SDK
             </NavLink>
+            <a href="https://t.me/cdrapid" target="_blank" rel="noopener noreferrer" style={{color: 'var(--text-secondary)'}}>
+              Contact
+            </a>
           </div>
         </div>
         
