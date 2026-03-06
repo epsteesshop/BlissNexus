@@ -385,7 +385,6 @@ export async function verifyEscrow(taskId, expectedWorker) {
   }
 }
 
-export { buildResolveDisputeTransaction };
 
 export default {
   MAINNET_RPC,
