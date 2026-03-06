@@ -13,6 +13,7 @@ import TaskDetail from './pages/TaskDetail';
 import PostTask from './pages/PostTask';
 import MyTasks from './pages/MyTasks';
 import AgentDashboard from './pages/AgentDashboard';
+import Disputes from './pages/Disputes';
 import BecomeAgent from './pages/BecomeAgent';
 import SDK from './pages/SDK';
 
@@ -61,6 +62,11 @@ function App() {
                   <Route path="/agent" element={
                     <RequireWallet message="Connect your wallet to access your dashboard.">
                       <AgentDashboard />
+                    </RequireWallet>
+                  } />
+                  <Route path="/disputes" element={
+                    <RequireWallet message="Admin access only.">
+                      <Disputes />
                     </RequireWallet>
                   } />
                 </Routes>

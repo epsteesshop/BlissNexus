@@ -385,6 +385,8 @@ export async function verifyEscrow(taskId, expectedWorker) {
   }
 }
 
+export { buildResolveDisputeTransaction };
+
 export default {
   MAINNET_RPC,
   ESCROW_PROGRAM_ID,
@@ -401,4 +403,44 @@ export default {
   checkEscrowFunding,
   getEscrowData,
   verifyEscrow,
+  buildResolveDisputeTransaction,
 };
+
+/**
+ * Build resolve_dispute transaction (admin only)
+ * Can release to worker or refund to requester
+ */
+export async function buildResolveDisputeTransaction(adminWallet, taskId, workerWallet, requesterWallet, releaseToWorker, connection) {
+  if (!connection) connection = await getWorkingConnection();
+  
+  const programId = new PublicKey(ESCROW_PROGRAM_ID);
+  const adminPubkey = new PublicKey(adminWallet);
+  const workerPubkey = new PublicKey(workerWallet);
+  const requesterPubkey = new PublicKey(requesterWallet);
+  const { pda: escrowPDA } = getEscrowPDA(taskId);
+  
+  const discriminator = getDiscriminator('resolve_dispute');
+  const taskBytes = taskIdToBytes(taskId);
+  const releaseFlag = new Uint8Array([releaseToWorker ? 1 : 0]);
+  
+  const data = concatBytes(discriminator, taskBytes, releaseFlag);
+  
+  const instruction = new TransactionInstruction({
+    keys: [
+      { pubkey: adminPubkey, isSigner: true, isWritable: false },
+      { pubkey: workerPubkey, isSigner: false, isWritable: true },
+      { pubkey: requesterPubkey, isSigner: false, isWritable: true },
+      { pubkey: escrowPDA, isSigner: false, isWritable: true },
+    ],
+    programId,
+    data,
+  });
+  
+  const transaction = new Transaction().add(instruction);
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+  transaction.recentBlockhash = blockhash;
+  transaction.lastValidBlockHeight = lastValidBlockHeight;
+  transaction.feePayer = adminPubkey;
+  
+  return { transaction, escrowPDA: escrowPDA.toBase58() };
+}

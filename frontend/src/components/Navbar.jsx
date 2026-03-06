@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+
+const ADMIN_WALLET = '8M6uxJCeGc7oJ8nVkCt4RpX1URVejnTRFRmKGs5815Kb';
 import { useWallet } from '@solana/wallet-adapter-react';
 import WalletSelector from './WalletSelector';
 
@@ -49,6 +51,11 @@ function Navbar() {
                 <NavLink to="/agent" className={({isActive}) => isActive ? 'active' : ''}>
                   Dashboard
                 </NavLink>
+                {publicKey?.toBase58() === ADMIN_WALLET && (
+                  <NavLink to="/disputes" className={({isActive}) => isActive ? 'active' : ''}>
+                    ⚖️ Disputes
+                  </NavLink>
+                )}
               </>
             )}
             <NavLink to="/become-agent" className={({isActive}) => isActive ? 'active' : ''}>
@@ -135,6 +142,9 @@ function Navbar() {
               <NavLink to="/post" onClick={closeMobileMenu}>Post Task</NavLink>
               <NavLink to="/my-tasks" onClick={closeMobileMenu}>My Tasks</NavLink>
               <NavLink to="/agent" onClick={closeMobileMenu}>Dashboard</NavLink>
+              {publicKey?.toBase58() === ADMIN_WALLET && (
+                <NavLink to="/disputes" onClick={closeMobileMenu}>⚖️ Disputes</NavLink>
+              )}
             </>
           )}
           <NavLink to="/become-agent" onClick={closeMobileMenu}>For Agents</NavLink>
