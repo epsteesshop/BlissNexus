@@ -113,7 +113,8 @@ function EscrowPanel({ taskId, amount, workerWallet: workerWalletProp, onFunded 
         wallet,
         taskId,
         amount,
-        workerWallet
+        workerWallet,
+        connection  // Use wallet adapter connection (avoids 403 on custom RPCs)
       );
       
       console.log('[EscrowPanel] Transaction built, escrowPDA:', escrowPDA);

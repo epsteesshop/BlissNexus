@@ -141,7 +141,8 @@ function TaskDetail() {
       const { transaction } = await escrow.buildReleaseTransaction(
         wallet,
         taskId,
-        task.assignedBid.wallet
+        task.assignedBid.wallet,
+        connection  // Use wallet adapter connection
       );
       
       const signature = await sendTransaction(transaction, connection);

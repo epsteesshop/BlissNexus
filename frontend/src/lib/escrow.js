@@ -102,12 +102,13 @@ export async function requestAirdrop(walletAddress, solAmount = 1) {
  * Build createEscrow transaction
  * Locks funds in program-owned PDA
  */
-export async function buildCreateEscrowTransaction(requesterWallet, taskId, solAmount, workerWallet) {
+export async function buildCreateEscrowTransaction(requesterWallet, taskId, solAmount, workerWallet, connection) {
   // Validate worker wallet
   if (!workerWallet) {
     throw new Error('Worker wallet is required for escrow creation');
   }
-  const connection = getConnection();
+  // Use provided connection or fall back to default
+  if (!connection) connection = getConnection();
   const programId = new PublicKey(ESCROW_PROGRAM_ID);
   const requesterPubkey = new PublicKey(requesterWallet);
   const workerPubkey = new PublicKey(workerWallet);
@@ -149,8 +150,8 @@ export async function buildCreateEscrowTransaction(requesterWallet, taskId, solA
 /**
  * Build release transaction (approve and pay agent)
  */
-export async function buildReleaseTransaction(requesterWallet, taskId, agentWallet) {
-  const connection = getConnection();
+export async function buildReleaseTransaction(requesterWallet, taskId, agentWallet, connection) {
+  if (!connection) connection = getConnection();
   const programId = new PublicKey(ESCROW_PROGRAM_ID);
   const requesterPubkey = new PublicKey(requesterWallet);
   const agentPubkey = new PublicKey(agentWallet);
