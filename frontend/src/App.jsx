@@ -21,8 +21,8 @@ import './App.css';
 import './wallet.css';
 
 function App() {
-  // Use reliable RPC (official Solana RPC rate-limits heavily)
-  const endpoint = useMemo(() => 'https://rpc.ankr.com/solana', []);
+  // Use reliable free RPC
+  const endpoint = useMemo(() => 'https://solana-rpc.publicnode.com', []);
   
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),

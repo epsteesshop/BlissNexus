@@ -58,9 +58,9 @@ function EscrowPanel({ taskId, amount, workerWallet: workerWalletProp, onFunded 
   const loadData = async () => {
     // Try multiple RPCs for balance (public mainnet RPC rate-limits often)
     const RPCS = [
-      'https://rpc.ankr.com/solana',
-      'https://api.mainnet-beta.solana.com',
       'https://solana-rpc.publicnode.com',
+      'https://api.mainnet-beta.solana.com',
+      'https://solana.public-rpc.com',
     ];
     let balanceFetched = false;
     for (const rpc of RPCS) {

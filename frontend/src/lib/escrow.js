@@ -15,9 +15,9 @@ import { sha256 } from 'js-sha256';
 
 // Config
 const MAINNET_RPCS = [
-  'https://rpc.ankr.com/solana',
   'https://solana-rpc.publicnode.com',
   'https://api.mainnet-beta.solana.com',
+  'https://solana.public-rpc.com',
 ];
 export const MAINNET_RPC = MAINNET_RPCS[0];
 export const ESCROW_PROGRAM_ID = '7vNFHULaw8fmnCZPZ5GDFhWovUixe769qzupuqSA7kjw';
