@@ -15,8 +15,10 @@ import { sha256 } from 'js-sha256';
 
 // Config
 const MAINNET_RPCS = [
+  'https://solana-mainnet.g.alchemy.com/v2/demo',
   'https://api.mainnet-beta.solana.com',
-  'https://mango.mainnet-beta.rpcpool.com',
+  'https://rpc.ankr.com/solana',
+  'https://mainnet.helius-rpc.com/?api-key=demo',
 ];
 export const MAINNET_RPC = MAINNET_RPCS[0];
 export const ESCROW_PROGRAM_ID = '7vNFHULaw8fmnCZPZ5GDFhWovUixe769qzupuqSA7kjw';

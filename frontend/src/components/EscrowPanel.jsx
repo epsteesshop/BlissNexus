@@ -68,6 +68,7 @@ function EscrowPanel({ taskId, amount, workerWallet: workerWalletProp, onFunded 
 
   const fundEscrow = async () => {
     if (!publicKey) return setError('Connect wallet first');
+    if (balance > 0 && balance < amount) return setError(`Insufficient balance. You have ${balance.toFixed(4)} SOL, need ${amount} SOL.`);
     if (balance < amount) return setError('Insufficient balance');
     
     // Validate worker wallet
@@ -172,7 +173,7 @@ function EscrowPanel({ taskId, amount, workerWallet: workerWalletProp, onFunded 
       <button 
         className="btn btn-primary" 
         onClick={fundEscrow}
-        disabled={loading || !workerWallet || balance < amount}
+        disabled={loading || !workerWallet}
         style={{width: '100%'}}
       >
         {loading ? '⏳ Processing...' : `🔐 Lock ${amount} SOL in Escrow`}
