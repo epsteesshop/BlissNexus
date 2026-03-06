@@ -15,18 +15,31 @@ import { sha256 } from 'js-sha256';
 
 // Config
 const MAINNET_RPCS = [
-  'https://solana-mainnet.g.alchemy.com/v2/demo',
-  'https://api.mainnet-beta.solana.com',
   'https://rpc.ankr.com/solana',
-  'https://mainnet.helius-rpc.com/?api-key=demo',
+  'https://solana-rpc.publicnode.com',
+  'https://api.mainnet-beta.solana.com',
 ];
 export const MAINNET_RPC = MAINNET_RPCS[0];
 export const ESCROW_PROGRAM_ID = '7vNFHULaw8fmnCZPZ5GDFhWovUixe769qzupuqSA7kjw';
 export const ARBITRATOR = '14jEkruEqbG1pS8YaKhXeS5xBQFzgfXqy2GinLwcwz8q';
 
-// Get connection
+// Get connection — tries RPCs in order, returns first working one
 export function getConnection() {
   return new Connection(MAINNET_RPCS[0], 'confirmed');
+}
+
+// Get connection with fallback (async)
+async function getWorkingConnection() {
+  for (const rpc of MAINNET_RPCS) {
+    try {
+      const conn = new Connection(rpc, 'confirmed');
+      await conn.getLatestBlockhash();
+      return conn;
+    } catch (e) {
+      console.warn('[escrow] RPC unavailable:', rpc);
+    }
+  }
+  throw new Error('All RPC endpoints failed');
 }
 
 // Convert task ID to 32-byte array
@@ -107,8 +120,8 @@ export async function buildCreateEscrowTransaction(requesterWallet, taskId, solA
   if (!workerWallet) {
     throw new Error('Worker wallet is required for escrow creation');
   }
-  // Use provided connection or fall back to default
-  if (!connection) connection = getConnection();
+  // Use provided connection or fall back to working RPC
+  if (!connection) connection = await getWorkingConnection();
   const programId = new PublicKey(ESCROW_PROGRAM_ID);
   const requesterPubkey = new PublicKey(requesterWallet);
   const workerPubkey = new PublicKey(workerWallet);
@@ -151,7 +164,7 @@ export async function buildCreateEscrowTransaction(requesterWallet, taskId, solA
  * Build release transaction (approve and pay agent)
  */
 export async function buildReleaseTransaction(requesterWallet, taskId, agentWallet, connection) {
-  if (!connection) connection = getConnection();
+  if (!connection) connection = await getWorkingConnection();
   const programId = new PublicKey(ESCROW_PROGRAM_ID);
   const requesterPubkey = new PublicKey(requesterWallet);
   const agentPubkey = new PublicKey(agentWallet);
@@ -186,7 +199,7 @@ export async function buildReleaseTransaction(requesterWallet, taskId, agentWall
  * Build dispute transaction
  */
 export async function buildDisputeTransaction(requesterWallet, taskId, reason = '') {
-  const connection = getConnection();
+  const connection = await getWorkingConnection();
   const programId = new PublicKey(ESCROW_PROGRAM_ID);
   const requesterPubkey = new PublicKey(requesterWallet);
   const { pda: escrowPDA } = getEscrowPDA(taskId);
@@ -221,7 +234,7 @@ export async function buildDisputeTransaction(requesterWallet, taskId, reason = 
  * Build cancel transaction (refund before agent assigned)
  */
 export async function buildCancelTransaction(requesterWallet, taskId) {
-  const connection = getConnection();
+  const connection = await getWorkingConnection();
   const programId = new PublicKey(ESCROW_PROGRAM_ID);
   const requesterPubkey = new PublicKey(requesterWallet);
   const { pda: escrowPDA } = getEscrowPDA(taskId);
@@ -254,7 +267,7 @@ export async function buildCancelTransaction(requesterWallet, taskId) {
  * Check escrow status
  */
 export async function checkEscrowFunding(taskId) {
-  const connection = getConnection();
+  const connection = await getWorkingConnection();
   const { pda } = getEscrowPDA(taskId);
   
   try {
@@ -284,7 +297,7 @@ export async function checkEscrowFunding(taskId) {
  * Get escrow account data (parsed)
  */
 export async function getEscrowData(taskId) {
-  const connection = getConnection();
+  const connection = await getWorkingConnection();
   const { pda } = getEscrowPDA(taskId);
   
   try {
@@ -325,7 +338,7 @@ export async function getEscrowData(taskId) {
  * Verify escrow was created correctly
  */
 export async function verifyEscrow(taskId, expectedWorker) {
-  const connection = getConnection();
+  const connection = await getWorkingConnection();
   const { pda } = getEscrowPDA(taskId);
   
   try {
