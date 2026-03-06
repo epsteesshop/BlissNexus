@@ -15,8 +15,8 @@ import { sha256 } from 'js-sha256';
 
 // Config
 const DEVNET_RPCS = [
-  'https://api.devnet.solana.com',
-  'https://mango.devnet.rpcpool.com',
+  'https://api.mainnet-beta.solana.com',
+  'https://mango.mainnet-beta.rpcpool.com',
 ];
 export const DEVNET_RPC = DEVNET_RPCS[0];
 export const ESCROW_PROGRAM_ID = '7vNFHULaw8fmnCZPZ5GDFhWovUixe769qzupuqSA7kjw';
@@ -84,7 +84,7 @@ export async function getBalance(walletAddress) {
 // Request airdrop
 export async function requestAirdrop(walletAddress, solAmount = 1) {
   try {
-    const connection = new Connection('https://mango.devnet.rpcpool.com', 'confirmed');
+    const connection = new Connection('https://mango.mainnet-beta.rpcpool.com', 'confirmed');
     const signature = await connection.requestAirdrop(
       new PublicKey(walletAddress), 
       solAmount * LAMPORTS_PER_SOL
