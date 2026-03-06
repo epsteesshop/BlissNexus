@@ -8,7 +8,7 @@ function EscrowPanel({ taskId, amount, workerWallet: workerWalletProp, onFunded 
   const { publicKey, sendTransaction } = useWallet();
   const { connection } = useConnection();
   
-  const [balance, setBalance] = useState(0);
+  const [balance, setBalance] = useState(null); // null = not yet loaded
   const [escrowStatus, setEscrowStatus] = useState(null);
   const [escrowData, setEscrowData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -56,13 +56,28 @@ function EscrowPanel({ taskId, amount, workerWallet: workerWalletProp, onFunded 
   }, [wallet, taskId]);
 
   const loadData = async () => {
-    try {
-      // Use wallet adapter connection directly for reliable balance
-      const { PublicKey, LAMPORTS_PER_SOL } = await import('@solana/web3.js');
-      const lamports = await connection.getBalance(new PublicKey(wallet));
-      setBalance(lamports / LAMPORTS_PER_SOL);
-    } catch (e) {
-      console.warn('[EscrowPanel] Balance fetch failed:', e.message);
+    // Try multiple RPCs for balance (public mainnet RPC rate-limits often)
+    const RPCS = [
+      'https://rpc.ankr.com/solana',
+      'https://api.mainnet-beta.solana.com',
+      'https://solana-rpc.publicnode.com',
+    ];
+    let balanceFetched = false;
+    for (const rpc of RPCS) {
+      try {
+        const { PublicKey, LAMPORTS_PER_SOL, Connection } = await import('@solana/web3.js');
+        const conn = new Connection(rpc, 'confirmed');
+        const lamports = await conn.getBalance(new PublicKey(wallet));
+        setBalance(lamports / LAMPORTS_PER_SOL);
+        balanceFetched = true;
+        break;
+      } catch (e) {
+        console.warn('[EscrowPanel] RPC failed, trying next:', rpc, e.message);
+      }
+    }
+    if (!balanceFetched) {
+      console.warn('[EscrowPanel] All RPCs failed for balance — proceeding without balance display');
+      setBalance(-1); // sentinel: unknown
     }
     
     try {
@@ -79,7 +94,6 @@ function EscrowPanel({ taskId, amount, workerWallet: workerWalletProp, onFunded 
 
   const fundEscrow = async () => {
     if (!publicKey) return setError('Connect wallet first');
-    if (balance < amount) return setError('Insufficient balance');
     
     // Validate worker wallet
     if (!workerWallet) {
@@ -167,7 +181,7 @@ function EscrowPanel({ taskId, amount, workerWallet: workerWalletProp, onFunded 
       <div style={{marginBottom: 16, padding: 12, background: 'var(--bg-tertiary)', borderRadius: 8}}>
         <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 8}}>
           <span>Your Balance:</span>
-          <strong>{balance.toFixed(4)} SOL</strong>
+          <strong>{balance === null ? '...' : balance === -1 ? 'Unknown' : balance.toFixed(4) + ' SOL'}</strong>
         </div>
         <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 8}}>
           <span>Amount to Lock:</span>
