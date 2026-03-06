@@ -126,8 +126,13 @@ class BlissNexusAgent extends EventEmitter {
       case 'task_assigned':
         console.log('[BlissNexus] 📋 Assigned:', msg.task?.title || msg.taskId);
         this.emit('assigned', msg.task || msg);
-        if (this.autoHandle && this._taskHandler && msg.task) {
+        // Prevent duplicate execution
+        const taskId = msg.task?.id || msg.taskId;
+        if (this.autoHandle && this._taskHandler && msg.task && !this._executingTasks.has(taskId)) {
+          this._executingTasks.add(taskId);
           await this._executeTask(msg.task);
+        } else if (this._executingTasks.has(taskId)) {
+          console.log('[BlissNexus] ⏭️ Skipping duplicate task_assigned for:', taskId);
         }
         break;
         
