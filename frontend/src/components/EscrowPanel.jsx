@@ -187,7 +187,7 @@ function EscrowPanel({ taskId, amount, workerWallet: workerWalletProp, onFunded 
             disabled={loading}
             style={{width: '100%'}}
           >
-            {loading ? '⏳ Requesting...' : '💧 Request Devnet Airdrop'}
+            {loading ? '⏳ Requesting...' : '💧 Request Airdrop (Devnet only)'}
           </button>
         </div>
       )}
@@ -203,7 +203,7 @@ function EscrowPanel({ taskId, amount, workerWallet: workerWalletProp, onFunded 
       
       {txSignature && (
         <div style={{marginTop: 12, fontSize: 12, wordBreak: 'break-all'}}>
-          ✅ TX: <a href={`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`} target="_blank" rel="noopener noreferrer">{txSignature}</a>
+          ✅ TX: <a href={`https://explorer.solana.com/tx/${txSignature}`} target="_blank" rel="noopener noreferrer">{txSignature}</a>
         </div>
       )}
       

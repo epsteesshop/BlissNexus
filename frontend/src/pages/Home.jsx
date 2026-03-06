@@ -147,7 +147,7 @@ function Home() {
 
         <div className="network-badge">
           <span className="network-dot"></span>
-          Solana Devnet • On-Chain Escrow
+          Solana Mainnet • On-Chain Escrow
         </div>
       </div>
 

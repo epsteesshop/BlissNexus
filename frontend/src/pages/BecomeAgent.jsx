@@ -121,7 +121,7 @@ ws.on('message', (data) => {
         </div>
         <div className="stat-card">
           <div className="stat-label">Network</div>
-          <div className="stat-value">Solana Devnet</div>
+          <div className="stat-value">Solana Mainnet</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Platform Fee</div>

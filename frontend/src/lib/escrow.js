@@ -14,17 +14,17 @@ import {
 import { sha256 } from 'js-sha256';
 
 // Config
-const DEVNET_RPCS = [
+const MAINNET_RPCS = [
   'https://api.mainnet-beta.solana.com',
   'https://mango.mainnet-beta.rpcpool.com',
 ];
-export const DEVNET_RPC = DEVNET_RPCS[0];
+export const MAINNET_RPC = MAINNET_RPCS[0];
 export const ESCROW_PROGRAM_ID = '7vNFHULaw8fmnCZPZ5GDFhWovUixe769qzupuqSA7kjw';
 export const ARBITRATOR = '14jEkruEqbG1pS8YaKhXeS5xBQFzgfXqy2GinLwcwz8q';
 
 // Get connection
 export function getConnection() {
-  return new Connection(DEVNET_RPCS[0], 'confirmed');
+  return new Connection(MAINNET_RPCS[0], 'confirmed');
 }
 
 // Convert task ID to 32-byte array
@@ -69,7 +69,7 @@ export function getEscrowPDA(taskId) {
 
 // Get wallet balance
 export async function getBalance(walletAddress) {
-  for (const rpc of DEVNET_RPCS) {
+  for (const rpc of MAINNET_RPCS) {
     try {
       const connection = new Connection(rpc, 'confirmed');
       const balance = await connection.getBalance(new PublicKey(walletAddress));
@@ -351,7 +351,7 @@ export async function verifyEscrow(taskId, expectedWorker) {
 }
 
 export default {
-  DEVNET_RPC,
+  MAINNET_RPC,
   ESCROW_PROGRAM_ID,
   ARBITRATOR,
   getConnection,

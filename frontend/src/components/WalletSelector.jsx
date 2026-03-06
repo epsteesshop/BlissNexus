@@ -103,7 +103,7 @@ function WalletSelector({ isOpen, onClose }) {
         </div>
         
         <div className="wallet-selector-footer">
-          🔒 Non-custodial • Devnet
+          🔒 Non-custodial • Mainnet
         </div>
       </div>
     </>
