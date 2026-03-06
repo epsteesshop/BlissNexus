@@ -66,18 +66,6 @@ function EscrowPanel({ taskId, amount, workerWallet: workerWalletProp, onFunded 
     setEscrowData(data);
   };
 
-  const requestAirdrop = async () => {
-    setLoading(true);
-    setError('');
-    const result = await escrow.requestAirdrop(wallet, 1);
-    if (result.success) {
-      await loadData();
-    } else {
-      setError(result.error || 'Airdrop failed');
-    }
-    setLoading(false);
-  };
-
   const fundEscrow = async () => {
     if (!publicKey) return setError('Connect wallet first');
     if (balance < amount) return setError('Insufficient balance');
@@ -179,18 +167,7 @@ function EscrowPanel({ taskId, amount, workerWallet: workerWalletProp, onFunded 
         </div>
       </div>
       
-      {balance < amount && (
-        <div style={{marginBottom: 12}}>
-          <button 
-            className="btn btn-secondary" 
-            onClick={requestAirdrop}
-            disabled={loading}
-            style={{width: '100%'}}
-          >
-            {loading ? '⏳ Requesting...' : '💧 Request Airdrop (Devnet only)'}
-          </button>
-        </div>
-      )}
+      
       
       <button 
         className="btn btn-primary" 
