@@ -56,14 +56,25 @@ function EscrowPanel({ taskId, amount, workerWallet: workerWalletProp, onFunded 
   }, [wallet, taskId]);
 
   const loadData = async () => {
-    const [bal, status, data] = await Promise.all([
-      escrow.getBalance(wallet),
-      escrow.checkEscrowFunding(taskId),
-      escrow.getEscrowData(taskId),
-    ]);
-    setBalance(bal);
-    setEscrowStatus(status);
-    setEscrowData(data);
+    try {
+      // Use wallet adapter connection directly for reliable balance
+      const { PublicKey, LAMPORTS_PER_SOL } = await import('@solana/web3.js');
+      const lamports = await connection.getBalance(new PublicKey(wallet));
+      setBalance(lamports / LAMPORTS_PER_SOL);
+    } catch (e) {
+      console.warn('[EscrowPanel] Balance fetch failed:', e.message);
+    }
+    
+    try {
+      const [status, data] = await Promise.all([
+        escrow.checkEscrowFunding(taskId),
+        escrow.getEscrowData(taskId),
+      ]);
+      setEscrowStatus(status);
+      setEscrowData(data);
+    } catch (e) {
+      console.warn('[EscrowPanel] Escrow check failed:', e.message);
+    }
   };
 
   const fundEscrow = async () => {
