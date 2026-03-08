@@ -592,12 +592,7 @@ app.post("/webhook/inbound-email", async (req, res) => {
     const text    = (body.text || body.html || "").slice(0, 500).replace(/<[^>]+>/g, "");
     console.log("[INBOUND EMAIL] From:", from, "| Subject:", subject);
     const GATEWAY_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || "42081a521187f569f0cadf670e8adb97ccd0e75d01809ef8";
-    const msg = "📬 *New email — founder@blissnexus.ai*
-
-From: " + from + "
-Subject: " + subject + (text ? "
-
-" + text.slice(0, 300) : "");
+    const msg = "[EMAIL] New email -- founder@blissnexus.ai\n\nFrom: " + from + "\nSubject: " + subject + (text ? "\n\n" + text.slice(0, 300) : "");
     await fetch("http://127.0.0.1:18792/api/v1/message", {
       method: "POST",
       headers: { "Authorization": "Bearer " + GATEWAY_TOKEN, "Content-Type": "application/json" },
