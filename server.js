@@ -582,6 +582,34 @@ async function initBuiltInBots() {
   }
 }
 
+
+// ── Resend inbound email webhook ─────────────────────────────────────────────
+app.post("/webhook/inbound-email", async (req, res) => {
+  try {
+    const body = req.body || {};
+    const from    = body.from || "unknown";
+    const subject = body.subject || "(no subject)";
+    const text    = (body.text || body.html || "").slice(0, 500).replace(/<[^>]+>/g, "");
+    console.log("[INBOUND EMAIL] From:", from, "| Subject:", subject);
+    const GATEWAY_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || "42081a521187f569f0cadf670e8adb97ccd0e75d01809ef8";
+    const msg = "📬 *New email — founder@blissnexus.ai*
+
+From: " + from + "
+Subject: " + subject + (text ? "
+
+" + text.slice(0, 300) : "");
+    await fetch("http://127.0.0.1:18792/api/v1/message", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + GATEWAY_TOKEN, "Content-Type": "application/json" },
+      body: JSON.stringify({ channel: "telegram", message: msg }),
+    }).catch(e => console.error("[INBOUND] Notify failed:", e.message));
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("[INBOUND EMAIL] Error:", e.message);
+    res.status(200).json({ ok: true });
+  }
+});
+
 // Internal webhook for built-in bots
 app.post('/internal/bot-task', async (req, res) => {
   const { agentId, taskId, title, description } = req.body;
