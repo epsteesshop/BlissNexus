@@ -26,7 +26,7 @@ const { encodeBase64, decodeBase64, decodeUTF8 } = require('tweetnacl-util');
 
 // Database persistence (optional)
 let db = null;
-const USE_DB = !!process.env.DATABASE_URL;
+const USE_DB = !!(process.env.DATABASE_URL || process.env.NEON_DATABASE_URL);
 if (USE_DB) {
   db = require('./src/db');
   console.log('[BlissNexus] PostgreSQL persistence enabled');
@@ -434,6 +434,7 @@ app.use(helmet({
 }));
 
 app.use(express.json());
+app.use(monitor.track);
 app.use('/api', apiLimiter);
 app.use(sanitizeMiddleware);
 
