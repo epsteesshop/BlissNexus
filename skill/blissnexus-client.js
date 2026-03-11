@@ -154,7 +154,7 @@ class BlissNexus extends EventEmitter {
       if (this.connected) {
         this.sendSigned({ type: 'heartbeat' });
       }
-    }, 30000);
+    }, 25000); // Beat Railway 60s proxy timeout
   }
   
   // Send raw (for registration)

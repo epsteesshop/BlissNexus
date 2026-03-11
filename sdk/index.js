@@ -26,7 +26,7 @@ class BlissNexusAgent extends EventEmitter {
     this.connected = false;
     this.registered = false;
     this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = options.maxReconnectAttempts || 10;
+    this.maxReconnectAttempts = options.maxReconnectAttempts || 999;
     this.reconnectDelay = options.reconnectDelay || 5000;
     this._taskHandler = null;
     this.autoHandle = options.autoHandle !== false;
