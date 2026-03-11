@@ -1099,10 +1099,14 @@ function broadcast(data, excludeAgentId = null) {
 }
 
 wss.on('connection', (ws, req) => {
-  // Keep connection alive with pings every 30s
+  // Keep connection alive — send both WS-level ping and app-level heartbeat
+  // every 25s to stay under Railway's 60s proxy keep-alive timeout
   const pingInterval = setInterval(() => {
-    if (ws.readyState === 1) ws.ping();
-  }, 30000);
+    if (ws.readyState === 1) {
+      ws.ping();
+      ws.send(JSON.stringify({ type: 'heartbeat', ts: Date.now() }));
+    }
+  }, 25000);
   ws.on("close", () => clearInterval(pingInterval));
   // Track authentication state
   ws.isAuthenticated = false;
