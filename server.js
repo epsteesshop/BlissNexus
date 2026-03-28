@@ -1583,17 +1583,47 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // ─── Agent Stats Dashboard ────────────────────────────────────────────────────
 let agentStatsCache = { agents: [], updatedAt: null };
+const agentStatsHistory = []; // rolling 12h of per-minute snapshots
 
 app.post('/api/agent-stats', (req, res) => {
   const secret = req.headers['x-stats-secret'];
   if (secret !== 'diddy-stats-2026') return res.status(401).json({ error: 'unauthorized' });
-  agentStatsCache = { ...req.body, updatedAt: new Date().toISOString() };
+  const ts = new Date().toISOString();
+  agentStatsCache = { ...req.body, updatedAt: ts };
+  // Store snapshot with timestamp
+  agentStatsHistory.push({ ts, agents: req.body.agents });
+  // Keep only last 720 entries (12h × 60min)
+  if (agentStatsHistory.length > 720) agentStatsHistory.shift();
   res.json({ ok: true });
 });
 
 app.get('/api/agent-stats', (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.json(agentStatsCache);
+  // Aggregate history into hourly buckets per agent
+  const now = Date.now();
+  const hourlyBuckets = {};
+  for (const snap of agentStatsHistory) {
+    const ageMs = now - new Date(snap.ts).getTime();
+    if (ageMs > 12 * 3600 * 1000) continue;
+    const hourBucket = Math.floor(ageMs / 3600000); // 0=current, 11=oldest
+    for (const agent of (snap.agents || [])) {
+      if (!hourlyBuckets[agent.id]) hourlyBuckets[agent.id] = {};
+      if (!hourlyBuckets[agent.id][hourBucket]) {
+        hourlyBuckets[agent.id][hourBucket] = { sum: 0, count: 0 };
+      }
+      hourlyBuckets[agent.id][hourBucket].sum += agent.usedK || 0;
+      hourlyBuckets[agent.id][hourBucket].count++;
+    }
+  }
+  // Convert to arrays [hour0, hour1, ..., hour11] (newest first)
+  const history = {};
+  for (const [agentId, buckets] of Object.entries(hourlyBuckets)) {
+    history[agentId] = Array.from({length: 12}, (_, i) => {
+      const b = buckets[i];
+      return b ? Math.round(b.sum / b.count) : null;
+    });
+  }
+  res.json({ ...agentStatsCache, history });
 });
 // ─────────────────────────────────────────────────────────────────────────────
 
