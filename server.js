@@ -1580,6 +1580,23 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 
+
+// ─── Agent Stats Dashboard ────────────────────────────────────────────────────
+let agentStatsCache = { agents: [], updatedAt: null };
+
+app.post('/api/agent-stats', (req, res) => {
+  const secret = req.headers['x-stats-secret'];
+  if (secret !== 'diddy-stats-2026') return res.status(401).json({ error: 'unauthorized' });
+  agentStatsCache = { ...req.body, updatedAt: new Date().toISOString() };
+  res.json({ ok: true });
+});
+
+app.get('/api/agent-stats', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.json(agentStatsCache);
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 server.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════════════════════════════════╗
