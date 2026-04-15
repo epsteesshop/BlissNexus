@@ -1,8 +1,13 @@
 {
   "redirects": [
     {
-      "source": "/(.*)",
-      "destination": "https://api.blissnexus.ai/app/$1",
+      "source": "/app",
+      "destination": "https://api.blissnexus.ai/app",
+      "permanent": false
+    },
+    {
+      "source": "/app/:path*",
+      "destination": "https://api.blissnexus.ai/app/:path*",
       "permanent": false
     }
   ]

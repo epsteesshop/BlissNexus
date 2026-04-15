@@ -1,12 +1,561 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0;url=/app/">
-  <title>BlissNexus</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agentrail | Hosted MCP for your API</title>
+  <meta name="description" content="Turn your OpenAPI into a hosted MCP server with auth, scopes, run ledger, replay, and usage controls built in." />
+  <style>
+    :root {
+      --bg: #081019;
+      --bg2: #0d1726;
+      --panel: rgba(16, 24, 38, 0.84);
+      --border: rgba(114, 137, 218, 0.16);
+      --text: #e8eefb;
+      --muted: #9fb0c7;
+      --accent: #7c9cff;
+      --accent2: #55e6c1;
+      --good: #83f28f;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+      --max: 1180px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(124,156,255,0.18), transparent 30%),
+        radial-gradient(circle at top right, rgba(85,230,193,0.14), transparent 26%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      opacity: 0.45;
+    }
+
+    .wrap { position: relative; z-index: 1; }
+    .container { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(16px);
+      background: rgba(8,16,25,0.72);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #081019;
+      font-weight: 800;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 22px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .hero {
+      padding: 84px 0 48px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 28px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border: 1px solid rgba(124,156,255,0.22);
+      border-radius: 999px;
+      background: rgba(124,156,255,0.08);
+      color: var(--accent2);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .eyebrow-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--good);
+      box-shadow: 0 0 0 6px rgba(131,242,143,0.12);
+    }
+
+    h1 {
+      margin: 18px 0 14px;
+      font-size: clamp(2.6rem, 6vw, 5rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+      max-width: 12ch;
+    }
+
+    .lede {
+      margin: 0;
+      max-width: 60ch;
+      color: var(--muted);
+      font-size: 1.08rem;
+      line-height: 1.7;
+    }
+
+    .cta-row {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 28px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary {
+      color: #081019;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      box-shadow: var(--shadow);
+    }
+    .btn-secondary {
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .hero-card, .panel {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    .mini-label {
+      color: var(--accent2);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 14px;
+    }
+
+    .flow {
+      display: grid;
+      gap: 12px;
+    }
+
+    .flow-step {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .flow-step strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.98rem;
+    }
+
+    .flow-step span {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .logo-strip {
+      padding: 18px 0 10px;
+    }
+
+    .strip {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+    }
+
+    .strip div {
+      text-align: center;
+      padding: 12px 10px;
+      border-radius: 14px;
+      color: var(--muted);
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.025);
+      font-size: 0.88rem;
+    }
+
+    section {
+      padding: 34px 0;
+    }
+
+    .section-head {
+      max-width: 720px;
+      margin-bottom: 24px;
+    }
+
+    .section-kicker {
+      color: var(--accent2);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.8rem;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+
+    .section-copy {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      padding: 22px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+    }
+
+    .card p, .card li {
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .stack .card { padding: 18px 20px; }
+
+    .pricing {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .tier {
+      padding: 22px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .tier.featured {
+      border-color: rgba(124,156,255,0.35);
+      background: linear-gradient(180deg, rgba(124,156,255,0.12), rgba(255,255,255,0.03));
+    }
+
+    .tier .price {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .tier ul {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .footer-cta {
+      padding: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .footer-cta p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      max-width: 52ch;
+      line-height: 1.6;
+    }
+
+    footer {
+      padding: 14px 0 42px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 980px) {
+      .hero-grid, .grid-3, .pricing { grid-template-columns: 1fr; }
+      .strip { grid-template-columns: repeat(2, 1fr); }
+      .nav-inner { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
 </head>
 <body>
-  <script>window.location.href = '/app/';</script>
-  <p>Redirecting to <a href="/app/">BlissNexus App</a>...</p>
+  <div class="wrap">
+    <nav>
+      <div class="container nav-inner">
+        <div class="brand">
+          <div class="brand-mark">A</div>
+          <div>Agentrail</div>
+        </div>
+        <div class="nav-links">
+          <a href="#how">How it works</a>
+          <a href="#features">Why Agentrail</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#mvp">MVP</a>
+          <a class="btn btn-secondary" href="#contact">Import your OpenAPI</a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="container hero-grid">
+        <div>
+          <div class="eyebrow"><span class="eyebrow-dot"></span> Hosted MCP for your API</div>
+          <h1>Turn your OpenAPI into a hosted MCP server</h1>
+          <p class="lede">Import your OpenAPI and get auth, scopes, run ledger, replay, and usage controls built in. Agentrail gives you a concrete MCP-first front door now, without rebuilding your backend for agents.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="#contact">Import your OpenAPI</a>
+            <a class="btn btn-secondary" href="#pricing">See pricing</a>
+          </div>
+        </div>
+        <div class="hero-card">
+          <div class="mini-label">How it works</div>
+          <div class="flow">
+            <div class="flow-step"><strong>1. Import your OpenAPI</strong><span>Upload or link the spec you already have.</span></div>
+            <div class="flow-step"><strong>2. Generate hosted MCP tools</strong><span>Turn operations into a hosted MCP server agents can actually use.</span></div>
+            <div class="flow-step"><strong>3. Control access</strong><span>Add auth, scopes, and install controls before anything reaches production.</span></div>
+            <div class="flow-step"><strong>4. Inspect every run</strong><span>Use run ledger and replay to see what happened when behavior drifts or breaks.</span></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="logo-strip">
+      <div class="container strip">
+        <div>OpenAPI import</div>
+        <div>Hosted MCP</div>
+        <div>Auth + scopes</div>
+        <div>Run ledger</div>
+        <div>Replay</div>
+        <div>Usage controls</div>
+      </div>
+    </div>
+
+    <section id="features">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-kicker">Why Agentrail</div>
+          <h2>A concrete developer product first, governance where it matters</h2>
+          <p class="section-copy">The front door stays simple. Hosted MCP for your API. The deeper controls are there when you need them, but they do not muddy the pitch.</p>
+        </div>
+        <div class="grid-3">
+          <div class="card">
+            <h3>Ship faster</h3>
+            <p>Turn an existing API into MCP tools without re-platforming your backend or inventing a new agent surface from scratch.</p>
+          </div>
+          <div class="card">
+            <h3>Control access</h3>
+            <p>Add auth, scopes, and governed installs before agents touch production systems, accounts, or customer data.</p>
+          </div>
+          <div class="card">
+            <h3>See what happened</h3>
+            <p>Track runs, inspect tool calls, and replay behavior step by step when something breaks or drifts.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-kicker">Workflow</div>
+          <h2>The MVP path is narrow on purpose</h2>
+          <p class="section-copy">Agentrail is not trying to be every protocol and every control surface on day one. It starts with a clean MCP-first workflow and moves governance deeper in the funnel.</p>
+        </div>
+        <div class="stack">
+          <div class="card"><strong>OpenAPI import + normalization</strong><p>Bring your existing API in without rewriting the business logic behind it.</p></div>
+          <div class="card"><strong>Hosted MCP generation</strong><p>Generate a hosted MCP server from real operations, not a hand-built demo layer.</p></div>
+          <div class="card"><strong>Auth + scopes</strong><p>Attach credentials and define what an agent can and cannot do.</p></div>
+          <div class="card"><strong>Run ledger + replay</strong><p>Record every run and replay what happened before install flow becomes the focus.</p></div>
+          <div class="card"><strong>Usage metering + installs</strong><p>Measure real usage, then expose a clean install flow once the core runtime is solid.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-kicker">Pricing</div>
+          <h2>Simple public packaging, platform fee plus usage</h2>
+          <p class="section-copy">Keep pricing readable. Do not turn this into a seat maze.</p>
+        </div>
+        <div class="pricing">
+          <div class="tier">
+            <div>
+              <h3>Free</h3>
+              <div class="price">$0</div>
+            </div>
+            <p>Try one API with basic MCP hosting.</p>
+            <ul>
+              <li>1 API</li>
+              <li>Basic hosted MCP</li>
+              <li>Basic auth</li>
+              <li>Limited replay/history</li>
+            </ul>
+          </div>
+          <div class="tier featured">
+            <div>
+              <h3>Growth</h3>
+              <div class="price">$99<span style="font-size:1rem;font-weight:600;">/mo + usage</span></div>
+            </div>
+            <p>For real installs and real governed usage.</p>
+            <ul>
+              <li>Scoped access controls</li>
+              <li>Run ledger</li>
+              <li>Replay + debugging</li>
+              <li>Usage metering</li>
+            </ul>
+          </div>
+          <div class="tier">
+            <div>
+              <h3>Team</h3>
+              <div class="price">$499<span style="font-size:1rem;font-weight:600;">/mo + usage</span></div>
+            </div>
+            <p>For teams that need deeper visibility and shared controls.</p>
+            <ul>
+              <li>Higher limits</li>
+              <li>Shared governance controls</li>
+              <li>Longer history</li>
+              <li>Audit/export features</li>
+            </ul>
+          </div>
+          <div class="tier">
+            <div>
+              <h3>Enterprise</h3>
+              <div class="price">Custom</div>
+            </div>
+            <p>For larger deployments and custom requirements.</p>
+            <ul>
+              <li>Advanced controls</li>
+              <li>Custom contracts</li>
+              <li>Custom support</li>
+              <li>Deployment guidance</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="mvp">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-kicker">MVP scope</div>
+          <h2>What ships first</h2>
+          <p class="section-copy">This is the current carry-forward sequence for Sprint B Trigger 2.</p>
+        </div>
+        <div class="grid-3">
+          <div class="card"><h3>Core runtime</h3><p>OpenAPI import, hosted MCP generation, auth, and scopes.</p></div>
+          <div class="card"><h3>Trust layer</h3><p>Run ledger, replay, and audit before broader install and ecosystem polish.</p></div>
+          <div class="card"><h3>Commercial layer</h3><p>Usage metering first, install flow next, billing after, A2A later.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact">
+      <div class="container panel footer-cta">
+        <div>
+          <div class="section-kicker">Get started</div>
+          <h2 style="margin:0;">Bring your API into the agent era without rewriting it</h2>
+          <p>Agentrail turns your existing OpenAPI into a hosted MCP server, then gives you the controls and replay you need once agents start touching real systems.</p>
+        </div>
+        <div class="cta-row" style="margin-top:0;">
+          <a class="btn btn-primary" href="mailto:hello@blissnexus.ai?subject=Agentrail%20demo">Book a demo</a>
+          <a class="btn btn-secondary" href="mailto:hello@blissnexus.ai?subject=Import%20my%20OpenAPI">Import your OpenAPI</a>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="container">Agentrail, hosted MCP for your API.</div>
+    </footer>
+  </div>
 </body>
 </html>
